@@ -1,0 +1,4 @@
+# Business Logic Services
+# Place service classes here following the pattern:
+# - {Entity}Service.php
+# Example: ProductService.php, InventoryService.php
