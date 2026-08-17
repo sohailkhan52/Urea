@@ -39,9 +39,9 @@ class SalesController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('invoice_number', 'like', "%{$search}%")
-                  ->orWhereHas('customer', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('customer', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -162,26 +162,88 @@ class SalesController extends Controller
         $products = Product::active()->orderBy('name')->get();
 
         $summary = $this->salesService->getSaleSummary($sale);
+        $stockService = $this->stockService;
 
-        return view('admin.sales.edit', compact('sale', 'customers', 'warehouses', 'products', 'summary'));
+        return view('admin.sales.edit', compact('sale', 'customers', 'warehouses', 'products', 'summary', 'stockService'));
+    }
+
+    /**
+     * Update sale details (customer, date, notes).
+     */
+    public function update(Sale $sale, UpdateSaleRequest $request): RedirectResponse
+    {
+        $this->authorize('sales.update');
+
+        if (!$sale->isDraft()) {
+            return back()->with('error', 'Only draft sales can be updated.');
+        }
+
+        try {
+            $sale->update($request->only(['customer_id', 'walkin_customer_name', 'walkin_customer_contact', 'sale_date', 'notes']));
+
+            return back()->with('success', 'Sale updated successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error updating sale: ' . $e->getMessage());
+        }
     }
 
     /**
      * Confirm sale and reduce stock.
+     * Also handles payment recording (full, partial, or credit sale).
      */
-    public function confirm(Sale $sale): RedirectResponse
+    public function confirm(Sale $sale, Request $request): RedirectResponse
     {
         $this->authorize('sales.approve');
+
+        $request->validate([
+            'paid_amount' => 'nullable|numeric|min:0|max:' . $sale->total_amount,
+            'payment_method' => 'nullable|in:' . implode(',', array_keys(\App\Models\Payment::$methods)),
+            'reference_number' => 'nullable|string|max:100',
+            'payment_notes' => 'nullable|string|max:500',
+        ]);
 
         if (!$sale->canBeConfirmed()) {
             return back()->with('error', 'This sale cannot be confirmed.');
         }
 
         try {
-            $this->salesService->confirmSale($sale);
+            $paidAmount = (float) ($request->paid_amount ?? 0);
+            
+            // Confirm sale (creates stock movements, sets payment status)
+            $this->salesService->confirmSale($sale, $paidAmount);
+            
+            // If payment amount > 0, record the payment
+            if ($paidAmount > 0) {
+                $paymentService = app(\App\Services\PaymentService::class);
+                $paymentService->recordPayment(
+                    saleId: $sale->id,
+                    amount: $paidAmount,
+                    paymentMethod: $request->payment_method ?? \App\Models\Payment::METHOD_CASH,
+                    paymentDate: now()->toDateString(),
+                    referenceNumber: $request->reference_number,
+                    notes: $request->payment_notes
+                );
+            }
 
-            return redirect()->route('admin.sales.show', $sale)
-                ->with('success', 'Sale confirmed successfully! Stock has been reduced from warehouse.');
+            // Refresh sale to get updated payment_status
+            $sale->refresh();
+
+            // Generate success message based on payment status
+            $message = match($sale->payment_status) {
+                \App\Models\Sale::PAYMENT_STATUS_PAID => 
+                    "Sale confirmed successfully with full payment of Rs. " . 
+                    number_format($sale->paid_amount, 2) . ". Stock has been reduced.",
+                \App\Models\Sale::PAYMENT_STATUS_PARTIAL => 
+                    "Sale confirmed with partial payment of Rs. " . 
+                    number_format($sale->paid_amount, 2) . ". Outstanding balance: Rs. " . 
+                    number_format($sale->due_amount, 2),
+                \App\Models\Sale::PAYMENT_STATUS_UNPAID => 
+                    "Sale confirmed as credit (Udhar). Total amount: Rs. " . 
+                    number_format($sale->total_amount, 2),
+                default => "Sale confirmed successfully!"
+            };
+
+            return redirect()->route('admin.sales.show', $sale)->with('success', $message);
         } catch (\Exception $e) {
             return back()->with('error', 'Error confirming sale: ' . $e->getMessage());
         }
@@ -223,6 +285,16 @@ class SalesController extends Controller
         ]);
 
         try {
+            // Check if product has stock in the selected warehouse
+            $availableStock = $this->stockService->getCurrentStock(
+                $sale->warehouse_id,
+                $request->product_id
+            );
+
+            if ($availableStock <= 0) {
+                return back()->with('error', 'This product is out of stock in the selected warehouse.');
+            }
+
             $this->salesService->addItem(
                 $sale,
                 $request->product_id,
@@ -345,12 +417,13 @@ class SalesController extends Controller
         ]);
 
         $availableStock = $this->stockService->getCurrentStock(
-            $request->product_id,
-            $request->warehouse_id
+            $request->warehouse_id,
+            $request->product_id
         );
 
         return response()->json([
             'available_stock' => $availableStock,
+            'available' => $availableStock,
             'message' => "Available: {$availableStock} units",
         ]);
     }

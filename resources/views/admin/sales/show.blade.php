@@ -73,6 +73,17 @@
                                 <p class="mb-0">
                                     <span class="badge bg-secondary">Walk-in Customer</span>
                                 </p>
+                                @if($sale->walkin_customer_name)
+                                <p class="mb-0 mt-2">
+                                    <strong>{{ $sale->walkin_customer_name }}</strong>
+                                </p>
+                                @endif
+                                @if($sale->walkin_customer_contact)
+                                <small>
+                                    <i class="bi bi-telephone me-1"></i>
+                                    {{ $sale->walkin_customer_contact }}
+                                </small>
+                                @endif
                             @endif
                         </div>
                         <div class="col-md-6">

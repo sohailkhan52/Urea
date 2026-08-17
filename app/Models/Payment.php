@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|null $sale_id
  * @property float $amount
  * @property string $payment_method
+ * @property string|null $payment_type
+ * @property string|null $payment_status
  * @property \Illuminate\Support\Carbon $payment_date
  * @property string|null $reference_number
  * @property string|null $notes
@@ -34,6 +36,20 @@ class Payment extends Model
     public const METHOD_JAZZ_CASH = 'jazz_cash';
     public const METHOD_CHEQUE = 'cheque';
     public const METHOD_OTHER = 'other';
+
+    /**
+     * Payment type constants
+     */
+    public const TYPE_AGAINST_SALE = 'against_sale';
+    public const TYPE_UDHAR_SETTLEMENT = 'udhar_settlement';
+    public const TYPE_GENERAL = 'general';
+
+    /**
+     * Payment status constants
+     */
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_RECEIVED = 'received';
+    public const STATUS_CANCELLED = 'cancelled';
 
     /**
      * Available payment methods
@@ -58,6 +74,8 @@ class Payment extends Model
         'sale_id',
         'amount',
         'payment_method',
+        'payment_type',
+        'payment_status',
         'payment_date',
         'reference_number',
         'notes',
@@ -81,7 +99,7 @@ class Payment extends Model
     }
 
     /**
-     * Get customer relationship
+     * Get the customer this payment is from
      */
     public function customer()
     {
@@ -89,7 +107,7 @@ class Payment extends Model
     }
 
     /**
-     * Get sale relationship (nullable)
+     * Get the sale that this payment is for (nullable)
      */
     public function sale()
     {
@@ -105,7 +123,31 @@ class Payment extends Model
     }
 
     /**
-     * Scope to filter by payment method
+     * Get ledger entries created for this payment
+     */
+    public function ledgerEntries()
+    {
+        return $this->hasMany(CustomerLedger::class);
+    }
+
+    /**
+     * Scope: Filter by payment type
+     */
+    public function scopeByType($query, $type)
+    {
+        return $query->where('payment_type', $type);
+    }
+
+    /**
+     * Scope: Filter by payment status
+     */
+    public function scopeByPaymentStatus($query, $status)
+    {
+        return $query->where('payment_status', $status);
+    }
+
+    /**
+     * Scope: Filter by payment method
      */
     public function scopeByMethod($query, $method)
     {
@@ -137,6 +179,30 @@ class Payment extends Model
     }
 
     /**
+     * Check if payment is received
+     */
+    public function isReceived(): bool
+    {
+        return $this->payment_status === self::STATUS_RECEIVED;
+    }
+
+    /**
+     * Check if payment is cancelled
+     */
+    public function isCancelled(): bool
+    {
+        return $this->payment_status === self::STATUS_CANCELLED;
+    }
+
+    /**
+     * Check if payment is against a specific sale
+     */
+    public function isAgainstSale(): bool
+    {
+        return $this->payment_type === self::TYPE_AGAINST_SALE;
+    }
+
+    /**
      * Get payment method label
      */
     public function getMethodLabelAttribute(): string
@@ -157,6 +223,19 @@ class Payment extends Model
             self::METHOD_CHEQUE => 'secondary',
             self::METHOD_OTHER => 'light',
             default => 'secondary',
+        };
+    }
+
+    /**
+     * Get payment type label
+     */
+    public function getTypeLabelAttribute(): string
+    {
+        return match($this->payment_type) {
+            self::TYPE_AGAINST_SALE => 'Against Sale',
+            self::TYPE_UDHAR_SETTLEMENT => 'Udhar Settlement',
+            self::TYPE_GENERAL => 'General Payment',
+            default => 'Unknown',
         };
     }
 }

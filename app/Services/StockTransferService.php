@@ -64,7 +64,7 @@ class StockTransferService
         }
 
         // Check stock availability in source warehouse
-        $availableStock = $this->stockService->getCurrentStock($productId, $transfer->source_warehouse_id);
+        $availableStock = $this->stockService->getCurrentStock($transfer->source_warehouse_id, $productId);
         if ($availableStock < $quantity) {
             throw new \Exception(
                 "Insufficient stock in source warehouse. Available: {$availableStock}, Requested: {$quantity}"
@@ -105,7 +105,7 @@ class StockTransferService
         $quantityDifference = $quantity - $currentQuantity;
 
         if ($quantityDifference > 0) {
-            $availableStock = $this->stockService->getCurrentStock($item->product_id, $transfer->source_warehouse_id);
+            $availableStock = $this->stockService->getCurrentStock($transfer->source_warehouse_id, $item->product_id);
             if ($availableStock < $quantityDifference) {
                 throw new \Exception(
                     "Insufficient stock for additional quantity. Available: {$availableStock}, " .
@@ -210,7 +210,7 @@ class StockTransferService
 
             // Verify stock availability for all items
             foreach ($transfer->items as $item) {
-                $currentStock = $this->stockService->getCurrentStock($item->product_id, $transfer->source_warehouse_id);
+                $currentStock = $this->stockService->getCurrentStock($transfer->source_warehouse_id, $item->product_id);
 
                 if ($currentStock < $item->quantity) {
                     throw new \Exception(

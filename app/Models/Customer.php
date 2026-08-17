@@ -225,6 +225,14 @@ class Customer extends Model
     }
 
     /**
+     * Relationship: Get all sales for this customer
+     */
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
+    }
+
+    /**
      * Check if customer can be deleted
      */
     public function canBeDeleted(): bool

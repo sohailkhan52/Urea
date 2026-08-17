@@ -325,6 +325,20 @@
                 <span>Sales</span>
             </a>
             @endpermission
+
+            @permission('udhar.view')
+            <a href="{{ route('admin.udhar.index') }}" class="nav-link {{ request()->routeIs('admin.udhar.*') ? 'active' : '' }}">
+                <i class="bi bi-credit-card"></i>
+                <span>Udhar Management</span>
+            </a>
+            @endpermission
+
+            @permission('payables.view')
+            <a href="{{ route('admin.payables.index') }}" class="nav-link {{ request()->routeIs('admin.payables.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-check"></i>
+                <span>Supplier Payables</span>
+            </a>
+            @endpermission
             @endanypermission
 
             @anypermission(['transfers.view'])

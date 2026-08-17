@@ -34,7 +34,7 @@
             {{-- Sale Header --}}
             <div class="card mb-3">
                 <div class="card-body">
-                    <form action="{{ route('admin.sales.update', $sale) }}" method="POST">
+                    <form action="{{ route('admin.sales.update', $sale) }}" method="POST" id="updateSaleForm">
                         @csrf
                         @method('PUT')
 
@@ -110,7 +110,7 @@
 
                         @if($sale->isDraft())
                         <div class="mt-3 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmWithPaymentModal">
                                 <i class="bi bi-check-circle me-1"></i> Update
                             </button>
                             <a href="{{ route('admin.sales.show', $sale) }}" class="btn btn-secondary">
@@ -167,7 +167,7 @@
                                             <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editItemModal{{ $item->id }}" title="Edit">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
-                                            <form action="{{ route('admin.sales.remove-item', $item) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('admin.sales.removeItem', $item) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-danger" title="Remove" onclick="return confirm('Remove this item?');">
@@ -250,12 +250,9 @@
             @if($sale->isDraft())
             <div class="card mt-3">
                 <div class="card-body">
-                    <form action="{{ route('admin.sales.confirm', $sale) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Confirm this sale? Stock will be reduced from warehouse.');">
-                            <i class="bi bi-check-circle me-1"></i> Confirm Sale
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#confirmWithPaymentModal">
+                        <i class="bi bi-check-circle me-1"></i> Confirm Sale
+                    </button>
                 </div>
             </div>
             @endif
@@ -271,7 +268,7 @@
                     <h5 class="modal-title">Add Item to Sale</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form action="{{ route('admin.sales.add-item', $sale) }}" method="POST">
+                <form action="{{ route('admin.sales.addItem', $sale) }}" method="POST">
                     @csrf
                     <div class="modal-body">
                         <div class="mb-3">
@@ -279,26 +276,43 @@
                             <select class="form-select" id="product_id" name="product_id" required onchange="checkStockAvailability()">
                                 <option value="">-- Select Product --</option>
                                 @foreach($products as $product)
-                                <option value="{{ $product->id }}" data-price="{{ $product->sale_price }}">
-                                    {{ $product->name }} ({{ $product->sku }})
-                                </option>
+                                    @php
+                                        $warehouseStock = $stockService->getCurrentStock($sale->warehouse_id, $product->id);
+                                        $isDisabled = $warehouseStock <= 0;
+                                    @endphp
+                                    <option value="{{ $product->id }}" 
+                                            data-price="{{ $product->sale_price }}" 
+                                            data-stock="{{ $warehouseStock }}"
+                                            {{ $isDisabled ? 'disabled' : '' }}>
+                                        {{ $product->name }} ({{ $product->sku }}) 
+                                        {{ $isDisabled ? '❌ Out of Stock' : '✓ ' . $warehouseStock . ' units' }}
+                                    </option>
                                 @endforeach
                             </select>
+                            <small class="text-muted d-block mt-1">
+                                <i class="bi bi-info-circle"></i> Out of stock items are disabled
+                            </small>
                         </div>
+
+                        <!-- Stock Availability Alert -->
+                        <div class="alert alert-info d-none" id="stock_alert" role="alert">
+                            <strong>Warehouse Stock:</strong> <span id="stock_available_text">—</span> units available in <strong>{{ $sale->warehouse->name }}</strong>
+                        </div>
+
                         <div class="row g-2">
                             <div class="col-md-6">
                                 <label for="quantity" class="form-label">Quantity <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="quantity" name="quantity" step="0.01" min="0.01" required>
-                                <small class="text-muted" id="stock_available">Available: —</small>
+                                <input type="number" class="form-control" id="quantity" name="quantity" step="0.01" min="0.01" required placeholder="Enter quantity">
+                                <small class="text-muted" id="stock_warning"></small>
                             </div>
                             <div class="col-md-6">
                                 <label for="unit_price" class="form-label">Unit Price <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="unit_price" name="unit_price" step="0.01" min="0" required>
+                                <input type="number" class="form-control" id="unit_price" name="unit_price" step="0.01" min="0" required placeholder="Auto-filled">
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="discount" class="form-label">Item Discount</label>
-                            <input type="number" class="form-control" id="discount" name="discount" step="0.01" min="0" value="0">
+                            <input type="number" class="form-control" id="discount" name="discount" step="0.01" min="0" value="0" placeholder="0.00">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -319,7 +333,7 @@
                     <h5 class="modal-title">Edit Item</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form action="{{ route('admin.sales.update-item', $item) }}" method="POST">
+                <form action="{{ route('admin.sales.updateItem', $item) }}" method="POST">
                     @csrf
                     @method('PUT')
                     <div class="modal-body">
@@ -354,23 +368,295 @@
     @endif
 </div>
 
+{{-- Confirm Sale with Payment Modal --}}
+<div class="modal fade" id="confirmWithPaymentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Sale & Record Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ route('admin.sales.confirm', $sale) }}" method="POST" id="confirmSaleForm">
+                @csrf
+                <div class="modal-body">
+                    {{-- Sale Total --}}
+                    <div class="alert alert-light border mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted"><strong>Total Amount:</strong></span>
+                            <strong class="text-primary h5 mb-0">Rs. {{ number_format($sale->total_amount, 2) }}</strong>
+                        </div>
+                    </div>
+
+                    {{-- Paid Amount Input --}}
+                    <div class="mb-3">
+                        <label for="paid_amount_input" class="form-label"><strong>Amount Paid</strong> <span class="text-muted">(Optional)</span></label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text"><strong>Rs.</strong></span>
+                            <input type="number" 
+                                   class="form-control form-control-lg" 
+                                   id="paid_amount_input" 
+                                   name="paid_amount"
+                                   step="0.01" 
+                                   min="0" 
+                                   max="{{ $sale->total_amount }}"
+                                   value="0" 
+                                   placeholder="0.00"
+                                   onkeyup="calculatePaymentDue()"
+                                   oninput="calculatePaymentDue()">
+                        </div>
+                        <small class="text-muted d-block mt-2">Enter amount received from customer (leave 0 if to be collected later)</small>
+                    </div>
+
+                    {{-- Due Amount Display --}}
+                    <div class="alert alert-info mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span><strong>Due Amount (To Collect):</strong></span>
+                            <strong class="h5 mb-0" id="due_amount_display">Rs. {{ number_format($sale->total_amount, 2) }}</strong>
+                        </div>
+                    </div>
+
+                    {{-- Payment Status Display --}}
+                    <div id="payment_status_badge" class="alert alert-light mb-3">
+                        <small><strong>Payment Status:</strong> <span id="status_text">Unpaid</span></small>
+                    </div>
+
+                    <hr>
+
+                    {{-- Payment Details (shown only if amount > 0) --}}
+                    <div id="payment_fields_container" style="display: none;">
+                        <h6 class="mb-3">Payment Details</h6>
+                        
+                        {{-- Payment Method --}}
+                        <div class="mb-3">
+                            <label for="payment_method" class="form-label"><strong>Payment Method</strong> <span class="text-danger">*</span></label>
+                            <select class="form-select" id="payment_method" name="payment_method">
+                                <option value="">-- Select Payment Method --</option>
+                                @foreach(\App\Models\Payment::$methods as $key => $label)
+                                    <option value="{{ $key }}" {{ $key === 'cash' ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Reference Number --}}
+                        <div class="mb-3">
+                            <label for="reference_number" class="form-label">Reference Number <span class="text-muted">(Optional)</span></label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="reference_number" 
+                                   name="reference_number" 
+                                   maxlength="100"
+                                   placeholder="Transaction ID, Cheque No., etc.">
+                            <small class="text-muted">Enter transaction ID, cheque number, or other reference</small>
+                        </div>
+
+                        {{-- Payment Notes --}}
+                        <div class="mb-3">
+                            <label for="payment_notes" class="form-label">Payment Notes <span class="text-muted">(Optional)</span></label>
+                            <textarea class="form-control" 
+                                      id="payment_notes" 
+                                      name="payment_notes" 
+                                      rows="2" 
+                                      maxlength="500"
+                                      placeholder="Additional notes about the payment"></textarea>
+                        </div>
+
+                        <hr>
+                    </div>
+
+                    <div class="alert alert-warning mb-0">
+                        <small>
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            <strong>Stock Impact:</strong> Confirming this sale will reduce stock from <strong>{{ $sale->warehouse->name }}</strong>.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-check-circle me-1"></i> Confirm & Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 function checkStockAvailability() {
     const productId = document.getElementById('product_id').value;
+    const quantityInput = document.getElementById('quantity');
+    const stockAlert = document.getElementById('stock_alert');
+    const stockWarning = document.getElementById('stock_warning');
+    
     if (productId) {
+        // Get unit price from selected option
         const option = document.querySelector(`#product_id option[value="${productId}"]`);
         const unitPrice = option.dataset.price;
+        const warehouseStock = parseFloat(option.dataset.stock) || 0;
+        
         document.getElementById('unit_price').value = unitPrice;
         
-        // AJAX call to check stock
-        fetch(`{{ route('admin.sales.check-stock') }}?product_id=${productId}&warehouse_id={{ $sale->warehouse_id }}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('stock_available').textContent = `Available: ${data.available}`;
-            });
+        // Show stock alert with the stock from data attribute (no AJAX needed)
+        stockAlert.classList.remove('d-none');
+        document.getElementById('stock_available_text').textContent = warehouseStock;
+        
+        // Add validation warning if user enters quantity
+        quantityInput.addEventListener('input', function() {
+            const requestedQty = parseFloat(this.value) || 0;
+            if (requestedQty > warehouseStock) {
+                stockWarning.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle"></i> Insufficient stock! Only ${warehouseStock} units available.</span>`;
+                this.classList.add('is-invalid');
+            } else if (requestedQty > 0) {
+                stockWarning.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> OK</span>`;
+                this.classList.remove('is-invalid');
+            } else {
+                stockWarning.innerHTML = '';
+                this.classList.remove('is-invalid');
+            }
+        });
+    } else {
+        // Hide alert if no product selected
+        stockAlert.classList.add('d-none');
+        document.getElementById('unit_price').value = '';
+        quantityInput.value = '';
+        quantityInput.classList.remove('is-invalid');
+        stockWarning.innerHTML = '';
     }
 }
+
+// Check stock when modal is opened
+document.addEventListener('show.bs.modal', function(event) {
+    if (event.target.id === 'addItemModal') {
+        // Reset form
+        document.getElementById('product_id').value = '';
+        document.getElementById('quantity').value = '';
+        document.getElementById('unit_price').value = '';
+        document.getElementById('discount').value = '0';
+        document.getElementById('stock_alert').classList.add('d-none');
+        document.getElementById('stock_warning').innerHTML = '';
+    }
+});
+
+// Prevent form submission if product is out of stock or quantity exceeds available
+document.addEventListener('submit', function(event) {
+    if (event.target.getAttribute('action')?.includes('addItem')) {
+        const productId = document.getElementById('product_id').value;
+        const quantity = parseFloat(document.getElementById('quantity').value) || 0;
+        
+        if (!productId) {
+            event.preventDefault();
+            alert('Please select a product.');
+            return false;
+        }
+        
+        const option = document.querySelector(`#product_id option[value="${productId}"]`);
+        if (!option) {
+            event.preventDefault();
+            alert('Invalid product selected.');
+            return false;
+        }
+        
+        const warehouseStock = parseFloat(option.dataset.stock) || 0;
+        
+        // Check if product is disabled
+        if (option.disabled) {
+            event.preventDefault();
+            alert('Cannot add out-of-stock products. Please select a product with available stock.');
+            return false;
+        }
+        
+        // Check if quantity exceeds available stock
+        if (quantity > warehouseStock) {
+            event.preventDefault();
+            alert(`Insufficient stock! Only ${warehouseStock} units available.`);
+            return false;
+        }
+        
+        if (quantity <= 0) {
+            event.preventDefault();
+            alert('Please enter a valid quantity.');
+            return false;
+        }
+    }
+});
+
+// Payment Calculation Function
+const totalAmountForPayment = {{ $sale->total_amount }};
+
+function calculatePaymentDue() {
+    const paidAmountInput = document.getElementById('paid_amount_input');
+    const paidAmount = parseFloat(paidAmountInput.value) || 0;
+    const dueAmount = totalAmountForPayment - paidAmount;
+    
+    // Validate paid amount does not exceed total
+    if (paidAmount > totalAmountForPayment) {
+        paidAmountInput.value = totalAmountForPayment;
+        alert('Paid amount cannot exceed total amount!');
+        calculatePaymentDue();
+        return;
+    }
+    
+    // Update due amount display
+    document.getElementById('due_amount_display').textContent = 'Rs. ' + dueAmount.toFixed(2);
+    
+    // Update payment status
+    let statusText = 'Unpaid';
+    let badgeClass = 'alert-light';
+    
+    if (paidAmount >= totalAmountForPayment) {
+        statusText = 'Fully Paid';
+        badgeClass = 'alert-success';
+    } else if (paidAmount > 0) {
+        statusText = 'Partially Paid';
+        badgeClass = 'alert-warning';
+    }
+    
+    document.getElementById('status_text').textContent = statusText;
+    const badge = document.getElementById('payment_status_badge');
+    badge.className = 'alert ' + badgeClass + ' mb-3';
+    
+    // Show/hide payment fields based on amount
+    const paymentFieldsContainer = document.getElementById('payment_fields_container');
+    const paymentMethodSelect = document.getElementById('payment_method');
+    
+    if (paidAmount > 0) {
+        paymentFieldsContainer.style.display = 'block';
+        paymentMethodSelect.required = true;
+    } else {
+        paymentFieldsContainer.style.display = 'none';
+        paymentMethodSelect.required = false;
+    }
+}
+
+// Initialize when modal opens
+document.addEventListener('show.bs.modal', function(event) {
+    if (event.target.id === 'confirmWithPaymentModal') {
+        document.getElementById('paid_amount_input').value = '0';
+        document.getElementById('payment_method').value = 'cash';
+        document.getElementById('reference_number').value = '';
+        document.getElementById('payment_notes').value = '';
+        calculatePaymentDue();
+    }
+});
 </script>
+
+<style>
+/* Style for disabled product options - lighter/grayed out appearance */
+select option:disabled {
+    color: #999 !important;
+    background-color: #f5f5f5 !important;
+    opacity: 0.6 !important;
+}
+
+select option {
+    padding: 8px;
+}
+
+select option[disabled] {
+    font-style: italic;
+    text-decoration: line-through;
+}
+</style>
 @endpush
 @endsection

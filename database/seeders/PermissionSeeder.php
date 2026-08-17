@@ -326,6 +326,52 @@ class PermissionSeeder extends Seeder
                 'group' => 'dealers',
                 'description' => 'Delete dealers',
             ],
+
+            // Udhar Management (Credit/Outstanding)
+            [
+                'name' => 'View Udhar',
+                'slug' => 'udhar.view',
+                'group' => 'udhar',
+                'description' => 'View Udhar (outstanding balance) management',
+            ],
+            [
+                'name' => 'Record Udhar Payments',
+                'slug' => 'udhar.create',
+                'group' => 'udhar',
+                'description' => 'Record payments for outstanding Udhar',
+            ],
+            [
+                'name' => 'Export Udhar Reports',
+                'slug' => 'udhar.export',
+                'group' => 'udhar',
+                'description' => 'Export Udhar reports',
+            ],
+
+            // Payables Management (Supplier Outstanding)
+            [
+                'name' => 'View Payables',
+                'slug' => 'payables.view',
+                'group' => 'payables',
+                'description' => 'View Payables (supplier outstanding balance) management',
+            ],
+            [
+                'name' => 'Record Payables Payments',
+                'slug' => 'payables.create',
+                'group' => 'payables',
+                'description' => 'Record payments for supplier payables',
+            ],
+            [
+                'name' => 'Manage Payables',
+                'slug' => 'payables.manage',
+                'group' => 'payables',
+                'description' => 'Full management of payables',
+            ],
+            [
+                'name' => 'Export Payables Reports',
+                'slug' => 'payables.export',
+                'group' => 'payables',
+                'description' => 'Export payables reports',
+            ],
         ];
 
         foreach ($permissions as $permission) {

@@ -283,6 +283,41 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->name('sales.checkStock')
         ->middleware('permission:sales.create');
 
+    // Udhar Management (Credit/Outstanding)
+    Route::prefix('udhar')->name('udhar.')->middleware('permission:udhar.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\UdharController::class, 'index'])
+            ->name('index');
+        
+        Route::get('/{customer}', [\App\Http\Controllers\Admin\UdharController::class, 'details'])
+            ->name('details');
+        
+        Route::get('/{customer}/ledger', [\App\Http\Controllers\Admin\UdharController::class, 'ledger'])
+            ->name('ledger');
+        
+        Route::post('/{customer}/payment', [\App\Http\Controllers\Admin\UdharController::class, 'recordPayment'])
+            ->name('recordPayment')
+            ->middleware('permission:udhar.create');
+    });
+
+    // Payables Management (Supplier Outstanding)
+    Route::prefix('payables')->name('payables.')->middleware('permission:payables.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PayableController::class, 'index'])
+            ->name('index');
+        
+        Route::get('/aging', [\App\Http\Controllers\Admin\PayableController::class, 'aging'])
+            ->name('aging');
+        
+        Route::get('/{supplier}', [\App\Http\Controllers\Admin\PayableController::class, 'details'])
+            ->name('details');
+        
+        Route::get('/{supplier}/ledger', [\App\Http\Controllers\Admin\PayableController::class, 'ledger'])
+            ->name('ledger');
+        
+        Route::post('/{supplier}/payment', [\App\Http\Controllers\Admin\PayableController::class, 'recordPayment'])
+            ->name('recordPayment')
+            ->middleware('permission:payables.create');
+    });
+
     // Stock Transfer Management
     Route::resource('stock-transfers', \App\Http\Controllers\Admin\StockTransferController::class)
         ->middleware('permission:transfers.view');

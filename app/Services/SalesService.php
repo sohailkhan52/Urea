@@ -60,7 +60,7 @@ class SalesService
         }
 
         // Check stock availability
-        $availableStock = $this->stockService->getCurrentStock($productId, $sale->warehouse_id);
+        $availableStock = $this->stockService->getCurrentStock($sale->warehouse_id, $productId);
         if ($availableStock < $quantity) {
             throw new \Exception("Only {$availableStock} units available in warehouse. Cannot sell {$quantity} units.");
         }
@@ -103,7 +103,7 @@ class SalesService
         $quantityDifference = $quantity - $currentQuantity;
 
         if ($quantityDifference > 0) {
-            $availableStock = $this->stockService->getCurrentStock($item->product_id, $sale->warehouse_id);
+            $availableStock = $this->stockService->getCurrentStock($sale->warehouse_id, $item->product_id);
             if ($availableStock < $quantityDifference) {
                 throw new \Exception("Only {$availableStock} additional units available. Cannot increase by {$quantityDifference} units.");
             }
@@ -152,7 +152,7 @@ class SalesService
      * @return Sale
      * @throws \Exception
      */
-    public function confirmSale(Sale $sale): Sale
+    public function confirmSale(Sale $sale, float $paidAmount = 0): Sale
     {
         if (!$sale->isDraft()) {
             throw new \Exception('Only draft sales can be confirmed.');
@@ -162,7 +162,16 @@ class SalesService
             throw new \Exception('Cannot confirm sale without items.');
         }
 
-        return DB::transaction(function () use ($sale) {
+        return DB::transaction(function () use ($sale, $paidAmount) {
+            // Validate paid amount
+            if ($paidAmount < 0) {
+                throw new \Exception('Paid amount cannot be negative.');
+            }
+
+            if ($paidAmount > $sale->total_amount) {
+                throw new \Exception('Paid amount cannot exceed total amount.');
+            }
+
             // Lock the warehouse inventory rows to prevent overselling
             $inventoryRows = WarehouseInventory::where('warehouse_id', $sale->warehouse_id)
                 ->lockForUpdate()
@@ -170,7 +179,7 @@ class SalesService
 
             // Verify stock availability for all items
             foreach ($sale->items as $item) {
-                $currentStock = $this->stockService->getCurrentStock($item->product_id, $sale->warehouse_id);
+                $currentStock = $this->stockService->getCurrentStock($sale->warehouse_id, $item->product_id);
 
                 if ($currentStock < $item->quantity) {
                     throw new \Exception(
@@ -195,12 +204,43 @@ class SalesService
                 );
             }
 
-            // Update sale status
+            // Ensure paid amount is valid (between 0 and total)
+            $validPaidAmount = max(0, min($paidAmount, $sale->total_amount));
+            
+            // Calculate due and udhar amounts
+            $dueAmount = max(0, $sale->total_amount - $validPaidAmount);
+            $udharAmount = max(0, $dueAmount);
+
+            // Calculate payment status
+            if ($validPaidAmount == 0) {
+                $paymentStatus = Sale::PAYMENT_STATUS_UNPAID;
+            } elseif ($validPaidAmount >= $sale->total_amount) {
+                $paymentStatus = Sale::PAYMENT_STATUS_PAID;
+            } else {
+                $paymentStatus = Sale::PAYMENT_STATUS_PARTIAL;
+            }
+
+            // Update sale status and payment info
             $sale->update([
                 'status' => Sale::STATUS_CONFIRMED,
                 'confirmed_at' => now(),
                 'confirmed_by' => auth()->id(),
+                'paid_amount' => $validPaidAmount,
+                'due_amount' => $dueAmount,
+                'udhar_amount' => $udharAmount,
+                'payment_status' => $paymentStatus,
             ]);
+
+            // If customer exists, create ledger entry for the sale
+            if ($sale->customer_id) {
+                $paymentService = app(PaymentService::class);
+                $paymentService->createSaleLedgerEntry($sale, auth()->id());
+            }
+
+            $sale->refresh();
+            
+            // Dispatch SaleConfirmed event to trigger notifications
+            \App\Events\SaleConfirmed::dispatch($sale);
 
             return $sale;
         });
@@ -281,7 +321,7 @@ class SalesService
      * @param Sale $sale
      * @return void
      */
-    protected function recalculateSaleTotals(Sale $sale): void
+    public function recalculateSaleTotals(Sale $sale): void
     {
         $subtotal = $sale->items()->sum(DB::raw('(quantity * unit_price)'));
         $totalDiscount = $sale->items()->sum('discount');

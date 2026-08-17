@@ -26,10 +26,10 @@ class CustomerController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('cnic', 'like', "%{$search}%")
-                  ->orWhere('village', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('cnic', 'like', "%{$search}%")
+                    ->orWhere('village', 'like', "%{$search}%");
             });
         }
 
@@ -77,6 +77,9 @@ class CustomerController extends Controller
 
         try {
             $customer = Customer::create($request->validated());
+
+            // Dispatch CustomerCreated event to trigger welcome email
+            \App\Events\CustomerCreated::dispatch($customer);
 
             return redirect()->route('admin.customers.show', $customer)
                 ->with('success', 'Customer created successfully.');

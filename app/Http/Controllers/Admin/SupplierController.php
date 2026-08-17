@@ -28,11 +28,11 @@ class SupplierController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('company_name', 'like', "%{$search}%")
-                  ->orWhere('contact_person', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('ntn', 'like', "%{$search}%");
+                    ->orWhere('company_name', 'like', "%{$search}%")
+                    ->orWhere('contact_person', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('ntn', 'like', "%{$search}%");
             });
         }
 
@@ -81,6 +81,9 @@ class SupplierController extends Controller
             'supplier_id' => $supplier->id,
             'supplier_name' => $supplier->name,
         ]);
+
+        // Dispatch SupplierCreated event to trigger welcome email
+        \App\Events\SupplierCreated::dispatch($supplier);
 
         return redirect()->route('admin.suppliers.index')
             ->with('success', 'Supplier created successfully.');

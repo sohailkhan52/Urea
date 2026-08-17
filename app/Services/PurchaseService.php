@@ -241,21 +241,36 @@ class PurchaseService
                 }
             }
 
+            // Calculate payment status based on current paid_amount
+            $paymentStatus = $this->calculatePaymentStatus($purchase);
+
             // Update purchase status
             $purchase->update([
                 'status' => Purchase::STATUS_CONFIRMED,
+                'payment_status' => $paymentStatus,
                 'confirmed_at' => now(),
                 'confirmed_by' => Auth::id(),
             ]);
+
+            // Create initial ledger entry for this purchase
+            $this->createSupplierLedgerEntry($purchase);
 
             Log::warning('Purchase confirmed', [
                 'purchase_id' => $purchase->id,
                 'purchase_number' => $purchase->purchase_number,
                 'confirmed_by' => Auth::id(),
                 'total_items' => $purchase->items()->count(),
+                'total_amount' => $purchase->total_amount,
+                'paid_amount' => $purchase->paid_amount,
+                'payment_status' => $paymentStatus,
             ]);
 
-            return $purchase->refresh();
+            $purchase->refresh();
+            
+            // Dispatch PurchaseConfirmed event to trigger notifications
+            \App\Events\PurchaseConfirmed::dispatch($purchase);
+
+            return $purchase;
         });
     }
 
@@ -356,5 +371,56 @@ class PurchaseService
             'balance' => $purchase->balance,
             'payment_status' => $purchase->payment_status,
         ];
+    }
+
+    /**
+     * Calculate payment status based on paid vs total
+     * 
+     * @param Purchase $purchase
+     * @return string
+     */
+    private function calculatePaymentStatus(Purchase $purchase): string
+    {
+        if ($purchase->paid_amount == 0) {
+            return Purchase::PAYMENT_STATUS_UNPAID;
+        } elseif ($purchase->paid_amount >= $purchase->total_amount) {
+            return Purchase::PAYMENT_STATUS_PAID;
+        } else {
+            return Purchase::PAYMENT_STATUS_PARTIAL;
+        }
+    }
+
+    /**
+     * Create initial supplier ledger entry when purchase is confirmed
+     * 
+     * @param Purchase $purchase
+     * @throws \Exception
+     */
+    private function createSupplierLedgerEntry(Purchase $purchase): void
+    {
+        $suppLedgerModel = \App\Models\SupplierLedger::class;
+        
+        // Get previous balance for this supplier
+        $previousEntry = $suppLedgerModel::where('supplier_id', $purchase->supplier_id)
+            ->orderBy('date', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $previousBalance = $previousEntry ? $previousEntry->balance : 0;
+        $payableAmount = $purchase->total_amount - $purchase->paid_amount;
+        $newBalance = $previousBalance + $payableAmount;
+
+        $suppLedgerModel::create([
+            'supplier_id' => $purchase->supplier_id,
+            'type' => $suppLedgerModel::TYPE_PURCHASE,
+            'purchase_id' => $purchase->id,
+            'payable_added' => $payableAmount,
+            'payment_made' => $purchase->paid_amount,
+            'balance' => $newBalance,
+            'description' => "Purchase {$purchase->purchase_number} - Rs. " . number_format($payableAmount, 2) . " payable",
+            'reference_number' => $purchase->purchase_number,
+            'date' => $purchase->purchase_date,
+            'created_by' => Auth::id(),
+        ]);
     }
 }

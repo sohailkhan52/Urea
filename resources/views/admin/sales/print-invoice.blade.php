@@ -212,6 +212,12 @@
                         @endif
                     @else
                         <p><strong>Walk-in Customer</strong></p>
+                        @if($sale->walkin_customer_name)
+                        <p>Name: {{ $sale->walkin_customer_name }}</p>
+                        @endif
+                        @if($sale->walkin_customer_contact)
+                        <p>Contact: {{ $sale->walkin_customer_contact }}</p>
+                        @endif
                     @endif
                 </div>
             </div>

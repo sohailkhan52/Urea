@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property float $other_expenses
  * @property float $total_amount
  * @property float $paid_amount
+ * @property string $payment_status
  * @property string|null $notes
  * @property \Illuminate\Support\Carbon|null $confirmed_at
  * @property \Illuminate\Support\Carbon|null $cancelled_at
@@ -40,6 +41,13 @@ class Purchase extends Model
     public const STATUS_CANCELLED = 'cancelled';
 
     /**
+     * Payment status constants
+     */
+    public const PAYMENT_STATUS_UNPAID = 'unpaid';
+    public const PAYMENT_STATUS_PARTIAL = 'partial';
+    public const PAYMENT_STATUS_PAID = 'paid';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -56,6 +64,7 @@ class Purchase extends Model
         'other_expenses',
         'total_amount',
         'paid_amount',
+        'payment_status',
         'notes',
         'confirmed_at',
         'cancelled_at',
@@ -151,6 +160,22 @@ class Purchase extends Model
     }
 
     /**
+     * Get purchase payments
+     */
+    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PurchasePayment::class);
+    }
+
+    /**
+     * Get ledger entries for this purchase
+     */
+    public function ledgerEntries(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(SupplierLedger::class);
+    }
+
+    /**
      * Scope to filter draft purchases
      */
     public function scopeDraft($query)
@@ -183,11 +208,35 @@ class Purchase extends Model
     }
 
     /**
-     * Scope to filter by warehouse
+     * Scope to filter by payment status
      */
-    public function scopeByWarehouse($query, $warehouseId)
+    public function scopeByPaymentStatus($query, $status)
     {
-        return $query->where('warehouse_id', $warehouseId);
+        return $query->where('payment_status', $status);
+    }
+
+    /**
+     * Scope to filter unpaid purchases
+     */
+    public function scopeUnpaid($query)
+    {
+        return $query->where('payment_status', self::PAYMENT_STATUS_UNPAID);
+    }
+
+    /**
+     * Scope to filter partial purchases
+     */
+    public function scopePartial($query)
+    {
+        return $query->where('payment_status', self::PAYMENT_STATUS_PARTIAL);
+    }
+
+    /**
+     * Scope to filter paid purchases
+     */
+    public function scopePaid($query)
+    {
+        return $query->where('payment_status', self::PAYMENT_STATUS_PAID);
     }
 
     /**
@@ -257,23 +306,59 @@ class Purchase extends Model
     }
 
     /**
-     * Get payment status
+     * Get payment status label
      */
-    public function getPaymentStatusAttribute(): string
+    public function getPaymentStatusLabelAttribute(): string
     {
-        if ($this->paid_amount == 0) {
-            return 'Unpaid';
-        } elseif ($this->paid_amount >= $this->total_amount) {
-            return 'Paid';
-        } else {
-            return 'Partial';
-        }
+        return match($this->payment_status) {
+            self::PAYMENT_STATUS_PAID => 'Paid',
+            self::PAYMENT_STATUS_PARTIAL => 'Partial',
+            self::PAYMENT_STATUS_UNPAID => 'Unpaid',
+            default => 'Unknown',
+        };
     }
 
     /**
-     * Get balance amount
+     * Get payment status badge class
      */
-    public function getBalanceAttribute(): float
+    public function getPaymentStatusBadgeAttribute(): string
+    {
+        return match($this->payment_status) {
+            self::PAYMENT_STATUS_PAID => 'success',
+            self::PAYMENT_STATUS_PARTIAL => 'warning',
+            self::PAYMENT_STATUS_UNPAID => 'danger',
+            default => 'secondary',
+        };
+    }
+
+    /**
+     * Check if purchase is fully paid
+     */
+    public function isPaid(): bool
+    {
+        return $this->payment_status === self::PAYMENT_STATUS_PAID;
+    }
+
+    /**
+     * Check if purchase is partially paid
+     */
+    public function isPartial(): bool
+    {
+        return $this->payment_status === self::PAYMENT_STATUS_PARTIAL;
+    }
+
+    /**
+     * Check if purchase is unpaid
+     */
+    public function isUnpaid(): bool
+    {
+        return $this->payment_status === self::PAYMENT_STATUS_UNPAID;
+    }
+
+    /**
+     * Get payable amount (remaining to be paid)
+     */
+    public function getPayableAmountAttribute(): float
     {
         return max(0, $this->total_amount - $this->paid_amount);
     }
