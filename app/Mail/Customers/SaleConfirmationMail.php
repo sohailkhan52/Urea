@@ -14,29 +14,19 @@ class SaleConfirmationMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    /**
-     * Create a new message instance.
-     */
     public function __construct(
         public Sale $sale
-    ) {
-        $this->queue = 'default';
-        $this->delay = 0;
-    }
+    ) {}
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
         return new Envelope(
+            from: config('mail.from.address'),
+            replyTo: config('mail.from.address'),
             subject: "Sale Confirmation - Invoice {$this->sale->invoice_number}",
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         $customerName = $this->sale->customer?->name ?? $this->sale->walkin_customer_name ?? 'Valued Customer';
@@ -51,11 +41,6 @@ class SaleConfirmationMail extends Mailable implements ShouldQueue
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
     public function attachments(): array
     {
         return [];

@@ -116,10 +116,27 @@ class StockTransferController extends Controller
 
         $stockTransfer->load(['sourceWarehouse', 'destinationWarehouse', 'items.product']);
         $warehouses = Warehouse::orderBy('name')->get();
+        
+        // Get products with stock in the source warehouse
+        $stockService = app(\App\Services\StockService::class);
+        $productsWithStock = [];
+        
         $products = Product::where('status', 'active')->orderBy('name')->get();
+        foreach ($products as $product) {
+            $availableStock = $stockService->getCurrentStock($stockTransfer->source_warehouse_id, $product->id);
+            if ($availableStock > 0) {
+                $productsWithStock[] = [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'available_stock' => $availableStock,
+                ];
+            }
+        }
+        
         $summary = $this->transferService->getTransferSummary($stockTransfer);
 
-        return view('admin.stock-transfers.edit', compact('stockTransfer', 'warehouses', 'products', 'summary'));
+        return view('admin.stock-transfers.edit', compact('stockTransfer', 'warehouses', 'productsWithStock', 'summary'));
     }
 
     /**
@@ -135,7 +152,7 @@ class StockTransferController extends Controller
             $stockTransfer->update($request->validated());
 
             return redirect()
-                ->route('admin.stock-transfers.edit', $stockTransfer)
+                ->route('admin.stock-transfers.show', $stockTransfer)
                 ->with('success', 'Transfer updated successfully.');
         } catch (\Exception $e) {
             return back()
@@ -285,7 +302,7 @@ class StockTransferController extends Controller
             $this->transferService->receiveTransfer($stockTransfer, $receivedItems);
 
             return redirect()
-                ->route('admin.stock-transfers.show', $stockTransfer)
+                ->route('admin.stock-transfers.index')
                 ->with('success', 'Transfer received successfully. Stock added to destination warehouse.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -305,10 +322,30 @@ class StockTransferController extends Controller
             $this->transferService->cancelTransfer($stockTransfer, $request->reason ?? '');
 
             return redirect()
-                ->route('admin.stock-transfers.show', $stockTransfer)
+                ->route('admin.stock-transfers.index')
                 ->with('success', 'Transfer cancelled successfully.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete transfer (soft delete)
+     */
+    public function destroy(StockTransfer $stockTransfer)
+    {
+        try {
+            // Remove all items first
+            $stockTransfer->items()->delete();
+            
+            // Soft delete the transfer
+            $stockTransfer->delete();
+
+            return redirect()
+                ->route('admin.stock-transfers.index')
+                ->with('success', 'Transfer deleted successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error deleting transfer: ' . $e->getMessage());
         }
     }
 

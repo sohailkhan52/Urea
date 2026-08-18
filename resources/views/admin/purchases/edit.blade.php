@@ -354,13 +354,9 @@
                 </div>
                 <div class="card-body d-flex flex-column gap-2">
                     @if($purchase->canBeConfirmed())
-                    <form action="{{ route('admin.purchases.confirm', $purchase) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn btn-success w-100"
-                                onclick="return confirm('Confirm this purchase? Stock will be added to the warehouse.');">
-                            <i class="bi bi-check-circle me-1"></i> Confirm Purchase
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#confirmPurchaseModal">
+                        <i class="bi bi-check-circle me-1"></i> Confirm Purchase
+                    </button>
                     @endif
 
                     @if($purchase->canBeCancelled())
@@ -476,5 +472,219 @@
             </div>
         </div>
     </div>
+
+    {{-- Confirm Purchase Modal with Payment Details --}}
+    <div class="modal fade" id="confirmPurchaseModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-check-circle me-2"></i>Confirm Purchase Order
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ route('admin.purchases.confirm', $purchase) }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        {{-- Purchase Summary --}}
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-2">Purchase Details</h6>
+                                <div class="bg-light p-3 rounded">
+                                    <p class="mb-1">
+                                        <small class="text-muted">Order Number</small><br>
+                                        <strong>{{ $purchase->purchase_number }}</strong>
+                                    </p>
+                                    <p class="mb-1">
+                                        <small class="text-muted">Supplier</small><br>
+                                        <strong>{{ $purchase->supplier->name }}</strong>
+                                    </p>
+                                    <p class="mb-0">
+                                        <small class="text-muted">Warehouse</small><br>
+                                        <strong>{{ $purchase->warehouse->name }}</strong>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-2">Amount Summary</h6>
+                                <div class="bg-light p-3 rounded">
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted">Subtotal:</small>
+                                            <strong>{{ number_format($purchase->subtotal, 2) }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted">Discount:</small>
+                                            <strong>- {{ number_format($purchase->discount, 2) }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted">Transport:</small>
+                                            <strong>+ {{ number_format($purchase->transport_cost, 2) }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted">Other Expenses:</small>
+                                            <strong>+ {{ number_format($purchase->other_expenses, 2) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        {{-- Payment Information --}}
+                        <h6 class="text-muted mb-3">Payment Information</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="card border-success">
+                                    <div class="card-body">
+                                        <small class="text-muted d-block mb-1">Total Amount Due</small>
+                                        <h3 class="text-success mb-0" id="totalAmountDisplay">
+                                            {{ number_format($purchase->total_amount, 2) }}
+                                        </h3>
+                                        <small class="text-muted">PKR</small>
+                                        <input type="hidden" id="totalAmount" value="{{ $purchase->total_amount }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-primary">
+                                    <div class="card-body">
+                                        <label for="amountPaid" class="form-label small mb-2">
+                                            <small class="text-muted">Amount to Pay Now <span class="text-danger">*</span></small>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">PKR</span>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="amountPaid" 
+                                                   name="amount_paid"
+                                                   value="{{ $purchase->paid_amount }}"
+                                                   step="0.01"
+                                                   min="0"
+                                                   max="{{ $purchase->total_amount }}"
+                                                   required
+                                                   onchange="calculatePayable()"
+                                                   oninput="calculatePayable()">
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Enter amount being paid now</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Outstanding Payable --}}
+                        <div class="alert alert-warning" role="alert" id="payableAlert">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h6 class="alert-heading mb-1">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>Outstanding Payable to Supplier
+                                    </h6>
+                                    <p class="mb-0">
+                                        <small>Remaining amount due to <strong>{{ $purchase->supplier->name }}</strong>:</small>
+                                    </p>
+                                </div>
+                                <div class="col-auto">
+                                    <h3 class="mb-0 text-warning" id="payableAmount">
+                                        {{ number_format($purchase->total_amount - $purchase->paid_amount, 2) }}
+                                    </h3>
+                                    <small class="text-muted">PKR</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Payment Status Alert --}}
+                        <div id="paymentStatusAlert"></div>
+
+                        {{-- Confirmation Message --}}
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Note:</strong> Confirming this purchase will:
+                            <ul class="mb-0 mt-2 small">
+                                <li>Add the stock to the warehouse</li>
+                                <li>Record the paid amount as a payment</li>
+                                <li>If payment is incomplete, create a payable record for the supplier with the remaining balance</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-success" id="confirmBtn">
+                            <i class="bi bi-check-circle me-1"></i> Confirm & Add Stock
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calculatePayable() {
+            const totalAmountInput = document.getElementById('totalAmount');
+            const amountPaidInput = document.getElementById('amountPaid');
+            
+            // Get values directly
+            const totalAmount = totalAmountInput ? parseFloat(totalAmountInput.value) : 0;
+            const amountPaid = amountPaidInput ? (parseFloat(amountPaidInput.value) || 0) : 0;
+            
+            // Calculate payable
+            const payable = totalAmount - amountPaid;
+
+            // Update payable amount display with proper formatting
+            const payableElement = document.getElementById('payableAmount');
+            if (payableElement) {
+                payableElement.textContent = payable.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+
+            // Update status message
+            const statusAlert = document.getElementById('paymentStatusAlert');
+            const confirmBtn = document.getElementById('confirmBtn');
+
+            if (payable <= 0) {
+                // Full payment
+                statusAlert.innerHTML = `
+                    <div class="alert alert-success" role="alert">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>Full Payment!</strong> No outstanding balance.
+                    </div>
+                `;
+                document.getElementById('payableAlert').style.display = 'none';
+                confirmBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Confirm Purchase (Paid in Full)';
+            } else if (amountPaid > 0) {
+                // Partial payment
+                statusAlert.innerHTML = `
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Partial Payment:</strong> A payable record will be created for the supplier with the remaining balance of <strong>${payable.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} PKR</strong>.
+                    </div>
+                `;
+                document.getElementById('payableAlert').style.display = 'block';
+                confirmBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Confirm & Create Payable';
+            } else {
+                // No payment
+                statusAlert.innerHTML = `
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>No Payment:</strong> Full amount will be recorded as payable to the supplier.
+                    </div>
+                `;
+                document.getElementById('payableAlert').style.display = 'block';
+                confirmBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Confirm & Create Payable';
+            }
+        }
+
+        // Call on modal open to initialize
+        document.getElementById('confirmPurchaseModal').addEventListener('shown.bs.modal', function() {
+            calculatePayable();
+        });
+    </script>
 </div>
 @endsection

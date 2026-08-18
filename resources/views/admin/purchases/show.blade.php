@@ -222,7 +222,7 @@
                         </div>
                         <div class="d-flex justify-content-between">
                             <small class="text-muted">Balance Due</small>
-                            <strong class="text-warning">{{ number_format($purchase->balance, 2) }}</strong>
+                            <strong class="text-warning">{{ number_format($purchase->payable_amount, 2) }}</strong>
                         </div>
                     </div>
 

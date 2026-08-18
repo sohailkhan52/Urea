@@ -160,6 +160,19 @@ class StockTransfer extends Model
     }
 
     /**
+     * Check if transfer is confirmed (approved or beyond)
+     */
+    public function isConfirmed(): bool
+    {
+        return in_array($this->status, [
+            self::STATUS_APPROVED,
+            self::STATUS_DISPATCHED,
+            self::STATUS_IN_TRANSIT,
+            self::STATUS_RECEIVED,
+        ]);
+    }
+
+    /**
      * Check if transfer can be edited
      */
     public function canBeEdited(): bool

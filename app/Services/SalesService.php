@@ -204,28 +204,21 @@ class SalesService
                 );
             }
 
-            // Ensure paid amount is valid (between 0 and total)
-            $validPaidAmount = max(0, min($paidAmount, $sale->total_amount));
-            
-            // Calculate due and udhar amounts
-            $dueAmount = max(0, $sale->total_amount - $validPaidAmount);
+            // Ensure paid amount is 0 for confirmation (payment recorded separately)
+            // NOTE: We only confirm the sale here without recording payment
+            // Payment will be recorded separately via PaymentService
+            $dueAmount = $sale->total_amount;
             $udharAmount = max(0, $dueAmount);
 
-            // Calculate payment status
-            if ($validPaidAmount == 0) {
-                $paymentStatus = Sale::PAYMENT_STATUS_UNPAID;
-            } elseif ($validPaidAmount >= $sale->total_amount) {
-                $paymentStatus = Sale::PAYMENT_STATUS_PAID;
-            } else {
-                $paymentStatus = Sale::PAYMENT_STATUS_PARTIAL;
-            }
+            // Calculate payment status - initially unpaid (will update after payment recorded)
+            $paymentStatus = Sale::PAYMENT_STATUS_UNPAID;
 
             // Update sale status and payment info
             $sale->update([
                 'status' => Sale::STATUS_CONFIRMED,
                 'confirmed_at' => now(),
                 'confirmed_by' => auth()->id(),
-                'paid_amount' => $validPaidAmount,
+                'paid_amount' => 0,  // No payment recorded yet
                 'due_amount' => $dueAmount,
                 'udhar_amount' => $udharAmount,
                 'payment_status' => $paymentStatus,

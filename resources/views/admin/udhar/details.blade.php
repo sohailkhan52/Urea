@@ -214,6 +214,7 @@
                                id="payment_date" 
                                name="payment_date" 
                                value="{{ date('Y-m-d') }}"
+                               min="{{ date('Y-m-d') }}"
                                required>
                     </div>
 

@@ -209,23 +209,40 @@ class SalesController extends Controller
         try {
             $paidAmount = (float) ($request->paid_amount ?? 0);
             
-            // Confirm sale (creates stock movements, sets payment status)
-            $this->salesService->confirmSale($sale, $paidAmount);
+            // Step 1: Confirm sale (creates stock movements, sets payment status to unpaid)
+            // IMPORTANT: Do NOT pass paidAmount here - confirmation and payment are separate operations
+            $this->salesService->confirmSale($sale);
             
-            // If payment amount > 0, record the payment
+            // Step 2: If payment amount > 0, record the payment separately
             if ($paidAmount > 0) {
-                $paymentService = app(\App\Services\PaymentService::class);
-                $paymentService->recordPayment(
-                    saleId: $sale->id,
-                    amount: $paidAmount,
-                    paymentMethod: $request->payment_method ?? \App\Models\Payment::METHOD_CASH,
-                    paymentDate: now()->toDateString(),
-                    referenceNumber: $request->reference_number,
-                    notes: $request->payment_notes
-                );
+                try {
+                    $paymentService = app(\App\Services\PaymentService::class);
+                    $paymentService->recordPayment(
+                        saleId: $sale->id,
+                        amount: $paidAmount,
+                        paymentMethod: $request->payment_method ?? \App\Models\Payment::METHOD_CASH,
+                        paymentDate: now()->toDateString(),
+                        referenceNumber: $request->reference_number,
+                        notes: $request->payment_notes
+                    );
+                } catch (\Exception $paymentError) {
+                    // Payment recording failed after sale was confirmed
+                    \Illuminate\Support\Facades\Log::error('Payment recording failed after sale confirmation', [
+                        'sale_id' => $sale->id,
+                        'paid_amount' => $paidAmount,
+                        'error' => $paymentError->getMessage(),
+                    ]);
+                    
+                    // Refresh to get current state
+                    $sale->refresh();
+                    
+                    return redirect()->route('admin.sales.show', $sale)
+                        ->with('error', 'Sale was confirmed but payment recording failed: ' . $paymentError->getMessage() . 
+                                '. Please record the payment manually from the sales details page.');
+                }
             }
 
-            // Refresh sale to get updated payment_status
+            // Refresh sale to get updated data from payment recording
             $sale->refresh();
 
             // Generate success message based on payment status

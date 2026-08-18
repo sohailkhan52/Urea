@@ -75,6 +75,7 @@
                                        id="purchase_date" 
                                        name="purchase_date" 
                                        value="{{ old('purchase_date', date('Y-m-d')) }}"
+                                       min="{{ date('Y-m-d') }}"
                                        required>
                                 @error('purchase_date')
                                 <div class="invalid-feedback">{{ $message }}</div>

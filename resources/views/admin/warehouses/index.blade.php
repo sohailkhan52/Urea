@@ -85,7 +85,7 @@
                             <th>Manager</th>
                             <th>Address</th>
                             <th style="width: 120px;">Status</th>
-                            <th style="width: 180px;" class="text-end">Actions</th>
+                            <th style="width: 250px;" class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -146,78 +146,80 @@
                                 @endif
                             </td>
                             <td class="text-end">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    @can('warehouses.view')
-                                    <a href="{{ route('admin.warehouses.show', $warehouse) }}" 
-                                       class="btn btn-info" 
-                                       title="View">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    <a href="{{ route('admin.warehouses.inventory', $warehouse) }}" 
-                                       class="btn btn-secondary" 
-                                       title="Inventory">
-                                        <i class="bi bi-box-seam"></i>
-                                    </a>
-                                    @endcan
-                                    
-                                    @can('warehouses.update')
-                                    <a href="{{ route('admin.warehouses.edit', $warehouse) }}" 
-                                       class="btn btn-warning" 
-                                       title="Edit">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    @endcan
-                                    
-                                    @can('warehouses.delete')
-                                    <form action="{{ route('admin.warehouses.destroy', $warehouse) }}" 
-                                          method="POST" 
-                                          class="d-inline"
-                                          onsubmit="return confirm('Are you sure you want to delete this warehouse? This action cannot be undone.');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger" title="Delete">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                    @endcan
-                                </div>
+                                <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        @can('warehouses.view')
+                                        <a href="{{ route('admin.warehouses.show', $warehouse) }}" 
+                                           class="btn btn-info" 
+                                           title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{{ route('admin.warehouses.inventory', $warehouse) }}" 
+                                           class="btn btn-secondary" 
+                                           title="Inventory">
+                                            <i class="bi bi-box-seam"></i>
+                                        </a>
+                                        @endcan
+                                        
+                                        @can('warehouses.update')
+                                        <a href="{{ route('admin.warehouses.edit', $warehouse) }}" 
+                                           class="btn btn-warning" 
+                                           title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        @endcan
+                                        
+                                        @can('warehouses.delete')
+                                        <form action="{{ route('admin.warehouses.destroy', $warehouse) }}" 
+                                              method="POST" 
+                                              class="d-inline"
+                                              onsubmit="return confirm('Are you sure you want to delete this warehouse? This action cannot be undone.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                        @endcan
+                                    </div>
 
-                                {{-- Status Actions Dropdown --}}
-                                @can('warehouses.update')
-                                <div class="btn-group btn-group-sm ms-1" role="group">
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary dropdown-toggle" 
-                                            data-bs-toggle="dropdown" 
-                                            aria-expanded="false">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        @if($warehouse->status === 'inactive')
-                                        <li>
-                                            <form action="{{ route('admin.warehouses.activate', $warehouse) }}" method="POST">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item text-success">
-                                                    <i class="bi bi-check-circle me-1"></i> Activate
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @else
-                                        <li>
-                                            <form action="{{ route('admin.warehouses.deactivate', $warehouse) }}" 
-                                                  method="POST"
-                                                  onsubmit="return confirm('Are you sure you want to deactivate this warehouse?');">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item text-warning">
-                                                    <i class="bi bi-x-circle me-1"></i> Deactivate
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @endif
-                                    </ul>
+                                    {{-- Status Actions Dropdown --}}
+                                    @can('warehouses.update')
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" 
+                                                class="btn btn-outline-secondary dropdown-toggle" 
+                                                data-bs-toggle="dropdown" 
+                                                aria-expanded="false">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            @if($warehouse->status === 'inactive')
+                                            <li>
+                                                <form action="{{ route('admin.warehouses.activate', $warehouse) }}" method="POST">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="dropdown-item text-success">
+                                                        <i class="bi bi-check-circle me-1"></i> Activate
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            @else
+                                            <li>
+                                                <form action="{{ route('admin.warehouses.deactivate', $warehouse) }}" 
+                                                      method="POST"
+                                                      onsubmit="return confirm('Are you sure you want to deactivate this warehouse?');">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="dropdown-item text-warning">
+                                                        <i class="bi bi-x-circle me-1"></i> Deactivate
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            @endif
+                                        </ul>
+                                    </div>
+                                    @endcan
                                 </div>
-                                @endcan
                             </td>
                         </tr>
                         @endforeach

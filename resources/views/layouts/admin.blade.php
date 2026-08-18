@@ -238,6 +238,20 @@
             display: inline-block;
             margin-right: 5px;
         }
+
+        /* Fix dropdown menu clipping in responsive tables */
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        .table td .dropdown {
+            position: static;
+        }
+
+        .table td .dropdown-menu {
+            position: absolute;
+            z-index: 1050;
+        }
     </style>
 </head>
 <body>
@@ -309,7 +323,7 @@
             @endpermission
             @endanypermission
 
-            @anypermission(['purchases.view', 'sales.view'])
+            @anypermission(['purchases.view', 'sales.view', 'udhar.view', 'payables.view'])
             <div class="nav-section-title">Transactions</div>
 
             @permission('purchases.view')
@@ -341,16 +355,13 @@
             @endpermission
             @endanypermission
 
-            @anypermission(['transfers.view'])
-            <div class="nav-section-title">Management</div>
-
             @permission('transfers.view')
+            <div class="nav-section-title">Management</div>
             <a href="{{ route('admin.stock-transfers.index') }}" class="nav-link {{ request()->routeIs('admin.stock-transfers.*') ? 'active' : '' }}">
                 <i class="bi bi-arrow-left-right"></i>
                 <span>Stock Transfers</span>
             </a>
             @endpermission
-            @endanypermission
 
             {{-- Reports section disabled - routes and views not yet implemented --}}
             {{-- @permission('reports.view')
@@ -375,6 +386,10 @@
                 <i class="bi bi-list"></i>
             </button>
 
+            <a href="{{ url('/') }}" class="btn btn-outline-secondary btn-sm me-3" title="Go to Home Page">
+                <i class="bi bi-house-fill me-1"></i>Home
+            </a>
+
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
                     @yield('breadcrumbs')
@@ -382,17 +397,6 @@
             </nav>
 
             <div class="topbar-right">
-                <div class="dropdown">
-                    <button class="btn btn-link text-dark text-decoration-none dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-bell"></i>
-                        <span class="badge bg-danger rounded-pill position-absolute" style="font-size: 0.6rem; top: 8px;">3</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><h6 class="dropdown-header">Notifications</h6></li>
-                        <li><a class="dropdown-item" href="#">No new notifications</a></li>
-                    </ul>
-                </div>
-
                 <div class="dropdown">
                     <button class="btn btn-link text-dark text-decoration-none dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
                         <img src="{{ Auth::user()->profile_image_url }}" 
@@ -485,9 +489,27 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        const sidebar = document.getElementById('sidebar');
+
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('show');
+            sidebar.classList.toggle('show');
         }
+
+        // Restore sidebar scroll position on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedScrollPosition = sessionStorage.getItem('sidebarScrollPosition');
+            if (savedScrollPosition) {
+                sidebar.scrollTop = parseInt(savedScrollPosition, 10);
+                sessionStorage.removeItem('sidebarScrollPosition');
+            }
+        });
+
+        // Save sidebar scroll position before navigation
+        document.querySelectorAll('.sidebar-nav a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                sessionStorage.setItem('sidebarScrollPosition', sidebar.scrollTop);
+            });
+        });
 
         // Auto-hide alerts after 5 seconds
         setTimeout(function() {

@@ -254,6 +254,11 @@ class WarehouseController extends Controller
             ->orderBy('quantity', 'desc')
             ->paginate(20);
 
-        return view('admin.warehouses.inventory', compact('warehouse', 'inventory'));
+        // Calculate summary statistics (done after pagination for accuracy)
+        $inStock = $inventory->filter(fn($item) => $item->quantity > 0 && !$item->isLowStock())->count();
+        $lowStock = $inventory->filter(fn($item) => $item->isLowStock())->count();
+        $outOfStock = $inventory->where('quantity', 0)->count();
+
+        return view('admin.warehouses.inventory', compact('warehouse', 'inventory', 'inStock', 'lowStock', 'outOfStock'));
     }
 }

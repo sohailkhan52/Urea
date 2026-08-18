@@ -180,7 +180,7 @@
             <div class="card border-success">
                 <div class="card-body text-center">
                     <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
-                    <h3 class="mt-2 mb-0">{{ $inventory->where('quantity', '>', 0)->whereDoesntHave('product', function($q) { $q->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level'); })->count() }}</h3>
+                    <h3 class="mt-2 mb-0">{{ $inStock }}</h3>
                     <p class="text-muted mb-0">Products In Stock</p>
                 </div>
             </div>
@@ -189,7 +189,7 @@
             <div class="card border-warning">
                 <div class="card-body text-center">
                     <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
-                    <h3 class="mt-2 mb-0">{{ $inventory->filter(fn($item) => $item->isLowStock())->count() }}</h3>
+                    <h3 class="mt-2 mb-0">{{ $lowStock }}</h3>
                     <p class="text-muted mb-0">Low Stock Items</p>
                 </div>
             </div>
@@ -198,7 +198,7 @@
             <div class="card border-danger">
                 <div class="card-body text-center">
                     <i class="bi bi-x-circle text-danger" style="font-size: 2rem;"></i>
-                    <h3 class="mt-2 mb-0">{{ $inventory->where('quantity', 0)->count() }}</h3>
+                    <h3 class="mt-2 mb-0">{{ $outOfStock }}</h3>
                     <p class="text-muted mb-0">Out of Stock</p>
                 </div>
             </div>

@@ -156,13 +156,20 @@
                                 </small>
                             </td>
                             <td>
-                                @if($sale->payment_status === 'paid')
-                                    <span class="badge bg-success">Paid</span>
-                                @elseif($sale->payment_status === 'partial')
-                                    <span class="badge bg-warning">Partial</span>
-                                @else
-                                    <span class="badge bg-secondary">Unpaid</span>
-                                @endif
+                                @php
+                                    // Calculate payment status based on paid_amount and total_amount
+                                    if ($sale->paid_amount == 0) {
+                                        $paymentStatus = 'Unpaid';
+                                        $badgeClass = 'bg-secondary';
+                                    } elseif ($sale->paid_amount >= $sale->total_amount) {
+                                        $paymentStatus = 'Paid';
+                                        $badgeClass = 'bg-success';
+                                    } else {
+                                        $paymentStatus = 'Partial';
+                                        $badgeClass = 'bg-warning';
+                                    }
+                                @endphp
+                                <span class="badge {{ $badgeClass }}">{{ $paymentStatus }}</span>
                             </td>
                             <td>
                                 @if($sale->isDraft())

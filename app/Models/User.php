@@ -90,6 +90,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Scope: Get only active users
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', self::STATUS_ACTIVE);
+    }
+
+    /**
      * Update last login timestamp
      */
     public function updateLastLogin(): void

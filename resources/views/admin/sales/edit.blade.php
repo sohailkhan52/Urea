@@ -73,6 +73,7 @@
                                        id="sale_date" 
                                        name="sale_date" 
                                        value="{{ $sale->sale_date->format('Y-m-d') }}"
+                                       min="{{ date('Y-m-d') }}"
                                        {{ !$sale->isDraft() ? 'disabled' : '' }}>
                                 @error('sale_date')
                                 <div class="invalid-feedback">{{ $message }}</div>

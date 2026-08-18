@@ -14,48 +14,29 @@ class SupplierPaymentMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    /**
-     * Create a new message instance.
-     */
     public function __construct(
         public PurchasePayment $payment
-    ) {
-        $this->queue = 'default';
-        $this->delay = 0;
-    }
+    ) {}
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Payment Confirmation - {$this->payment->payment_number}",
+            from: config('mail.from.address'),
+            replyTo: config('mail.from.address'),
+            subject: "Payment Confirmation",
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
-        $purchase = $this->payment->purchase;
-        
         return new Content(
             view: 'mails.suppliers.payment-confirmation',
             with: [
                 'payment' => $this->payment,
-                'purchase' => $purchase,
-                'supplier' => $purchase->supplier,
             ],
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
     public function attachments(): array
     {
         return [];

@@ -147,7 +147,7 @@ class PurchaseController extends Controller
     /**
      * Confirm purchase and create stock movements.
      */
-    public function confirm(Purchase $purchase): RedirectResponse
+    public function confirm(Purchase $purchase, Request $request): RedirectResponse
     {
         $this->authorize('purchases.approve');
 
@@ -155,8 +155,12 @@ class PurchaseController extends Controller
             return back()->with('error', 'This purchase cannot be confirmed.');
         }
 
+        $request->validate([
+            'amount_paid' => 'required|numeric|min:0|max:' . $purchase->total_amount,
+        ]);
+
         try {
-            $this->purchaseService->confirmPurchase($purchase);
+            $this->purchaseService->confirmPurchase($purchase, $request->amount_paid);
 
             return redirect()->route('admin.purchases.show', $purchase)
                 ->with('success', 'Purchase confirmed successfully! Stock has been added to warehouse.');

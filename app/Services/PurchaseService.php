@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use App\Models\PurchasePayment;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -210,13 +211,13 @@ class PurchaseService
      * @return Purchase
      * @throws \Exception
      */
-    public function confirmPurchase(Purchase $purchase): Purchase
+    public function confirmPurchase(Purchase $purchase, float $amountPaid = 0): Purchase
     {
         if (!$purchase->canBeConfirmed()) {
             throw new \Exception("This purchase cannot be confirmed. It must be in draft status and have items.");
         }
 
-        return DB::transaction(function () use ($purchase) {
+        return DB::transaction(function () use ($purchase, $amountPaid) {
             // Add stock for each item
             foreach ($purchase->items as $item) {
                 try {
@@ -241,8 +242,48 @@ class PurchaseService
                 }
             }
 
-            // Calculate payment status based on current paid_amount
-            $paymentStatus = $this->calculatePaymentStatus($purchase);
+            // Update paid amount based on input
+            $purchase->update(['paid_amount' => $amountPaid]);
+
+            // Calculate outstanding payable
+            $payableAmount = $purchase->total_amount - $amountPaid;
+
+            // Create payment record if amount paid is greater than 0
+            if ($amountPaid > 0) {
+                try {
+                    PurchasePayment::create([
+                        'payment_number' => 'PP-' . date('YmdHis') . '-' . $purchase->id,
+                        'supplier_id' => $purchase->supplier_id,
+                        'purchase_id' => $purchase->id,
+                        'amount' => $amountPaid,
+                        'payment_method' => PurchasePayment::METHOD_OTHER,
+                        'payment_date' => now(),
+                        'notes' => "Payment recorded during purchase confirmation (PO #{$purchase->purchase_number})",
+                        'recorded_by' => Auth::id(),
+                    ]);
+
+                    Log::info('Purchase payment recorded', [
+                        'purchase_id' => $purchase->id,
+                        'amount' => $amountPaid,
+                        'recorded_by' => Auth::id(),
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create purchase payment', [
+                        'purchase_id' => $purchase->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw new \Exception("Failed to record payment: {$e->getMessage()}");
+                }
+            }
+
+            // Calculate payment status
+            if ($payableAmount <= 0) {
+                $paymentStatus = Purchase::PAYMENT_STATUS_PAID;
+            } elseif ($amountPaid > 0) {
+                $paymentStatus = Purchase::PAYMENT_STATUS_PARTIAL;
+            } else {
+                $paymentStatus = Purchase::PAYMENT_STATUS_UNPAID;
+            }
 
             // Update purchase status
             $purchase->update([
@@ -261,7 +302,8 @@ class PurchaseService
                 'confirmed_by' => Auth::id(),
                 'total_items' => $purchase->items()->count(),
                 'total_amount' => $purchase->total_amount,
-                'paid_amount' => $purchase->paid_amount,
+                'paid_amount' => $amountPaid,
+                'payable_amount' => $payableAmount,
                 'payment_status' => $paymentStatus,
             ]);
 
@@ -293,12 +335,54 @@ class PurchaseService
             throw new \Exception("This purchase cannot be cancelled.");
         }
 
-        // If already confirmed, we need to reverse stock movements (future enhancement)
-        if ($purchase->isConfirmed()) {
-            throw new \Exception("Cannot cancel confirmed purchases. This requires stock reversal (not yet implemented).");
-        }
-
         return DB::transaction(function () use ($purchase, $reason) {
+            // If confirmed, we need to reverse stock movements
+            if ($purchase->isConfirmed()) {
+                try {
+                    // Find all stock movements related to this purchase
+                    $stockMovements = StockMovement::where('reference_type', Purchase::class)
+                        ->where('reference_id', $purchase->id)
+                        ->where('type', StockMovement::TYPE_PURCHASE)
+                        ->get();
+
+                    // Reverse each stock movement
+                    foreach ($stockMovements as $movement) {
+                        try {
+                            $this->stockService->removeStock(
+                                warehouseId: $movement->warehouse_id,
+                                productId: $movement->product_id,
+                                quantity: $movement->quantity_in, // Reverse the quantity that was added
+                                type: StockMovement::TYPE_SUPPLIER_RETURN,
+                                referenceType: Purchase::class,
+                                referenceId: $purchase->id,
+                                unitCost: $movement->unit_cost,
+                                remarks: "Stock reversal - Purchase Order #{$purchase->purchase_number} cancelled. Original reason: {$reason}",
+                                userId: Auth::id()
+                            );
+                        } catch (\Exception $e) {
+                            Log::error('Stock reversal failed for movement', [
+                                'movement_id' => $movement->id,
+                                'purchase_id' => $purchase->id,
+                                'error' => $e->getMessage(),
+                            ]);
+                            throw new \Exception("Failed to reverse stock for {$movement->product->name}: {$e->getMessage()}");
+                        }
+                    }
+
+                    Log::info('Stock movements reversed for cancelled purchase', [
+                        'purchase_id' => $purchase->id,
+                        'movements_count' => $stockMovements->count(),
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Stock reversal process failed', [
+                        'purchase_id' => $purchase->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw new \Exception("Stock reversal failed: {$e->getMessage()}");
+                }
+            }
+
+            // Update purchase status
             $purchase->update([
                 'status' => Purchase::STATUS_CANCELLED,
                 'cancelled_at' => now(),
@@ -310,6 +394,7 @@ class PurchaseService
                 'purchase_number' => $purchase->purchase_number,
                 'cancelled_by' => Auth::id(),
                 'reason' => $reason,
+                'was_confirmed' => $purchase->isConfirmed(),
             ]);
 
             return $purchase;

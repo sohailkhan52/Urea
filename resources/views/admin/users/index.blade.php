@@ -72,8 +72,9 @@
 <!-- Users Table -->
 <div class="card">
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
+        <div class="table-responsive" style="overflow: visible;">
+            <div style="overflow-x: auto;">
+                <table class="table table-hover align-middle">
                 <thead>
                     <tr>
                         <th>User</th>
@@ -89,15 +90,15 @@
                     @forelse($users as $user)
                         <tr>
                             <td>
-                                <div class="d-flex align-items-center">
+                                <div class="d-flex align-items-center gap-2">
                                     <img src="{{ $user->profile_image_url }}" 
                                          alt="{{ $user->name }}" 
-                                         class="rounded-circle me-2" 
+                                         class="rounded-circle" 
                                          style="width: 40px; height: 40px; object-fit: cover;">
                                     <div>
                                         <div class="fw-semibold">{{ $user->name }}</div>
                                         @if($user->id === Auth::id())
-                                            <span class="badge badge-dot bg-primary">You</span>
+                                            <span class="badge bg-primary">You</span>
                                         @endif
                                     </div>
                                 </div>
@@ -158,12 +159,12 @@
 
                                 @can('users.update')
                                 <!-- Status Actions Dropdown -->
-                                <div class="btn-group btn-group-sm ms-2" role="group">
-                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" 
+                                <div class="dropdown d-inline ms-2">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                                             data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="bi bi-three-dots-vertical"></i>
                                     </button>
-                                    <ul class="dropdown-menu">
+                                    <ul class="dropdown-menu dropdown-menu-end">
                                         @if($user->status !== 'active')
                                         <li>
                                             <form action="{{ route('admin.users.activate', $user) }}" method="POST">
@@ -228,6 +229,7 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
 
         <!-- Pagination -->
