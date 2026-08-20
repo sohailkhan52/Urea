@@ -360,4 +360,44 @@ class UdharController extends Controller
             'paginator' => $ledgerEntries,
         ]);
     }
+
+    /**
+     * Show complete transaction history for customer Udhar.
+     */
+    public function transactionHistory(Customer $customer, Request $request): View
+    {
+        $this->authorize('udhar.view');
+
+        $udharHistoryService = new \App\Services\UdharHistoryService();
+
+        // Get summary
+        $summary = $udharHistoryService->getHistorySummary($customer->id);
+
+        // Get filtered transactions
+        $query = \App\Models\UdharHistory::where('customer_id', $customer->id)
+            ->with(['sale', 'payment', 'creator']);
+
+        // Filter by transaction type
+        if ($request->filled('transaction_type')) {
+            $query->where('transaction_type', $request->transaction_type);
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('transaction_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('transaction_date', '<=', $request->date_to);
+        }
+
+        $transactions = $query->orderBy('transaction_date', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin.udhar.transaction-history', [
+            'customer' => $customer,
+            'transactions' => $transactions,
+            'summary' => $summary,
+        ]);
+    }
 }

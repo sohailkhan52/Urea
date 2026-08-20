@@ -2,6 +2,7 @@
 
 namespace App\Mail\Suppliers;
 
+use App\Helpers\CompanyHelper;
 use App\Models\PurchasePayment;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,7 +24,7 @@ class SupplierPaymentMail extends Mailable implements ShouldQueue
         return new Envelope(
             from: config('mail.from.address'),
             replyTo: config('mail.from.address'),
-            subject: "Payment Confirmation",
+            subject: CompanyHelper::getCompanyName() . " - Payment Confirmation",
         );
     }
 
@@ -33,6 +34,7 @@ class SupplierPaymentMail extends Mailable implements ShouldQueue
             view: 'mails.suppliers.payment-confirmation',
             with: [
                 'payment' => $this->payment,
+                'companyName' => CompanyHelper::getCompanyName(),
             ],
         );
     }

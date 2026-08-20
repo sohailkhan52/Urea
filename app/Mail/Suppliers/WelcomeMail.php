@@ -2,6 +2,7 @@
 
 namespace App\Mail\Suppliers;
 
+use App\Helpers\CompanyHelper;
 use App\Models\Supplier;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -30,7 +31,7 @@ class WelcomeMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Welcome to FMS - Supplier Account Created",
+            subject: "Welcome to " . CompanyHelper::getCompanyName() . " - Supplier Account Created",
         );
     }
 
@@ -43,6 +44,7 @@ class WelcomeMail extends Mailable implements ShouldQueue
             view: 'mails.suppliers.welcome',
             with: [
                 'supplier' => $this->supplier,
+                'companyName' => CompanyHelper::getCompanyName(),
             ],
         );
     }

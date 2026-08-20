@@ -22,9 +22,24 @@
             --topbar-height: 60px;
         }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
+            overflow-x: hidden;
         }
 
         /* Sidebar Styles */
@@ -106,6 +121,9 @@
             margin-left: var(--sidebar-width);
             min-height: 100vh;
             transition: all 0.3s;
+            overflow-x: hidden;
+            width: calc(100% - var(--sidebar-width));
+            box-sizing: border-box;
         }
 
         /* Top Navbar */
@@ -258,8 +276,25 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <h4><i class="bi bi-box-seam"></i> FMS</h4>
-            <small>Fertilizer Management System</small>
+            @php
+                try {
+                    $sidebarSettings = \App\Models\WelcomePageSetting::first();
+                    $companyShortName = $sidebarSettings?->company_short_name ?? $sidebarSettings?->company_name ?? 'DeraNexa';
+                    $companyFullName = $sidebarSettings?->company_name ?? 'DeraNexa';
+                    $companyLogo = $sidebarSettings?->company_logo ? asset('storage/' . $sidebarSettings->company_logo) : null;
+                } catch (\Exception $e) {
+                    $companyShortName = 'DeraNexa';
+                    $companyFullName = 'DeraNexa';
+                    $companyLogo = null;
+                }
+            @endphp
+            @if($companyLogo)
+                <img src="{{ $companyLogo }}" alt="Logo" style="max-height: 40px; width: auto; margin-bottom: 10px;">
+            @else
+                <i class="bi bi-box-seam" style="font-size: 2rem; margin-bottom: 10px;"></i>
+            @endif
+            <h4>{{ $companyShortName }}</h4>
+            <small>{{ $companyFullName }}</small>
         </div>
 
         <nav class="sidebar-nav">
@@ -360,6 +395,13 @@
             <a href="{{ route('admin.stock-transfers.index') }}" class="nav-link {{ request()->routeIs('admin.stock-transfers.*') ? 'active' : '' }}">
                 <i class="bi bi-arrow-left-right"></i>
                 <span>Stock Transfers</span>
+            </a>
+            @endpermission
+
+            @permission('welcome-page.manage')
+            <a href="{{ route('admin.welcome-page.index') }}" class="nav-link {{ request()->routeIs('admin.welcome-page.*') ? 'active' : '' }}">
+                <i class="bi bi-gear"></i>
+                <span>Welcome Page Settings</span>
             </a>
             @endpermission
 

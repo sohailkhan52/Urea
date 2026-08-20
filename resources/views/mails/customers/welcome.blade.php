@@ -24,14 +24,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎉 Welcome to FMS!</h1>
-            <p>Fertilizer Management System</p>
+            <h1>🎉 Welcome to DeraNexa!</h1>
+            <p>DeraNexa</p>
         </div>
 
         <div class="content">
             <h2>Hello {{ $customer->name }}!</h2>
 
-            <p>Welcome to the Fertilizer Management System (FMS)! We're excited to have you as a valued customer. 
+            <p>Welcome to the DeraNexa (DeraNexa)! We're excited to have you as a valued customer. 
             Your account has been successfully created and is ready to use.</p>
 
             <div class="info-box">
@@ -78,17 +78,17 @@
             </div>
 
             <p>
-                Thank you for choosing FMS. We look forward to serving you!
+                Thank you for choosing DeraNexa. We look forward to serving you!
             </p>
 
             <p>
                 Best regards,<br>
-                <strong>The FMS Team</strong>
+                <strong>The DeraNexa Team</strong>
             </p>
         </div>
 
         <div class="footer">
-            <p>&copy; {{ date('Y') }} FMS - Fertilizer Management System. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} DeraNexa - DeraNexa. All rights reserved.</p>
             <p>{{ config('app.name') }} | {{ config('mail.from.address') }}</p>
         </div>
     </div>

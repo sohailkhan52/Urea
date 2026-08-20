@@ -228,6 +228,10 @@ class SalesService
             if ($sale->customer_id) {
                 $paymentService = app(PaymentService::class);
                 $paymentService->createSaleLedgerEntry($sale, auth()->id());
+                
+                // Record in UdharHistory
+                $udharHistoryService = app(UdharHistoryService::class);
+                $udharHistoryService->recordSaleCreated($sale, auth()->id());
             }
 
             $sale->refresh();
@@ -277,6 +281,12 @@ class SalesService
                 'status' => Sale::STATUS_CANCELLED,
                 'cancelled_at' => now(),
             ]);
+
+            // Record in UdharHistory if customer exists
+            if ($sale->customer_id) {
+                $udharHistoryService = app(UdharHistoryService::class);
+                $udharHistoryService->recordSaleCancelled($sale, $reason, auth()->id());
+            }
 
             return $sale;
         });

@@ -2,6 +2,7 @@
 
 namespace App\Mail\Customers;
 
+use App\Helpers\CompanyHelper;
 use App\Models\Payment;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,7 +24,7 @@ class PaymentReceiptMail extends Mailable implements ShouldQueue
         return new Envelope(
             from: config('mail.from.address'),
             replyTo: config('mail.from.address'),
-            subject: "Payment Receipt",
+            subject: CompanyHelper::getCompanyName() . " - Payment Receipt",
         );
     }
 
@@ -33,6 +34,7 @@ class PaymentReceiptMail extends Mailable implements ShouldQueue
             view: 'mails.customers.payment-receipt',
             with: [
                 'payment' => $this->payment,
+                'companyName' => CompanyHelper::getCompanyName(),
             ],
         );
     }

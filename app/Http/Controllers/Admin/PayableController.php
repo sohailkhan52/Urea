@@ -295,4 +295,40 @@ class PayableController extends Controller
             'selectedSupplierId' => $supplierId,
         ]);
     }
+
+    /**
+     * Show payable transaction history
+     */
+    public function transactionHistory(Supplier $supplier, Request $request): View
+    {
+        if (!auth()->user()->hasPermission('payables.view')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $historyService = app(\App\Services\PayableHistoryService::class);
+        
+        // Get filter parameters
+        $type = $request->get('type');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+
+        // Get history
+        $history = $historyService->getSupplierHistory($supplier->id, $type, $dateFrom, $dateTo);
+        $summary = $historyService->getHistorySummary($supplier->id);
+
+        // Get transaction types for filter dropdown
+        $transactionTypes = \App\Models\PayableHistory::$types;
+
+        return view('admin.payables.transaction-history', [
+            'supplier' => $supplier,
+            'history' => $history,
+            'summary' => $summary,
+            'transactionTypes' => $transactionTypes,
+            'filters' => [
+                'type' => $type,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
+            ],
+        ]);
+    }
 }

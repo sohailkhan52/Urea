@@ -372,6 +372,14 @@ class PermissionSeeder extends Seeder
                 'group' => 'payables',
                 'description' => 'Export payables reports',
             ],
+
+            // Welcome Page Management
+            [
+                'name' => 'Manage Welcome Page',
+                'slug' => 'welcome-page.manage',
+                'group' => 'welcome-page',
+                'description' => 'Manage welcome page content, settings, features, and workflow',
+            ],
         ];
 
         foreach ($permissions as $permission) {

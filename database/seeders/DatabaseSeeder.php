@@ -11,7 +11,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seed in proper order: permissions -> roles -> users -> companies -> categories -> products -> branches -> warehouses -> suppliers -> customers -> sales -> transfers
+        // Seed in proper order: permissions -> roles -> users -> companies -> categories -> products -> branches -> warehouses -> suppliers -> customers -> sales -> transfers -> welcome page
         $this->call([
             PermissionSeeder::class,
             RoleSeeder::class,
@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             CustomerSeeder::class,
             SalesSeeder::class,
             StockTransferSeeder::class,
+            WelcomePageSeeder::class,
             // Note: Purchase and PurchaseItem records are created through PurchaseService
             // Note: Stock movements are created through StockService and SalesService
         ]);

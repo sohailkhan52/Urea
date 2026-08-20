@@ -107,8 +107,8 @@
 <body>
     <div class="login-card">
         <div class="login-header">
-            <h4><i class="bi bi-box-seam me-2"></i>FMS</h4>
-            <small>Fertilizer Management System</small>
+            <h4><i class="bi bi-box-seam me-2"></i>DN</h4>
+            <small>DeraNexa</small>
         </div>
 
         <div class="login-body">

@@ -9,6 +9,7 @@ use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Services\PayableHistoryService;
 
 /**
  * Purchase Service - Handles purchase operations and inventory integration
@@ -22,10 +23,12 @@ use Illuminate\Support\Facades\Log;
 class PurchaseService
 {
     protected StockService $stockService;
+    protected PayableHistoryService $historyService;
 
-    public function __construct(StockService $stockService)
+    public function __construct(StockService $stockService, PayableHistoryService $historyService)
     {
         $this->stockService = $stockService;
+        $this->historyService = $historyService;
     }
 
     /**
@@ -296,6 +299,9 @@ class PurchaseService
             // Create initial ledger entry for this purchase
             $this->createSupplierLedgerEntry($purchase);
 
+            // Record purchase creation in payable history
+            $this->historyService->recordPurchaseCreated($purchase, Auth::id());
+
             Log::warning('Purchase confirmed', [
                 'purchase_id' => $purchase->id,
                 'purchase_number' => $purchase->purchase_number,
@@ -388,6 +394,9 @@ class PurchaseService
                 'cancelled_at' => now(),
                 'notes' => ($purchase->notes ? $purchase->notes . "\n" : "") . "Cancelled: " . $reason,
             ]);
+
+            // Record purchase cancellation in payable history
+            $this->historyService->recordPurchaseCancelled($purchase, $reason, Auth::id());
 
             Log::warning('Purchase cancelled', [
                 'purchase_id' => $purchase->id,

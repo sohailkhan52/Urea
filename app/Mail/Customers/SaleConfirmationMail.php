@@ -2,6 +2,7 @@
 
 namespace App\Mail\Customers;
 
+use App\Helpers\CompanyHelper;
 use App\Models\Sale;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,7 +24,7 @@ class SaleConfirmationMail extends Mailable implements ShouldQueue
         return new Envelope(
             from: config('mail.from.address'),
             replyTo: config('mail.from.address'),
-            subject: "Sale Confirmation - Invoice {$this->sale->invoice_number}",
+            subject: CompanyHelper::getCompanyName() . " - Sale Confirmation - Invoice {$this->sale->invoice_number}",
         );
     }
 
@@ -36,6 +37,7 @@ class SaleConfirmationMail extends Mailable implements ShouldQueue
             with: [
                 'sale' => $this->sale,
                 'customerName' => $customerName,
+                'companyName' => CompanyHelper::getCompanyName(),
                 'items' => $this->sale->items,
             ],
         );

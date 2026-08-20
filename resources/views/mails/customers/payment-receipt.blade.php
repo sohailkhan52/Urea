@@ -114,7 +114,7 @@
         </div>
 
         <div class="footer">
-            <p>&copy; {{ date('Y') }} FMS - Fertilizer Management System. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} DeraNexa - . All rights reserved.</p>
             <p>{{ config('app.name') }} | {{ config('mail.from.address') }}</p>
         </div>
     </div>

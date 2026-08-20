@@ -118,6 +118,14 @@ class Supplier extends Model
     }
 
     /**
+     * Get payable history for this supplier
+     */
+    public function payableHistory(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PayableHistory::class);
+    }
+
+    /**
      * Scope to filter only active suppliers
      */
     public function scopeActive($query)

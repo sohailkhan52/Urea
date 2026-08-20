@@ -176,6 +176,14 @@ class Purchase extends Model
     }
 
     /**
+     * Get payable history for this purchase
+     */
+    public function payableHistory(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PayableHistory::class);
+    }
+
+    /**
      * Scope to filter draft purchases
      */
     public function scopeDraft($query)

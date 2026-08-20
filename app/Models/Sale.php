@@ -130,6 +130,14 @@ class Sale extends Model
     }
 
     /**
+     * Get udhar history for this sale
+     */
+    public function udharHistory()
+    {
+        return $this->hasMany(UdharHistory::class);
+    }
+
+    /**
      * Check if sale is fully paid
      */
     public function isPaid(): bool

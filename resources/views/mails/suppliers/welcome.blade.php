@@ -24,14 +24,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤝 Welcome to FMS!</h1>
-            <p>Fertilizer Management System - Supplier Portal</p>
+            <h1>🤝 Welcome to DN!</h1>
+            <p>DeraNexa - Supplier Portal</p>
         </div>
 
         <div class="content">
             <h2>Hello {{ $supplier->name }}!</h2>
 
-            <p>Welcome to the Fertilizer Management System (FMS) Supplier Portal! We're excited to partner with you. 
+            <p>Welcome to the DeraNexa (DN) Supplier Portal! We're excited to partner with you. 
             Your supplier account has been successfully created and is ready to use.</p>
 
             <div class="info-box">
@@ -83,12 +83,12 @@
 
             <p>
                 Best regards,<br>
-                <strong>The FMS Procurement Team</strong>
+                <strong>The DN Procurement Team</strong>
             </p>
         </div>
 
         <div class="footer">
-            <p>&copy; {{ date('Y') }} FMS - Fertilizer Management System. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} DN - DeraNexa. All rights reserved.</p>
             <p>{{ config('app.name') }} | {{ config('mail.from.address') }}</p>
         </div>
     </div>

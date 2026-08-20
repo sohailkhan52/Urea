@@ -40,6 +40,7 @@ class RoleSeeder extends Seeder
                     'transfers.view', 'transfers.create', 'transfers.approve', 'transfers.receive',
                     'udhar.view', 'udhar.create', 'udhar.export',
                     'reports.view',
+                    'welcome-page.manage',
                 ],
             ],
         ];

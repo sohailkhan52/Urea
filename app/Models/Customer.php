@@ -233,6 +233,14 @@ class Customer extends Model
     }
 
     /**
+     * Relationship: Get all udhar history for this customer
+     */
+    public function udharHistory()
+    {
+        return $this->hasMany(UdharHistory::class);
+    }
+
+    /**
      * Check if customer can be deleted
      */
     public function canBeDeleted(): bool

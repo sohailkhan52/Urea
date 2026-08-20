@@ -9,6 +9,7 @@ use App\Models\SupplierLedger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Services\PayableHistoryService;
 
 /**
  * PurchasePaymentService - Handles supplier payment recording and ledger management
@@ -22,6 +23,12 @@ use Illuminate\Support\Facades\Log;
  */
 class PurchasePaymentService
 {
+    protected PayableHistoryService $historyService;
+
+    public function __construct(PayableHistoryService $historyService)
+    {
+        $this->historyService = $historyService;
+    }
     /**
      * Record payment for a supplier purchase
      * 
@@ -104,7 +111,18 @@ class PurchasePaymentService
             // 8. Create supplier ledger entry for payment
             $this->createPaymentLedgerEntry($purchase, $payment, $amount);
 
-            // 9. Log the transaction
+            // 9. Record transaction history (payable history)
+            $previousPayableAmount = $payableAmount;
+            $currentPayableAmount = max(0, $purchase->total_amount - $newPaidAmount);
+            $this->historyService->recordPaymentRecorded(
+                $purchase,
+                $payment,
+                $previousPayableAmount,
+                $currentPayableAmount,
+                Auth::id()
+            );
+
+            // 10. Log the transaction
             Log::info('Purchase payment recorded', [
                 'payment_id' => $payment->id,
                 'payment_number' => $payment->payment_number,

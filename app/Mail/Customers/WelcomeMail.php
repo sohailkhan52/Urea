@@ -2,6 +2,7 @@
 
 namespace App\Mail\Customers;
 
+use App\Helpers\CompanyHelper;
 use App\Models\Customer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,7 +24,7 @@ class WelcomeMail extends Mailable implements ShouldQueue
         return new Envelope(
             from: config('mail.from.address'),
             replyTo: config('mail.from.address'),
-            subject: "Welcome to FMS - Customer Account Created",
+            subject: "Welcome to " . CompanyHelper::getCompanyName() . " - Customer Account Created",
         );
     }
 
@@ -33,6 +34,7 @@ class WelcomeMail extends Mailable implements ShouldQueue
             view: 'mails.customers.welcome',
             with: [
                 'customer' => $this->customer,
+                'companyName' => CompanyHelper::getCompanyName(),
             ],
         );
     }

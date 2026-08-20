@@ -2,6 +2,7 @@
 
 namespace App\Mail\Suppliers;
 
+use App\Helpers\CompanyHelper;
 use App\Models\Purchase;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,7 +24,7 @@ class PurchaseOrderMail extends Mailable implements ShouldQueue
         return new Envelope(
             from: config('mail.from.address'),
             replyTo: config('mail.from.address'),
-            subject: "Purchase Order Confirmation - {$this->purchase->purchase_number}",
+            subject: CompanyHelper::getCompanyName() . " - Purchase Order Confirmation - {$this->purchase->purchase_number}",
         );
     }
 
@@ -34,6 +35,7 @@ class PurchaseOrderMail extends Mailable implements ShouldQueue
             with: [
                 'purchase' => $this->purchase,
                 'supplier' => $this->purchase->supplier,
+                'companyName' => CompanyHelper::getCompanyName(),
                 'items' => $this->purchase->items,
             ],
         );

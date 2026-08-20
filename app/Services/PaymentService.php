@@ -281,7 +281,7 @@ class PaymentService
         $previousBalance = $this->getRunningBalance($payment->customer_id);
         $newBalance = max(0, $previousBalance - $payment->amount);
 
-        return CustomerLedger::create([
+        $ledgerEntry = CustomerLedger::create([
             'customer_id' => $payment->customer_id,
             'type' => CustomerLedger::TYPE_PAYMENT,
             'sale_id' => $payment->sale_id,
@@ -294,6 +294,22 @@ class PaymentService
             'date' => $payment->payment_date,
             'created_by' => $createdBy,
         ]);
+
+        // Record in UdharHistory if sale exists
+        if ($payment->sale_id) {
+            $sale = $payment->sale;
+            $previousUdharAmount = $sale->udhar_amount + $payment->amount; // Before payment
+            
+            app(\App\Services\UdharHistoryService::class)->recordPaymentReceived(
+                sale: $sale,
+                payment: $payment,
+                previousUdharAmount: $previousUdharAmount,
+                currentUdharAmount: $sale->udhar_amount,
+                userId: $createdBy
+            );
+        }
+
+        return $ledgerEntry;
     }
 
     /**

@@ -64,9 +64,14 @@
     <div class="card">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Outstanding Purchases</h5>
-            <a href="{{ route('admin.payables.ledger', $supplier) }}" class="btn btn-sm btn-outline-info">
-                <i class="bi bi-book me-1"></i> View Ledger
-            </a>
+            <div class="btn-group" role="group">
+                <a href="{{ route('admin.payables.transaction-history', $supplier) }}" class="btn btn-sm btn-outline-warning">
+                    <i class="bi bi-clock-history me-1"></i> View History
+                </a>
+                <a href="{{ route('admin.payables.ledger', $supplier) }}" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-book me-1"></i> View Ledger
+                </a>
+            </div>
         </div>
         <div class="table-responsive">
             <table class="table table-hover mb-0">

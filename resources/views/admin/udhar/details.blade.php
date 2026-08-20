@@ -9,9 +9,14 @@
             <h1 class="h3 mb-1">Udhar Details</h1>
             <p class="text-muted mb-0">{{ $customer->name }}</p>
         </div>
-        <a href="{{ route('admin.udhar.index') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Back
-        </a>
+        <div class="btn-group" role="group">
+            <a href="{{ route('admin.udhar.index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back
+            </a>
+            <a href="{{ route('admin.udhar.transaction-history', $customer) }}" class="btn btn-outline-info">
+                <i class="bi bi-clock-history me-1"></i> Transaction History
+            </a>
+        </div>
     </div>
 
     {{-- Customer Summary --}}

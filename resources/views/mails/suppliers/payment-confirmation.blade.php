@@ -108,12 +108,12 @@
             <p>
                 Best regards,<br>
                 <strong>Accounts Department</strong><br>
-                FMS - Fertilizer Management System
+                DN - DeraNexa
             </p>
         </div>
 
         <div class="footer">
-            <p>&copy; {{ date('Y') }} FMS - Fertilizer Management System. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} DN - DeraNexa. All rights reserved.</p>
             <p>{{ config('app.name') }} | {{ config('mail.from.address') }}</p>
         </div>
     </div>

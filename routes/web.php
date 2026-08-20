@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ProfileController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,9 +19,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Test route - remove after debugging
+Route::get('/test-welcome', [TestController::class, 'testWelcomePage']);
+
 // Public Routes - Home/Welcome
 Route::get('/', function () {
-    return view('welcome');
+    $service = new \App\Services\WelcomePageService();
+    $data = $service->getFrontendData();
+    return view('welcome-dynamic', $data);
 })->name('home');
 
 /*
@@ -291,6 +297,9 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         Route::get('/{customer}/ledger', [\App\Http\Controllers\Admin\UdharController::class, 'ledger'])
             ->name('ledger');
         
+        Route::get('/{customer}/history', [\App\Http\Controllers\Admin\UdharController::class, 'transactionHistory'])
+            ->name('transaction-history');
+        
         Route::post('/{customer}/payment', [\App\Http\Controllers\Admin\UdharController::class, 'recordPayment'])
             ->name('recordPayment')
             ->middleware('permission:udhar.create');
@@ -309,6 +318,9 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         
         Route::get('/{supplier}/ledger', [\App\Http\Controllers\Admin\PayableController::class, 'ledger'])
             ->name('ledger');
+        
+        Route::get('/{supplier}/history', [\App\Http\Controllers\Admin\PayableController::class, 'transactionHistory'])
+            ->name('transaction-history');
         
         Route::post('/{supplier}/payment', [\App\Http\Controllers\Admin\PayableController::class, 'recordPayment'])
             ->name('recordPayment')
@@ -399,6 +411,50 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         });
     });
     */
+
+    // Welcome Page Management
+    Route::prefix('welcome-page')
+        ->name('welcome-page.')
+        ->middleware('permission:welcome-page.manage')
+        ->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\WelcomePageController::class, 'index'])
+                ->name('index');
+            
+            Route::post('/settings', [\App\Http\Controllers\Admin\WelcomePageController::class, 'updateSettings'])
+                ->name('settings.update');
+            
+            // Features
+            Route::post('/features', [\App\Http\Controllers\Admin\WelcomePageController::class, 'storeFeature'])
+                ->name('features.store');
+            
+            Route::put('/features/{feature}', [\App\Http\Controllers\Admin\WelcomePageController::class, 'updateFeature'])
+                ->name('features.update');
+            
+            Route::delete('/features/{feature}', [\App\Http\Controllers\Admin\WelcomePageController::class, 'destroyFeature'])
+                ->name('features.destroy');
+            
+            Route::post('/features/reorder', [\App\Http\Controllers\Admin\WelcomePageController::class, 'reorderFeatures'])
+                ->name('features.reorder');
+            
+            Route::patch('/features/{feature}/toggle', [\App\Http\Controllers\Admin\WelcomePageController::class, 'toggleFeature'])
+                ->name('features.toggle');
+            
+            // Workflow Steps
+            Route::post('/workflow-steps', [\App\Http\Controllers\Admin\WelcomePageController::class, 'storeWorkflowStep'])
+                ->name('workflow-steps.store');
+            
+            Route::put('/workflow-steps/{workflowStep}', [\App\Http\Controllers\Admin\WelcomePageController::class, 'updateWorkflowStep'])
+                ->name('workflow-steps.update');
+            
+            Route::delete('/workflow-steps/{workflowStep}', [\App\Http\Controllers\Admin\WelcomePageController::class, 'destroyWorkflowStep'])
+                ->name('workflow-steps.destroy');
+            
+            Route::post('/workflow-steps/reorder', [\App\Http\Controllers\Admin\WelcomePageController::class, 'reorderSteps'])
+                ->name('workflow-steps.reorder');
+            
+            Route::patch('/workflow-steps/{workflowStep}/toggle', [\App\Http\Controllers\Admin\WelcomePageController::class, 'toggleStep'])
+                ->name('workflow-steps.toggle');
+        });
 
     // Future module routes will be added here following this pattern:
     // Route::resource('dealers', DealerController::class);
