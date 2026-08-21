@@ -22,9 +22,24 @@
             --topbar-height: 60px;
         }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
+            overflow-x: hidden;
         }
 
         /* Sidebar Styles */
@@ -99,6 +114,29 @@
             font-size: 1.1rem;
             width: 20px;
             text-align: center;
+            flex-shrink: 0;
+        }
+
+        .nav-link-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .nav-link-text-en {
+            font-size: 0.95rem;
+            line-height: 1.2;
+            flex: 1;
+        }
+
+        .nav-link-text-ur {
+            font-size: 0.75rem;
+            color: #b0b8c1;
+            line-height: 1.2;
+            text-align: right;
+            flex-shrink: 0;
         }
 
         /* Main Content Area */
@@ -106,6 +144,9 @@
             margin-left: var(--sidebar-width);
             min-height: 100vh;
             transition: all 0.3s;
+            overflow-x: hidden;
+            width: calc(100% - var(--sidebar-width));
+            box-sizing: border-box;
         }
 
         /* Top Navbar */
@@ -238,105 +279,206 @@
             display: inline-block;
             margin-right: 5px;
         }
+
+        /* Fix dropdown menu clipping in responsive tables */
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        .table td .dropdown {
+            position: static;
+        }
+
+        .table td .dropdown-menu {
+            position: absolute;
+            z-index: 1050;
+        }
     </style>
 </head>
 <body>
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <h4><i class="bi bi-box-seam"></i> FMS</h4>
-            <small>Fertilizer Management System</small>
+            @php
+                try {
+                    $sidebarSettings = \App\Models\WelcomePageSetting::first();
+                    $companyShortName = $sidebarSettings?->company_short_name ?? $sidebarSettings?->company_name ?? 'DeraNexa';
+                    $companyFullName = $sidebarSettings?->company_name ?? 'DeraNexa';
+                    $companyLogo = $sidebarSettings?->company_logo ? asset('storage/' . $sidebarSettings->company_logo) : null;
+                } catch (\Exception $e) {
+                    $companyShortName = 'DeraNexa';
+                    $companyFullName = 'DeraNexa';
+                    $companyLogo = null;
+                }
+            @endphp
+            @if($companyLogo)
+                <img src="{{ $companyLogo }}" alt="Logo" style="max-height: 40px; width: auto; margin-bottom: 10px;">
+            @else
+                <i class="bi bi-box-seam" style="font-size: 2rem; margin-bottom: 10px;"></i>
+            @endif
+            <h4>{{ $companyShortName }}</h4>
+            <small>{{ $companyFullName }}</small>
         </div>
 
         <nav class="sidebar-nav">
             <div class="nav-section-title">Main</div>
             <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i>
-                <span>Dashboard</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Dashboard</span>
+                    <span class="nav-link-text-ur">ڈیش بورڈ</span>
+                </div>
             </a>
 
-            @permission('users.view')
+            @if(auth()->user()->isSuperAdmin())
             <div class="nav-section-title">User Management</div>
             <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                 <i class="bi bi-person-badge"></i>
-                <span>Users</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Users</span>
+                    <span class="nav-link-text-ur">صارفین</span>
+                </div>
             </a>
-            @endpermission
+            @endif
 
             @anypermission(['companies.view', 'products.view', 'warehouses.view', 'inventory.view', 'suppliers.view', 'customers.view'])
             <div class="nav-section-title">Inventory Management</div>
 
-            @permission('companies.view')
+            @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.companies.index') }}" class="nav-link {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}">
                 <i class="bi bi-building"></i>
-                <span>Companies</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Companies</span>
+                    <span class="nav-link-text-ur">کمپنیاں</span>
+                </div>
+            </a>
+            @endif
+
+            @permission('categories.view')
+            <a href="{{ route('admin.categories.index') }}" class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
+                <i class="bi bi-tags"></i>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Categories</span>
+                    <span class="nav-link-text-ur">زمرہ جات</span>
+                </div>
             </a>
             @endpermission
 
             @permission('products.view')
             <a href="{{ route('admin.products.index') }}" class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
                 <i class="bi bi-box-seam"></i>
-                <span>Products</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Products</span>
+                    <span class="nav-link-text-ur">مصنوعات</span>
+                </div>
             </a>
             @endpermission
 
-            @permission('warehouses.view')
+            @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.warehouses.index') }}" class="nav-link {{ request()->routeIs('admin.warehouses.*') ? 'active' : '' }}">
                 <i class="bi bi-building-fill-gear"></i>
-                <span>Warehouses</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Warehouses</span>
+                    <span class="nav-link-text-ur">گودام</span>
+                </div>
             </a>
-            @endpermission
+            @endif
 
             @permission('inventory.view')
             <a href="{{ route('admin.inventory.index') }}" class="nav-link {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}">
                 <i class="bi bi-collection"></i>
-                <span>Inventory</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Inventory</span>
+                    <span class="nav-link-text-ur">انوینٹری</span>
+                </div>
             </a>
             @endpermission
 
-            @permission('suppliers.view')
+            @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.suppliers.index') }}" class="nav-link {{ request()->routeIs('admin.suppliers.*') ? 'active' : '' }}">
                 <i class="bi bi-person-badge"></i>
-                <span>Suppliers</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Suppliers</span>
+                    <span class="nav-link-text-ur">سَپْلائِر</span>
+                </div>
             </a>
-            @endpermission
+            @endif
 
             @permission('customers.view')
             <a href="{{ route('admin.customers.index') }}" class="nav-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i>
-                <span>Customers</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Customers</span>
+                    <span class="nav-link-text-ur">گاہک</span>
+                </div>
             </a>
             @endpermission
             @endanypermission
 
-            @anypermission(['purchases.view', 'sales.view'])
+            @anypermission(['purchases.view', 'sales.view', 'udhar.view', 'payables.view'])
             <div class="nav-section-title">Transactions</div>
 
-            @permission('purchases.view')
+            @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.purchases.index') }}" class="nav-link {{ request()->routeIs('admin.purchases.*') ? 'active' : '' }}">
                 <i class="bi bi-cart"></i>
-                <span>Purchases</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Purchases</span>
+                    <span class="nav-link-text-ur">خریداری</span>
+                </div>
             </a>
-            @endpermission
+            @endif
 
             @permission('sales.view')
             <a href="{{ route('admin.sales.index') }}" class="nav-link {{ request()->routeIs('admin.sales.*') ? 'active' : '' }}">
                 <i class="bi bi-receipt"></i>
-                <span>Sales</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Sales</span>
+                    <span class="nav-link-text-ur">فروخت</span>
+                </div>
             </a>
             @endpermission
+
+            @permission('udhar.view')
+            <a href="{{ route('admin.udhar.index') }}" class="nav-link {{ request()->routeIs('admin.udhar.*') ? 'active' : '' }}">
+                <i class="bi bi-credit-card"></i>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Udhar Management</span>
+                    <span class="nav-link-text-ur">اُدھار</span>
+                </div>
+            </a>
+            @endpermission
+
+            @if(auth()->user()->isSuperAdmin())
+            <a href="{{ route('admin.payables.index') }}" class="nav-link {{ request()->routeIs('admin.payables.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-check"></i>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Supplier Payables</span>
+                    <span class="nav-link-text-ur">واجب الادا</span>
+                </div>
+            </a>
+            @endif
             @endanypermission
 
-            @anypermission(['transfers.view'])
+            @if(auth()->user()->isSuperAdmin())
             <div class="nav-section-title">Management</div>
-
-            @permission('transfers.view')
             <a href="{{ route('admin.stock-transfers.index') }}" class="nav-link {{ request()->routeIs('admin.stock-transfers.*') ? 'active' : '' }}">
                 <i class="bi bi-arrow-left-right"></i>
-                <span>Stock Transfers</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Stock Transfers</span>
+                    <span class="nav-link-text-ur">سٹاک منتقلی</span>
+                </div>
             </a>
-            @endpermission
-            @endanypermission
+            @endif
+
+            @if(auth()->user()->isSuperAdmin())
+            <a href="{{ route('admin.welcome-page.index') }}" class="nav-link {{ request()->routeIs('admin.welcome-page.*') ? 'active' : '' }}">
+                <i class="bi bi-gear"></i>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Welcome Page Settings</span>
+                    <span class="nav-link-text-ur">ترحیب کی ترتیبات</span>
+                </div>
+            </a>
+            @endif
 
             {{-- Reports section disabled - routes and views not yet implemented --}}
             {{-- @permission('reports.view')
@@ -361,6 +503,10 @@
                 <i class="bi bi-list"></i>
             </button>
 
+            <a href="{{ url('/') }}" class="btn btn-outline-secondary btn-sm me-3" title="Go to Home Page">
+                <i class="bi bi-house-fill me-1"></i>Home
+            </a>
+
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
                     @yield('breadcrumbs')
@@ -368,17 +514,6 @@
             </nav>
 
             <div class="topbar-right">
-                <div class="dropdown">
-                    <button class="btn btn-link text-dark text-decoration-none dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-bell"></i>
-                        <span class="badge bg-danger rounded-pill position-absolute" style="font-size: 0.6rem; top: 8px;">3</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><h6 class="dropdown-header">Notifications</h6></li>
-                        <li><a class="dropdown-item" href="#">No new notifications</a></li>
-                    </ul>
-                </div>
-
                 <div class="dropdown">
                     <button class="btn btn-link text-dark text-decoration-none dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
                         <img src="{{ Auth::user()->profile_image_url }}" 
@@ -471,9 +606,27 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        const sidebar = document.getElementById('sidebar');
+
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('show');
+            sidebar.classList.toggle('show');
         }
+
+        // Restore sidebar scroll position on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedScrollPosition = sessionStorage.getItem('sidebarScrollPosition');
+            if (savedScrollPosition) {
+                sidebar.scrollTop = parseInt(savedScrollPosition, 10);
+                sessionStorage.removeItem('sidebarScrollPosition');
+            }
+        });
+
+        // Save sidebar scroll position before navigation
+        document.querySelectorAll('.sidebar-nav a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                sessionStorage.setItem('sidebarScrollPosition', sidebar.scrollTop);
+            });
+        });
 
         // Auto-hide alerts after 5 seconds
         setTimeout(function() {

@@ -23,6 +23,13 @@ class WarehouseController extends Controller
     {
         $this->authorize('warehouses.view');
 
+        $user = auth()->user();
+
+        // Only super admin can manage warehouses
+        if (!$user->isSuperAdmin()) {
+            abort(403, 'Only super admins can manage warehouses.');
+        }
+
         $query = Warehouse::with(['branch', 'manager']);
 
         // Search
@@ -30,25 +37,9 @@ class WarehouseController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhere('address', 'like', "%{$search}%")
-                  ->orWhereHas('branch', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('manager', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%");
             });
-        }
-
-        // Filter by branch
-        if ($request->filled('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
-        }
-
-        // Filter by type
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
         }
 
         // Filter by status
@@ -57,49 +48,68 @@ class WarehouseController extends Controller
         }
 
         $warehouses = $query->latest()->paginate(15)->withQueryString();
-        
-        // Get branches for filter
-        $branches = Branch::active()->orderBy('name')->get();
-        $warehouseTypes = Warehouse::getTypes();
 
-        return view('admin.warehouses.index', compact('warehouses', 'branches', 'warehouseTypes'));
+        return view('admin.warehouses.index', compact('warehouses'));
     }
 
     /**
      * Show the form for creating a new warehouse.
+     * 
+     * Simplified form for Super Admin to create warehouse with manager in one go.
      */
     public function create(): View
     {
         $this->authorize('warehouses.create');
 
-        $branches = Branch::active()->orderBy('name')->get();
-        $managers = User::active()->orderBy('name')->get();
-        $warehouseTypes = Warehouse::getTypes();
+        // Only super admins can create warehouses
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can create warehouses.');
+        }
 
-        return view('admin.warehouses.create', compact('branches', 'managers', 'warehouseTypes'));
+        return view('admin.warehouses.create');
     }
 
     /**
      * Store a newly created warehouse in storage.
+     * 
+     * Creates both warehouse and manager/admin in a single transaction.
      */
-    public function store(StoreWarehouseRequest $request): RedirectResponse
+    public function store(\App\Http\Requests\Admin\StoreWarehouseWithManagerRequest $request): RedirectResponse
     {
         $this->authorize('warehouses.create');
 
-        $data = $request->validated();
+        $warehouseService = new \App\Services\WarehouseService();
 
-        $warehouse = Warehouse::create($data);
+        try {
+            $warehouse = $warehouseService->createWarehouseWithManager(
+                [
+                    'name' => $request->name,
+                    'code' => $request->code,
+                    'address' => $request->address,
+                    'status' => $request->status,
+                    'type' => Warehouse::TYPE_BRANCH,
+                ],
+                [
+                    'name' => $request->admin_name,
+                    'email' => $request->admin_email,
+                    'contact' => $request->admin_contact,
+                    'password' => $request->admin_password,
+                    'profile_image' => $request->file('admin_profile_image'),
+                ]
+            );
 
-        // Log activity
-        Log::info('Warehouse created', [
-            'created_by' => Auth::id(),
-            'warehouse_id' => $warehouse->id,
-            'warehouse_name' => $warehouse->name,
-            'warehouse_code' => $warehouse->code,
-        ]);
+            return redirect()->route('admin.warehouses.show', $warehouse)
+                ->with('success', "Warehouse '{$warehouse->name}' and manager '{$warehouse->manager->name}' created successfully!");
+        } catch (\Exception $e) {
+            Log::error('Warehouse creation failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
 
-        return redirect()->route('admin.warehouses.index')
-            ->with('success', 'Warehouse created successfully.');
+            return back()
+                ->withInput()
+                ->with('error', 'Error creating warehouse: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -108,6 +118,11 @@ class WarehouseController extends Controller
     public function show(Warehouse $warehouse): View
     {
         $this->authorize('warehouses.view');
+
+        // Check warehouse access
+        if (!auth()->user()->canAccessWarehouse($warehouse)) {
+            abort(403, 'You do not have permission to view this warehouse.');
+        }
 
         $warehouse->load(['branch', 'manager', 'inventory.product']);
 
@@ -128,17 +143,29 @@ class WarehouseController extends Controller
 
     /**
      * Show the form for editing the specified warehouse.
+     * Only super admin can edit warehouse details.
      */
     public function edit(Warehouse $warehouse): View
     {
         $this->authorize('warehouses.update');
 
-        $warehouse->load(['branch', 'manager']);
-        $branches = Branch::active()->orderBy('name')->get();
-        $managers = User::active()->orderBy('name')->get();
-        $warehouseTypes = Warehouse::getTypes();
+        // Only super admin can edit warehouses
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can edit warehouses.');
+        }
 
-        return view('admin.warehouses.edit', compact('warehouse', 'branches', 'managers', 'warehouseTypes'));
+        // Get all admins assigned to this warehouse
+        $currentAdmins = $warehouse->admins()->pluck('user_id')->toArray();
+        
+        // Get all available users (non-super-admin) for assignment
+        $availableUsers = User::whereDoesntHave('roles', function ($query) {
+            $query->where('is_super_admin', true);
+        })
+        ->where('status', 'active')
+        ->orderBy('name')
+        ->get();
+
+        return view('admin.warehouses.edit', compact('warehouse', 'currentAdmins', 'availableUsers'));
     }
 
     /**
@@ -148,11 +175,29 @@ class WarehouseController extends Controller
     {
         $this->authorize('warehouses.update');
 
+        // Only super admin can update warehouses
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can update warehouses.');
+        }
+
         $data = $request->validated();
 
         $warehouse->update($data);
 
-        // Log activity
+        // Handle admin assignment (only one admin per warehouse)
+        $adminId = $request->input('admin_id');
+        
+        // Remove all current admin assignments
+        $warehouse->admins()->detach();
+        
+        // Assign new admin if provided
+        if ($adminId) {
+            $warehouse->admins()->attach($adminId, [
+                'access_level' => 'manage',
+                'assigned_at' => now(),
+            ]);
+        }
+
         Log::info('Warehouse updated', [
             'updated_by' => Auth::id(),
             'warehouse_id' => $warehouse->id,
@@ -171,6 +216,11 @@ class WarehouseController extends Controller
     {
         $this->authorize('warehouses.delete');
 
+        // Only super admin can delete warehouses
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can delete warehouses.');
+        }
+
         // Check if warehouse can be deleted
         if (!$warehouse->canBeDeleted()) {
             return back()->with('error', 'Cannot delete this warehouse. It has inventory or pending transactions.');
@@ -182,7 +232,6 @@ class WarehouseController extends Controller
         // Soft delete
         $warehouse->delete();
 
-        // Log activity
         Log::warning('Warehouse deleted', [
             'deleted_by' => Auth::id(),
             'warehouse_name' => $warehouseName,
@@ -254,6 +303,34 @@ class WarehouseController extends Controller
             ->orderBy('quantity', 'desc')
             ->paginate(20);
 
-        return view('admin.warehouses.inventory', compact('warehouse', 'inventory'));
+        // Calculate summary statistics (done after pagination for accuracy)
+        $inStock = $inventory->filter(fn($item) => $item->quantity > 0 && !$item->isLowStock())->count();
+        $lowStock = $inventory->filter(fn($item) => $item->isLowStock())->count();
+        $outOfStock = $inventory->where('quantity', 0)->count();
+
+        return view('admin.warehouses.inventory', compact('warehouse', 'inventory', 'inStock', 'lowStock', 'outOfStock'));
+    }
+
+    /**
+     * Set warehouse as default.
+     */
+    public function setDefault(Warehouse $warehouse): RedirectResponse
+    {
+        $this->authorize('warehouses.update');
+
+        if (!$warehouse->isActive()) {
+            return back()->with('error', 'Only active warehouses can be set as default.');
+        }
+
+        $warehouse->setAsDefault();
+
+        // Log activity
+        Log::info('Default warehouse set', [
+            'set_by' => Auth::id(),
+            'warehouse_id' => $warehouse->id,
+            'warehouse_name' => $warehouse->name,
+        ]);
+
+        return back()->with('success', 'Warehouse set as default successfully.');
     }
 }

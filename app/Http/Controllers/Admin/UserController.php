@@ -24,6 +24,11 @@ class UserController extends Controller
     {
         $this->authorize('users.view');
 
+        // Only super admin can manage users
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can manage users.');
+        }
+
         $query = User::with('roles');
 
         // Search
@@ -31,8 +36,8 @@ class UserController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 

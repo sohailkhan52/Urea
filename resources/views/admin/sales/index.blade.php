@@ -156,13 +156,20 @@
                                 </small>
                             </td>
                             <td>
-                                @if($sale->payment_status === 'paid')
-                                    <span class="badge bg-success">Paid</span>
-                                @elseif($sale->payment_status === 'partial')
-                                    <span class="badge bg-warning">Partial</span>
-                                @else
-                                    <span class="badge bg-secondary">Unpaid</span>
-                                @endif
+                                @php
+                                    // Calculate payment status based on paid_amount and total_amount
+                                    if ($sale->paid_amount == 0) {
+                                        $paymentStatus = 'Unpaid';
+                                        $badgeClass = 'bg-secondary';
+                                    } elseif ($sale->paid_amount >= $sale->total_amount) {
+                                        $paymentStatus = 'Paid';
+                                        $badgeClass = 'bg-success';
+                                    } else {
+                                        $paymentStatus = 'Partial';
+                                        $badgeClass = 'bg-warning';
+                                    }
+                                @endphp
+                                <span class="badge {{ $badgeClass }}">{{ $paymentStatus }}</span>
                             </td>
                             <td>
                                 @if($sale->isDraft())
@@ -192,6 +199,19 @@
                                         </a>
                                         @endcan
                                     @endif
+                                    
+                                    @can('sales.delete')
+                                    <form action="{{ route('admin.sales.destroy', $sale) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                class="btn btn-danger" 
+                                                title="Delete"
+                                                onclick="return confirm('Are you sure you want to delete this sale? This action cannot be undone.');">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    @endcan
                                 </div>
 
                                 {{-- Action Dropdown --}}

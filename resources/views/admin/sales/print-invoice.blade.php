@@ -172,9 +172,7 @@
         <button onclick="window.print()" class="btn btn-primary">
             <i class="bi bi-printer"></i> Print Invoice
         </button>
-        <button onclick="window.history.back()" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Back
-        </button>
+
     </div>
 
     <div class="invoice-container">
@@ -212,6 +210,12 @@
                         @endif
                     @else
                         <p><strong>Walk-in Customer</strong></p>
+                        @if($sale->walkin_customer_name)
+                        <p>Name: {{ $sale->walkin_customer_name }}</p>
+                        @endif
+                        @if($sale->walkin_customer_contact)
+                        <p>Contact: {{ $sale->walkin_customer_contact }}</p>
+                        @endif
                     @endif
                 </div>
             </div>

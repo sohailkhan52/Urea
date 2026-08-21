@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\StockTransfer;
 use App\Models\StockTransferItem;
+use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 
 class StockTransferService
@@ -64,7 +65,7 @@ class StockTransferService
         }
 
         // Check stock availability in source warehouse
-        $availableStock = $this->stockService->getCurrentStock($productId, $transfer->source_warehouse_id);
+        $availableStock = $this->stockService->getCurrentStock($transfer->source_warehouse_id, $productId);
         if ($availableStock < $quantity) {
             throw new \Exception(
                 "Insufficient stock in source warehouse. Available: {$availableStock}, Requested: {$quantity}"
@@ -105,7 +106,7 @@ class StockTransferService
         $quantityDifference = $quantity - $currentQuantity;
 
         if ($quantityDifference > 0) {
-            $availableStock = $this->stockService->getCurrentStock($item->product_id, $transfer->source_warehouse_id);
+            $availableStock = $this->stockService->getCurrentStock($transfer->source_warehouse_id, $item->product_id);
             if ($availableStock < $quantityDifference) {
                 throw new \Exception(
                     "Insufficient stock for additional quantity. Available: {$availableStock}, " .
@@ -210,7 +211,7 @@ class StockTransferService
 
             // Verify stock availability for all items
             foreach ($transfer->items as $item) {
-                $currentStock = $this->stockService->getCurrentStock($item->product_id, $transfer->source_warehouse_id);
+                $currentStock = $this->stockService->getCurrentStock($transfer->source_warehouse_id, $item->product_id);
 
                 if ($currentStock < $item->quantity) {
                     throw new \Exception(
@@ -226,11 +227,12 @@ class StockTransferService
                     warehouseId: $transfer->source_warehouse_id,
                     productId: $item->product_id,
                     quantity: $item->quantity,
-                    unitCost: 0, // Transfer has no cost impact
-                    reason: "Transfer #{$transfer->transfer_number} dispatched",
-                    referenceType: 'transfer_out',
+                    type: \App\Models\StockMovement::TYPE_TRANSFER_OUT,
+                    referenceType: StockTransfer::class,
                     referenceId: $transfer->id,
-                    createdBy: auth()->id()
+                    unitCost: $item->unit_cost ?? 0,
+                    remarks: "Transfer #{$transfer->transfer_number} dispatched",
+                    userId: auth()->id()
                 );
             }
 
@@ -279,8 +281,8 @@ class StockTransferService
      */
     public function receiveTransfer(StockTransfer $transfer, array $receivedItems): StockTransfer
     {
-        if (!$transfer->canBeReceived()) {
-            throw new \Exception('Only in-transit transfers can be received.');
+        if (!in_array($transfer->status, [StockTransfer::STATUS_DISPATCHED, StockTransfer::STATUS_IN_TRANSIT])) {
+            throw new \Exception('Only dispatched or in-transit transfers can be received.');
         }
 
         // Validate received items
@@ -316,11 +318,12 @@ class StockTransferService
                     warehouseId: $transfer->destination_warehouse_id,
                     productId: $item->product_id,
                     quantity: $quantity,
-                    unitCost: 0, // Transfer has no cost impact
-                    reason: "Transfer #{$transfer->transfer_number} received",
-                    referenceType: 'transfer_in',
+                    type: StockMovement::TYPE_TRANSFER_IN,
+                    referenceType: 'stock_transfer',
                     referenceId: $transfer->id,
-                    createdBy: auth()->id()
+                    unitCost: 0, // Transfer has no cost impact
+                    remarks: "Transfer #{$transfer->transfer_number} received",
+                    userId: auth()->id()
                 );
 
                 // Update received quantity

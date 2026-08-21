@@ -94,11 +94,35 @@ class Supplier extends Model
     }
 
     /**
-     * Get purchases from this supplier (for future Purchase module)
+     * Get purchases from this supplier
      */
     public function purchases(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Purchase::class);
+    }
+
+    /**
+     * Get payments made to this supplier
+     */
+    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PurchasePayment::class);
+    }
+
+    /**
+     * Get ledger entries for this supplier
+     */
+    public function ledger(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(SupplierLedger::class);
+    }
+
+    /**
+     * Get payable history for this supplier
+     */
+    public function payableHistory(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PayableHistory::class);
     }
 
     /**

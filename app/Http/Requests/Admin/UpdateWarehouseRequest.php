@@ -24,7 +24,6 @@ class UpdateWarehouseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'branch_id' => ['nullable', 'exists:branches,id'],
             'name' => ['required', 'string', 'max:255'],
             'code' => [
                 'required',
@@ -33,14 +32,9 @@ class UpdateWarehouseRequest extends FormRequest
                 'alpha_dash',
                 Rule::unique('warehouses')->ignore($this->warehouse),
             ],
-            'type' => ['required', Rule::in([
-                Warehouse::TYPE_MAIN,
-                Warehouse::TYPE_BRANCH,
-                Warehouse::TYPE_STORE,
-            ])],
             'address' => ['required', 'string', 'max:500'],
-            'manager_id' => ['nullable', 'exists:users,id'],
             'status' => ['required', Rule::in([Warehouse::STATUS_ACTIVE, Warehouse::STATUS_INACTIVE])],
+            'admin_id' => ['nullable', 'exists:users,id'],
         ];
     }
 
@@ -52,9 +46,8 @@ class UpdateWarehouseRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'branch_id' => 'branch',
             'code' => 'warehouse code',
-            'manager_id' => 'manager',
+            'admin_id' => 'admin',
         ];
     }
 

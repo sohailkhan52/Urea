@@ -13,6 +13,147 @@
     <p class="text-muted mb-0">Welcome to Fertilizer Management System</p>
 </div>
 
+<!-- Management Quick Links -->
+<div class="row mb-5">
+    <!-- Sales Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{{ route('admin.sales.index') }}" class="text-decoration-none">
+            <div class="card management-card h-100" style="cursor: pointer; transition: all 0.3s ease;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small mb-2">Sales</div>
+                            <div class="h4 mb-0 fw-bold text-primary">
+                                @if(isset($totalSales))
+                                    {{ $totalSales }}
+                                @else
+                                    0
+                                @endif
+                            </div>
+                        </div>
+                        <div class="text-primary" style="font-size: 3rem; opacity: 0.2;">
+                            <i class="bi bi-bag-check"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-top">
+                        <small class="text-muted">
+                            <i class="bi bi-arrow-right me-1"></i>Go to Sales
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Purchases Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{{ route('admin.purchases.index') }}" class="text-decoration-none">
+            <div class="card management-card h-100" style="cursor: pointer; transition: all 0.3s ease;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small mb-2">Purchases</div>
+                            <div class="h4 mb-0 fw-bold text-success">
+                                @if(isset($totalPurchases))
+                                    {{ $totalPurchases }}
+                                @else
+                                    0
+                                @endif
+                            </div>
+                        </div>
+                        <div class="text-success" style="font-size: 3rem; opacity: 0.2;">
+                            <i class="bi bi-cart-plus"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-top">
+                        <small class="text-muted">
+                            <i class="bi bi-arrow-right me-1"></i>Go to Purchases
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Udhar (Credit) Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{{ route('admin.udhar.index') }}" class="text-decoration-none">
+            <div class="card management-card h-100" style="cursor: pointer; transition: all 0.3s ease;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small mb-2">Udhar (Credit)</div>
+                            <div class="h4 mb-0 fw-bold text-warning">
+                                @if(isset($totalUdhar))
+                                    PKR {{ number_format($totalUdhar, 2) }}
+                                @else
+                                    PKR 0.00
+                                @endif
+                            </div>
+                        </div>
+                        <div class="text-warning" style="font-size: 3rem; opacity: 0.2;">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-top">
+                        <small class="text-muted">
+                            <i class="bi bi-arrow-right me-1"></i>Go to Udhar
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Payables Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{{ route('admin.payables.index') }}" class="text-decoration-none">
+            <div class="card management-card h-100" style="cursor: pointer; transition: all 0.3s ease;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small mb-2">Payables</div>
+                            <div class="h4 mb-0 fw-bold text-danger">
+                                @if(isset($totalPayables))
+                                    PKR {{ number_format($totalPayables, 2) }}
+                                @else
+                                    PKR 0.00
+                                @endif
+                            </div>
+                        </div>
+                        <div class="text-danger" style="font-size: 3rem; opacity: 0.2;">
+                            <i class="bi bi-exclamation-circle"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-top">
+                        <small class="text-muted">
+                            <i class="bi bi-arrow-right me-1"></i>Go to Payables
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<style>
+.management-card {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.management-card:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+.management-card .card-body {
+    padding: 1.5rem;
+}
+</style>
+
 <div class="row">
     <!-- Total Products -->
     <div class="col-xl-3 col-md-6 mb-4">

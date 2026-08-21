@@ -27,7 +27,31 @@ class InventoryController extends Controller
     {
         $this->authorize('inventory.view');
 
+        $user = auth()->user();
         $query = WarehouseInventory::with(['product.company', 'product.category', 'warehouse']);
+
+        // Apply warehouse-level filtering for non-super-admins
+        if (!$user->isSuperAdmin()) {
+            $userWarehouses = $user->warehouses()
+                ->select('warehouses.id')
+                ->pluck('warehouses.id');
+                
+            if ($userWarehouses->isEmpty()) {
+                // User has no warehouse assigned
+                return view('admin.inventory.index', [
+                    'inventory' => collect(),
+                    'warehouses' => collect(),
+                    'products' => collect(),
+                    'stats' => [
+                        'total_items' => 0,
+                        'total_quantity' => 0,
+                        'out_of_stock' => 0,
+                        'low_stock' => 0,
+                    ],
+                ]);
+            }
+            $query->whereIn('warehouse_id', $userWarehouses);
+        }
 
         // Search
         if ($request->filled('search')) {
@@ -35,17 +59,21 @@ class InventoryController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->whereHas('product', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('sku', 'like', "%{$search}%");
+                        ->orWhere('sku', 'like', "%{$search}%");
                 })
-                ->orWhereHas('warehouse', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('code', 'like', "%{$search}%");
-                });
+                    ->orWhereHas('warehouse', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('code', 'like', "%{$search}%");
+                    });
             });
         }
 
         // Filter by warehouse
         if ($request->filled('warehouse_id')) {
+            // Check if user has access to this warehouse
+            if (!$user->isSuperAdmin() && !$user->canAccessWarehouse($request->warehouse_id)) {
+                abort(403, 'You do not have access to this warehouse.');
+            }
             $query->where('warehouse_id', $request->warehouse_id);
         }
 
@@ -63,7 +91,7 @@ class InventoryController extends Controller
             } elseif ($request->stock_status === 'low_stock') {
                 // Low stock items (complex filter)
                 $query->whereHas('product', function ($q) {
-                    $q->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
+                    $q->whereColumn('warehouse_inventory.quantity', '<', 'products.minimum_stock_level')
                       ->where('warehouse_inventory.quantity', '>', 0);
                 });
             }
@@ -71,12 +99,21 @@ class InventoryController extends Controller
 
         $inventory = $query->latest('updated_at')->paginate(20)->withQueryString();
 
-        // Get filters data
-        $warehouses = Warehouse::active()->orderBy('name')->get();
+        // Get filters data - limit warehouses for non-super-admins
+        if ($user->isSuperAdmin()) {
+            $warehouses = Warehouse::active()->orderBy('name')->get();
+        } else {
+            $warehouses = Warehouse::whereIn('id', 
+                $user->warehouses()
+                    ->select('warehouses.id')
+                    ->pluck('warehouses.id')
+            )->where('status', 'active')->orderBy('name')->get();
+        }
+        
         $products = Product::active()->orderBy('name')->get();
 
         // Get summary statistics
-        $stats = $this->getInventoryStats();
+        $stats = $this->getInventoryStats($user);
 
         return view('admin.inventory.index', compact('inventory', 'warehouses', 'products', 'stats'));
     }
@@ -144,14 +181,33 @@ class InventoryController extends Controller
     /**
      * Get inventory statistics
      */
-    protected function getInventoryStats(): array
+    protected function getInventoryStats($user = null): array
     {
-        $totalItems = WarehouseInventory::where('quantity', '>', 0)->count();
-        $totalQuantity = WarehouseInventory::sum('quantity');
-        $outOfStock = WarehouseInventory::where('quantity', '=', 0)->count();
+        $query = WarehouseInventory::query();
         
-        $lowStock = WarehouseInventory::whereHas('product', function ($q) {
-            $q->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
+        // Filter by user's warehouses if not super admin
+        if ($user && !$user->isSuperAdmin()) {
+            $userWarehouses = $user->warehouses()
+                ->select('warehouses.id')
+                ->pluck('warehouses.id');
+                
+            if ($userWarehouses->isEmpty()) {
+                return [
+                    'total_items' => 0,
+                    'total_quantity' => 0,
+                    'out_of_stock' => 0,
+                    'low_stock' => 0,
+                ];
+            }
+            $query->whereIn('warehouse_id', $userWarehouses);
+        }
+
+        $totalItems = (clone $query)->where('quantity', '>', 0)->count();
+        $totalQuantity = (clone $query)->sum('quantity');
+        $outOfStock = (clone $query)->where('quantity', '=', 0)->count();
+        
+        $lowStock = (clone $query)->whereHas('product', function ($q) {
+            $q->whereColumn('warehouse_inventory.quantity', '<', 'products.minimum_stock_level')
               ->where('warehouse_inventory.quantity', '>', 0);
         })->count();
 

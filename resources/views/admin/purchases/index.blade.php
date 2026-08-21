@@ -159,6 +159,19 @@
                                         </a>
                                         @endcan
                                     @endif
+                                    
+                                    @can('purchases.delete')
+                                    <form action="{{ route('admin.purchases.destroy', $purchase) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                class="btn btn-danger" 
+                                                title="Delete"
+                                                onclick="return confirm('Are you sure you want to delete this purchase? This action cannot be undone.');">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    @endcan
                                 </div>
 
                                 {{-- Action Dropdown --}}

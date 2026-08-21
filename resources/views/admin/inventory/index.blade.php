@@ -138,7 +138,9 @@
                             <th>Product</th>
                             <th>SKU</th>
                             <th>Warehouse</th>
+                            @if(auth()->user()->isSuperAdmin())
                             <th>Company</th>
+                            @endif
                             <th>Category</th>
                             <th class="text-end">Current Stock</th>
                             <th class="text-end">Min. Level</th>
@@ -168,9 +170,11 @@
                                     {{ $item->warehouse->name }}
                                 </small>
                             </td>
+                            @if(auth()->user()->isSuperAdmin())
                             <td>
                                 <small>{{ $item->product->company->name }}</small>
                             </td>
+                            @endif
                             <td>
                                 <span class="badge bg-secondary">{{ $item->product->category->name }}</span>
                             </td>
@@ -200,8 +204,8 @@
                                 @can('inventory.view')
                                 <a href="{{ route('admin.inventory.movements', ['warehouse_id' => $item->warehouse_id, 'product_id' => $item->product_id]) }}" 
                                    class="btn btn-sm btn-info"
-                                   title="View Movements">
-                                    <i class="bi bi-clock-history"></i>
+                                   title="View Stock Movements and History">
+                                    <i class="bi bi-clock-history me-1"></i>History
                                 </a>
                                 @endcan
                             </td>

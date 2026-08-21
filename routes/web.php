@@ -4,8 +4,8 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ProfileController;
-use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -19,8 +19,15 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Public Routes
-Route::view('/', 'welcome-custom')->name('home');
+// Test route - remove after debugging
+Route::get('/test-welcome', [TestController::class, 'testWelcomePage']);
+
+// Public Routes - Home/Welcome
+Route::get('/', function () {
+    $service = new \App\Services\WelcomePageService();
+    $data = $service->getFrontendData();
+    return view('welcome-dynamic', $data);
+})->name('home');
 
 /*
 |--------------------------------------------------------------------------
@@ -36,10 +43,6 @@ Route::middleware('guest')->group(function () {
     // Login
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
-
-    // Register
-    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-    Route::post('/register', [RegisterController::class, 'register']);
 
     // Forgot Password
     Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
@@ -119,6 +122,19 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->name('companies.deactivate')
         ->middleware('permission:companies.update');
 
+    // Category Management
+    Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class)
+        ->middleware('permission:categories.view');
+    
+    // Category status actions
+    Route::patch('/categories/{category}/activate', [\App\Http\Controllers\Admin\CategoryController::class, 'activate'])
+        ->name('categories.activate')
+        ->middleware('permission:categories.update');
+    
+    Route::patch('/categories/{category}/deactivate', [\App\Http\Controllers\Admin\CategoryController::class, 'deactivate'])
+        ->name('categories.deactivate')
+        ->middleware('permission:categories.update');
+
     // Product Management
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)
         ->middleware('permission:products.view');
@@ -143,6 +159,11 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     
     Route::patch('/warehouses/{warehouse}/deactivate', [\App\Http\Controllers\Admin\WarehouseController::class, 'deactivate'])
         ->name('warehouses.deactivate')
+        ->middleware('permission:warehouses.update');
+    
+    // Set default warehouse
+    Route::patch('/warehouses/{warehouse}/set-default', [\App\Http\Controllers\Admin\WarehouseController::class, 'setDefault'])
+        ->name('warehouses.setDefault')
         ->middleware('permission:warehouses.update');
     
     // Warehouse inventory
@@ -211,6 +232,11 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     Route::resource('purchases', \App\Http\Controllers\Admin\PurchaseController::class)
         ->middleware('permission:purchases.view');
 
+    // AJAX: Get all products (for single-page create form) - MUST come BEFORE resource routes
+    Route::get('/purchases-products', [\App\Http\Controllers\Admin\PurchaseController::class, 'getProducts'])
+        ->name('purchases.getProducts')
+        ->middleware('permission:purchases.create');
+
     // Purchase actions
     Route::post('/purchases/{purchase}/confirm', [\App\Http\Controllers\Admin\PurchaseController::class, 'confirm'])
         ->name('purchases.confirm')
@@ -238,6 +264,11 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->name('purchases.updateExpenses')
         ->middleware('permission:purchases.update');
 
+    // Purchase print
+    Route::get('/purchases/{purchase}/print', [\App\Http\Controllers\Admin\PurchaseController::class, 'print'])
+        ->name('purchases.print')
+        ->middleware('permission:purchases.view');
+
     // Sales Management
     Route::resource('sales', \App\Http\Controllers\Admin\SalesController::class)
         ->middleware('permission:sales.view');
@@ -250,6 +281,11 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     Route::post('/sales/{sale}/cancel', [\App\Http\Controllers\Admin\SalesController::class, 'cancel'])
         ->name('sales.cancel')
         ->middleware('permission:sales.cancel');
+
+    // Update sale with items (for single-page edit form)
+    Route::put('/sales/{sale}/update-items', [\App\Http\Controllers\Admin\SalesController::class, 'updateWithItems'])
+        ->name('sales.updateWithItems')
+        ->middleware('permission:sales.update');
 
     // Sale items
     Route::post('/sales/{sale}/items', [\App\Http\Controllers\Admin\SalesController::class, 'addItem'])
@@ -282,6 +318,58 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     Route::post('/sales/check-stock', [\App\Http\Controllers\Admin\SalesController::class, 'checkStock'])
         ->name('sales.checkStock')
         ->middleware('permission:sales.create');
+
+    // AJAX: Get warehouse products (for single-page create form)
+    Route::get('/sales/warehouse/{warehouse}/products', [\App\Http\Controllers\Admin\SalesController::class, 'getWarehouseProducts'])
+        ->name('sales.warehouseProducts')
+        ->middleware('permission:sales.create');
+
+    // Udhar Management (Credit/Outstanding)
+    Route::prefix('udhar')->name('udhar.')->middleware('permission:udhar.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\UdharController::class, 'index'])
+            ->name('index');
+        
+        Route::get('/{customer}', [\App\Http\Controllers\Admin\UdharController::class, 'details'])
+            ->name('details');
+        
+        Route::get('/{customer}/ledger', [\App\Http\Controllers\Admin\UdharController::class, 'ledger'])
+            ->name('ledger');
+        
+        Route::get('/{customer}/print', [\App\Http\Controllers\Admin\UdharController::class, 'printStatement'])
+            ->name('print');
+        
+        Route::get('/{customer}/history', [\App\Http\Controllers\Admin\UdharController::class, 'transactionHistory'])
+            ->name('transaction-history');
+        
+        Route::post('/{customer}/payment', [\App\Http\Controllers\Admin\UdharController::class, 'recordPayment'])
+            ->name('recordPayment')
+            ->middleware('permission:udhar.create');
+    });
+
+    // Payables Management (Supplier Outstanding)
+    Route::prefix('payables')->name('payables.')->middleware('permission:payables.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PayableController::class, 'index'])
+            ->name('index');
+        
+        Route::get('/aging', [\App\Http\Controllers\Admin\PayableController::class, 'aging'])
+            ->name('aging');
+        
+        Route::get('/{supplier}', [\App\Http\Controllers\Admin\PayableController::class, 'details'])
+            ->name('details');
+        
+        Route::get('/{supplier}/ledger', [\App\Http\Controllers\Admin\PayableController::class, 'ledger'])
+            ->name('ledger');
+        
+        Route::get('/{supplier}/print', [\App\Http\Controllers\Admin\PayableController::class, 'printStatement'])
+            ->name('print');
+        
+        Route::get('/{supplier}/history', [\App\Http\Controllers\Admin\PayableController::class, 'transactionHistory'])
+            ->name('transaction-history');
+        
+        Route::post('/{supplier}/payment', [\App\Http\Controllers\Admin\PayableController::class, 'recordPayment'])
+            ->name('recordPayment')
+            ->middleware('permission:payables.create');
+    });
 
     // Stock Transfer Management
     Route::resource('stock-transfers', \App\Http\Controllers\Admin\StockTransferController::class)
@@ -367,6 +455,50 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         });
     });
     */
+
+    // Welcome Page Management
+    Route::prefix('welcome-page')
+        ->name('welcome-page.')
+        ->middleware('permission:welcome-page.manage')
+        ->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\WelcomePageController::class, 'index'])
+                ->name('index');
+            
+            Route::post('/settings', [\App\Http\Controllers\Admin\WelcomePageController::class, 'updateSettings'])
+                ->name('settings.update');
+            
+            // Features
+            Route::post('/features', [\App\Http\Controllers\Admin\WelcomePageController::class, 'storeFeature'])
+                ->name('features.store');
+            
+            Route::put('/features/{feature}', [\App\Http\Controllers\Admin\WelcomePageController::class, 'updateFeature'])
+                ->name('features.update');
+            
+            Route::delete('/features/{feature}', [\App\Http\Controllers\Admin\WelcomePageController::class, 'destroyFeature'])
+                ->name('features.destroy');
+            
+            Route::post('/features/reorder', [\App\Http\Controllers\Admin\WelcomePageController::class, 'reorderFeatures'])
+                ->name('features.reorder');
+            
+            Route::patch('/features/{feature}/toggle', [\App\Http\Controllers\Admin\WelcomePageController::class, 'toggleFeature'])
+                ->name('features.toggle');
+            
+            // Workflow Steps
+            Route::post('/workflow-steps', [\App\Http\Controllers\Admin\WelcomePageController::class, 'storeWorkflowStep'])
+                ->name('workflow-steps.store');
+            
+            Route::put('/workflow-steps/{workflowStep}', [\App\Http\Controllers\Admin\WelcomePageController::class, 'updateWorkflowStep'])
+                ->name('workflow-steps.update');
+            
+            Route::delete('/workflow-steps/{workflowStep}', [\App\Http\Controllers\Admin\WelcomePageController::class, 'destroyWorkflowStep'])
+                ->name('workflow-steps.destroy');
+            
+            Route::post('/workflow-steps/reorder', [\App\Http\Controllers\Admin\WelcomePageController::class, 'reorderSteps'])
+                ->name('workflow-steps.reorder');
+            
+            Route::patch('/workflow-steps/{workflowStep}/toggle', [\App\Http\Controllers\Admin\WelcomePageController::class, 'toggleStep'])
+                ->name('workflow-steps.toggle');
+        });
 
     // Future module routes will be added here following this pattern:
     // Route::resource('dealers', DealerController::class);

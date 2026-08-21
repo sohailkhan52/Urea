@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property int $id
+ * @property int|null $warehouse_id
  * @property string $customer_type
  * @property string $name
  * @property string|null $father_name
@@ -55,6 +56,7 @@ class Customer extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'warehouse_id',
         'customer_type',
         'name',
         'father_name',
@@ -222,6 +224,30 @@ class Customer extends Model
     public function scopeRetailCustomers($query)
     {
         return $query->where('customer_type', self::TYPE_RETAIL_CUSTOMER);
+    }
+
+    /**
+     * Relationship: Get the warehouse this customer belongs to
+     */
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
+    /**
+     * Relationship: Get all sales for this customer
+     */
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
+    }
+
+    /**
+     * Relationship: Get all udhar history for this customer
+     */
+    public function udharHistory()
+    {
+        return $this->hasMany(UdharHistory::class);
     }
 
     /**

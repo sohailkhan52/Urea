@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -88,6 +87,14 @@ class User extends Authenticatable
     public function isSuspended(): bool
     {
         return $this->status === self::STATUS_SUSPENDED;
+    }
+
+    /**
+     * Scope: Get only active users
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', self::STATUS_ACTIVE);
     }
 
     /**
@@ -253,5 +260,168 @@ class User extends Authenticatable
         });
 
         $this->roles()->sync($roleIds);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Warehouse Relationships & Access Control
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Get the primary warehouse assigned to this user (if any)
+     * Used for non-super-admin users
+     */
+    public function warehouse(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
+    /**
+     * Get all warehouses this user has access to (with active assignments)
+     */
+    public function warehouses(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Warehouse::class, 'user_warehouse_assignments')
+            ->where('revoked_at', null)
+            ->withPivot('access_level', 'assigned_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get warehouses managed by this user
+     */
+    public function managedWarehouses(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Warehouse::class, 'manager_id');
+    }
+
+    /**
+     * Check if user has access to a specific warehouse
+     */
+    public function canAccessWarehouse(Warehouse|int $warehouse): bool
+    {
+        // Super admin can access all warehouses
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $warehouseId = $warehouse instanceof Warehouse ? $warehouse->id : $warehouse;
+
+        // Check if user has explicit warehouse assignment
+        return $this->warehouses()
+            ->where('warehouse_id', $warehouseId)
+            ->exists();
+    }
+
+    /**
+     * Get user's assigned warehouse for warehouse-specific operations
+     * Returns the primary warehouse if user is not a super admin
+     */
+    public function getAssignedWarehouse(): ?Warehouse
+    {
+        // Super admin has no single assigned warehouse
+        if ($this->isSuperAdmin()) {
+            return null;
+        }
+
+        // Return primary warehouse_id if set
+        if ($this->warehouse_id) {
+            return $this->warehouse;
+        }
+
+        // Fall back to first assigned warehouse
+        return $this->warehouses()->first();
+    }
+
+    /**
+     * Check if user is restricted to a single warehouse
+     */
+    public function isWarehouseRestricted(): bool
+    {
+        // Super admin is not restricted
+        if ($this->isSuperAdmin()) {
+            return false;
+        }
+
+        // Regular admin is restricted to their assigned warehouse
+        return true;
+    }
+
+    /**
+     * Assign user to a warehouse with specific access level
+     */
+    public function assignToWarehouse(Warehouse|int $warehouse, string $accessLevel = 'manage'): void
+    {
+        $warehouseId = $warehouse instanceof Warehouse ? $warehouse->id : $warehouse;
+        
+        $this->warehouses()->attach($warehouseId, [
+            'access_level' => $accessLevel,
+            'assigned_at' => now(),
+        ]);
+
+        // Also set as primary warehouse if not set
+        if (!$this->warehouse_id) {
+            $this->update(['warehouse_id' => $warehouseId]);
+        }
+    }
+
+    /**
+     * Remove user from a warehouse
+     */
+    public function removeFromWarehouse(Warehouse|int $warehouse): void
+    {
+        $warehouseId = $warehouse instanceof Warehouse ? $warehouse->id : $warehouse;
+        
+        $this->warehouses()->detach($warehouseId);
+
+        // If removing primary warehouse, clear it
+        if ($this->warehouse_id === $warehouseId) {
+            $this->update(['warehouse_id' => null]);
+        }
+    }
+
+    /**
+     * Get access level for a specific warehouse
+     */
+    public function getWarehouseAccessLevel(Warehouse|int $warehouse): ?string
+    {
+        $warehouseId = $warehouse instanceof Warehouse ? $warehouse->id : $warehouse;
+
+        $assignment = $this->warehouses()
+            ->where('warehouse_id', $warehouseId)
+            ->first();
+
+        return $assignment?->pivot->access_level;
+    }
+
+    /**
+     * Revoke all warehouse access
+     */
+    public function revokeAllWarehouseAccess(): void
+    {
+        $this->warehouses()->update(['revoked_at' => now()]);
+        $this->update(['warehouse_id' => null]);
+    }
+
+    /**
+     * Check if this is an admin for a warehouse
+     */
+    public function isWarehouseAdmin(Warehouse|int $warehouse = null): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return false;
+        }
+
+        if ($warehouse === null) {
+            // Check if user is admin for any warehouse
+            return $this->warehouses()->exists();
+        }
+
+        $warehouseId = $warehouse instanceof Warehouse ? $warehouse->id : $warehouse;
+        
+        return $this->warehouses()
+            ->where('warehouse_id', $warehouseId)
+            ->exists();
     }
 }

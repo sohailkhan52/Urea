@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\WarehouseScopeable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $id
  * @property string $invoice_number
  * @property int|null $customer_id
+ * @property string|null $walkin_customer_name
+ * @property string|null $walkin_customer_contact
  * @property int $warehouse_id
  * @property \Illuminate\Support\Carbon $sale_date
  * @property string $status
@@ -29,7 +32,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Sale extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, WarehouseScopeable;
 
     /**
      * Status constants
@@ -39,6 +42,13 @@ class Sale extends Model
     public const STATUS_CANCELLED = 'cancelled';
 
     /**
+     * Payment Status constants
+     */
+    public const PAYMENT_STATUS_UNPAID = 'unpaid';
+    public const PAYMENT_STATUS_PARTIAL = 'partial';
+    public const PAYMENT_STATUS_PAID = 'paid';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -46,6 +56,8 @@ class Sale extends Model
     protected $fillable = [
         'invoice_number',
         'customer_id',
+        'walkin_customer_name',
+        'walkin_customer_contact',
         'warehouse_id',
         'sale_date',
         'status',
@@ -54,6 +66,8 @@ class Sale extends Model
         'total_amount',
         'paid_amount',
         'due_amount',
+        'payment_status',
+        'udhar_amount',
         'notes',
         'confirmed_at',
         'cancelled_at',
@@ -80,6 +94,8 @@ class Sale extends Model
             'total_amount' => 'decimal:2',
             'paid_amount' => 'decimal:2',
             'due_amount' => 'decimal:2',
+            'udhar_amount' => 'decimal:2',
+            'payment_status' => 'string',
         ];
     }
 
@@ -105,6 +121,76 @@ class Sale extends Model
     public function isCancelled(): bool
     {
         return $this->status === self::STATUS_CANCELLED;
+    }
+
+    /**
+     * Get all payments for this sale
+     */
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get udhar history for this sale
+     */
+    public function udharHistory()
+    {
+        return $this->hasMany(UdharHistory::class);
+    }
+
+    /**
+     * Check if sale is fully paid
+     */
+    public function isPaid(): bool
+    {
+        return $this->paid_amount >= $this->total_amount;
+    }
+
+    /**
+     * Check if sale is partially paid
+     */
+    public function isPartiallyPaid(): bool
+    {
+        return $this->paid_amount > 0 && !$this->isPaid();
+    }
+
+    /**
+     * Check if sale is unpaid
+     */
+    public function isUnpaid(): bool
+    {
+        return $this->paid_amount == 0;
+    }
+
+    /**
+     * Check if sale has outstanding credit (Udhar)
+     */
+    public function hasUdhar(): bool
+    {
+        return $this->udhar_amount > 0;
+    }
+
+    /**
+     * Calculate payment status based on paid amount
+     */
+    public function calculatePaymentStatus(): string
+    {
+        if ($this->paid_amount == 0) {
+            return self::PAYMENT_STATUS_UNPAID;
+        } elseif ($this->paid_amount >= $this->total_amount) {
+            return self::PAYMENT_STATUS_PAID;
+        } else {
+            return self::PAYMENT_STATUS_PARTIAL;
+        }
+    }
+
+    /**
+     * Get remaining payable amount
+     */
+    public function getRemainingPayableAmount(): float
+    {
+        return max(0, $this->total_amount - $this->paid_amount);
     }
 
     /**
@@ -196,6 +282,22 @@ class Sale extends Model
     }
 
     /**
+     * Scope to filter by payment status
+     */
+    public function scopeByPaymentStatus($query, $status)
+    {
+        return $query->where('payment_status', $status);
+    }
+
+    /**
+     * Scope to filter sales with outstanding udhar
+     */
+    public function scopeWithOutstandingUdhar($query)
+    {
+        return $query->where('udhar_amount', '>', 0);
+    }
+
+    /**
      * Get total items count
      */
     public function getTotalItemsCountAttribute(): int
@@ -262,16 +364,16 @@ class Sale extends Model
     }
 
     /**
-     * Get payment status
+     * Get payment status label for display
      */
-    public function getPaymentStatusAttribute(): string
+    public function getPaymentStatusLabelAttribute(): string
     {
-        if ($this->paid_amount == 0) {
-            return 'Unpaid';
-        } elseif ($this->paid_amount >= $this->total_amount) {
-            return 'Paid';
-        } else {
-            return 'Partial';
-        }
+        $status = $this->getRawOriginal('payment_status') ?? $this->calculatePaymentStatus();
+        return match($status) {
+            self::PAYMENT_STATUS_PAID => 'Paid',
+            self::PAYMENT_STATUS_PARTIAL => 'Partial',
+            self::PAYMENT_STATUS_UNPAID => 'Unpaid',
+            default => ucfirst($status),
+        };
     }
 }

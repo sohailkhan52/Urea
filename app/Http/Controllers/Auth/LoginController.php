@@ -31,7 +31,8 @@ class LoginController extends Controller
         // Update last login timestamp
         Auth::user()->updateLastLogin();
 
-        return redirect()->intended(route('admin.dashboard'));
+        // Redirect to home page (welcome page with authenticated user view)
+        return redirect()->intended(route('home'));
     }
 
     /**
@@ -45,6 +46,6 @@ class LoginController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return redirect()->route('home');
     }
 }

@@ -63,19 +63,24 @@
                             {{-- Category --}}
                             <div class="col-md-6 mb-3">
                                 <label for="category_id" class="form-label">Category <span class="text-danger">*</span></label>
-                                <select class="form-select @error('category_id') is-invalid @enderror" 
-                                        id="category_id" 
-                                        name="category_id" 
-                                        required>
-                                    <option value="">Select Category</option>
-                                    @foreach($categories as $category)
-                                    <option value="{{ $category->id }}" {{ old('category_id', $product->category_id) == $category->id ? 'selected' : '' }}>
-                                        {{ $category->name }}
-                                    </option>
-                                    @endforeach
-                                </select>
+                                <div class="input-group">
+                                    <select class="form-select @error('category_id') is-invalid @enderror" 
+                                            id="category_id" 
+                                            name="category_id" 
+                                            required>
+                                        <option value="">Select Category</option>
+                                        @foreach($categories as $category)
+                                        <option value="{{ $category->id }}" {{ old('category_id', $product->category_id) == $category->id ? 'selected' : '' }}>
+                                            {{ $category->name }}
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addCategoryModal" title="Add New Category">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </button>
+                                </div>
                                 @error('category_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
@@ -367,6 +372,86 @@ document.getElementById('image').addEventListener('change', function(e) {
 document.getElementById('sku').addEventListener('input', function(e) {
     e.target.value = e.target.value.toUpperCase();
 });
+
+// Handle add category modal
+document.getElementById('addCategoryForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    try {
+        const response = await fetch('{{ route("admin.categories.store") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            
+            // Add new category to select
+            const categorySelect = document.getElementById('category_id');
+            const newOption = new Option(result.name, result.id, false, true);
+            categorySelect.add(newOption);
+            categorySelect.value = result.id;
+            
+            // Close modal and reset form
+            bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
+            this.reset();
+            
+            // Show success message
+            alert('Category added successfully!');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error adding category');
+    }
+});
 </script>
 @endpush
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addCategoryForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="new_category_name" class="form-label">Category Name <span class="text-danger">*</span></label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="new_category_name" 
+                               name="name"
+                               placeholder="e.g., Urea, DAP, NPK"
+                               required
+                               autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_category_description" class="form-label">Description</label>
+                        <textarea class="form-control" 
+                                  id="new_category_description" 
+                                  name="description"
+                                  rows="2"
+                                  placeholder="Enter description (optional)"></textarea>
+                    </div>
+                    <input type="hidden" name="status" value="active">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i> Add Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection

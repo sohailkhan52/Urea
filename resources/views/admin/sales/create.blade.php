@@ -47,6 +47,34 @@
                                 @enderror
                             </div>
 
+                            {{-- Walk-in Customer Name --}}
+                            <div class="col-md-6" id="walkin-name-field" style="display: none;">
+                                <label for="walkin_customer_name" class="form-label">Walk-in Customer Name</label>
+                                <input type="text" 
+                                       class="form-control @error('walkin_customer_name') is-invalid @enderror" 
+                                       id="walkin_customer_name" 
+                                       name="walkin_customer_name" 
+                                       value="{{ old('walkin_customer_name') }}"
+                                       placeholder="Enter customer name (optional)">
+                                @error('walkin_customer_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Walk-in Customer Contact --}}
+                            <div class="col-md-6" id="walkin-contact-field" style="display: none;">
+                                <label for="walkin_customer_contact" class="form-label">Walk-in Customer Contact</label>
+                                <input type="text" 
+                                       class="form-control @error('walkin_customer_contact') is-invalid @enderror" 
+                                       id="walkin_customer_contact" 
+                                       name="walkin_customer_contact" 
+                                       value="{{ old('walkin_customer_contact') }}"
+                                       placeholder="Enter phone/contact (optional)">
+                                @error('walkin_customer_contact')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
                             {{-- Warehouse --}}
                             <div class="col-md-6">
                                 <label for="warehouse_id" class="form-label">Warehouse <span class="text-danger">*</span></label>
@@ -74,6 +102,7 @@
                                        id="sale_date" 
                                        name="sale_date" 
                                        value="{{ old('sale_date', date('Y-m-d')) }}"
+                                       min="{{ date('Y-m-d') }}"
                                        required>
                                 @error('sale_date')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -167,3 +196,34 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const customerSelect = document.getElementById('customer_id');
+    const walkinNameField = document.getElementById('walkin-name-field');
+    const walkinContactField = document.getElementById('walkin-contact-field');
+    
+    function toggleWalkinFields() {
+        if (customerSelect.value === '') {
+            // Show walk-in customer fields
+            walkinNameField.style.display = 'block';
+            walkinContactField.style.display = 'block';
+        } else {
+            // Hide walk-in customer fields
+            walkinNameField.style.display = 'none';
+            walkinContactField.style.display = 'none';
+            // Clear the values
+            document.getElementById('walkin_customer_name').value = '';
+            document.getElementById('walkin_customer_contact').value = '';
+        }
+    }
+    
+    // Toggle on page load
+    toggleWalkinFields();
+    
+    // Toggle when customer selection changes
+    customerSelect.addEventListener('change', toggleWalkinFields);
+});
+</script>
+@endpush

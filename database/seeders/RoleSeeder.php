@@ -38,7 +38,9 @@ class RoleSeeder extends Seeder
                     'purchases.view', 'purchases.create', 'purchases.update', 'purchases.approve', 'purchases.cancel',
                     'sales.view', 'sales.create', 'sales.update', 'sales.approve', 'sales.cancel',
                     'transfers.view', 'transfers.create', 'transfers.approve', 'transfers.receive',
+                    'udhar.view', 'udhar.create', 'udhar.export',
                     'reports.view',
+                    'welcome-page.manage',
                 ],
             ],
         ];

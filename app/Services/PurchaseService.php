@@ -4,10 +4,12 @@ namespace App\Services;
 
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use App\Models\PurchasePayment;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Services\PayableHistoryService;
 
 /**
  * Purchase Service - Handles purchase operations and inventory integration
@@ -21,10 +23,12 @@ use Illuminate\Support\Facades\Log;
 class PurchaseService
 {
     protected StockService $stockService;
+    protected PayableHistoryService $historyService;
 
-    public function __construct(StockService $stockService)
+    public function __construct(StockService $stockService, PayableHistoryService $historyService)
     {
         $this->stockService = $stockService;
+        $this->historyService = $historyService;
     }
 
     /**
@@ -210,13 +214,13 @@ class PurchaseService
      * @return Purchase
      * @throws \Exception
      */
-    public function confirmPurchase(Purchase $purchase): Purchase
+    public function confirmPurchase(Purchase $purchase, float $amountPaid = 0): Purchase
     {
         if (!$purchase->canBeConfirmed()) {
             throw new \Exception("This purchase cannot be confirmed. It must be in draft status and have items.");
         }
 
-        return DB::transaction(function () use ($purchase) {
+        return DB::transaction(function () use ($purchase, $amountPaid) {
             // Add stock for each item
             foreach ($purchase->items as $item) {
                 try {
@@ -241,21 +245,79 @@ class PurchaseService
                 }
             }
 
-            // Update purchase status
+            // Update paid amount based on input
+            $purchase->update(['paid_amount' => $amountPaid]);
+
+            // Calculate outstanding payable and payment status
+            $payableAmount = $purchase->total_amount - $amountPaid;
+
+            if ($amountPaid >= $purchase->total_amount) {
+                $paymentStatus = Purchase::PAYMENT_STATUS_PAID;
+            } elseif ($amountPaid == 0) {
+                $paymentStatus = Purchase::PAYMENT_STATUS_UNPAID;
+            } else {
+                $paymentStatus = Purchase::PAYMENT_STATUS_PARTIAL;
+            }
+
+            // Create payment record if amount paid is greater than 0
+            if ($amountPaid > 0) {
+                try {
+                    PurchasePayment::create([
+                        'payment_number' => 'PP-' . date('YmdHis') . '-' . $purchase->id,
+                        'supplier_id' => $purchase->supplier_id,
+                        'purchase_id' => $purchase->id,
+                        'amount' => $amountPaid,
+                        'payment_method' => PurchasePayment::METHOD_OTHER,
+                        'payment_date' => now(),
+                        'notes' => "Payment recorded during purchase confirmation (PO #{$purchase->purchase_number})",
+                        'recorded_by' => Auth::id(),
+                    ]);
+
+                    Log::info('Purchase payment recorded', [
+                        'purchase_id' => $purchase->id,
+                        'amount' => $amountPaid,
+                        'recorded_by' => Auth::id(),
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create purchase payment', [
+                        'purchase_id' => $purchase->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw new \Exception("Failed to record payment: {$e->getMessage()}");
+                }
+            }
+
+            // Update purchase status to CONFIRMED
             $purchase->update([
                 'status' => Purchase::STATUS_CONFIRMED,
+                'payment_status' => $paymentStatus,
                 'confirmed_at' => now(),
                 'confirmed_by' => Auth::id(),
             ]);
+
+            // Create initial ledger entry for this purchase
+            $this->createSupplierLedgerEntry($purchase);
+
+            // Record purchase creation in payable history
+            $this->historyService->recordPurchaseCreated($purchase, Auth::id());
 
             Log::warning('Purchase confirmed', [
                 'purchase_id' => $purchase->id,
                 'purchase_number' => $purchase->purchase_number,
                 'confirmed_by' => Auth::id(),
                 'total_items' => $purchase->items()->count(),
+                'total_amount' => $purchase->total_amount,
+                'paid_amount' => $amountPaid,
+                'payable_amount' => $payableAmount,
+                'payment_status' => $paymentStatus,
             ]);
 
-            return $purchase->refresh();
+            $purchase->refresh();
+            
+            // Dispatch PurchaseConfirmed event to trigger notifications
+            \App\Events\PurchaseConfirmed::dispatch($purchase);
+
+            return $purchase;
         });
     }
 
@@ -278,23 +340,69 @@ class PurchaseService
             throw new \Exception("This purchase cannot be cancelled.");
         }
 
-        // If already confirmed, we need to reverse stock movements (future enhancement)
-        if ($purchase->isConfirmed()) {
-            throw new \Exception("Cannot cancel confirmed purchases. This requires stock reversal (not yet implemented).");
-        }
-
         return DB::transaction(function () use ($purchase, $reason) {
+            // If confirmed, we need to reverse stock movements
+            if ($purchase->isConfirmed()) {
+                try {
+                    // Find all stock movements related to this purchase
+                    $stockMovements = StockMovement::where('reference_type', Purchase::class)
+                        ->where('reference_id', $purchase->id)
+                        ->where('type', StockMovement::TYPE_PURCHASE)
+                        ->get();
+
+                    // Reverse each stock movement
+                    foreach ($stockMovements as $movement) {
+                        try {
+                            $this->stockService->removeStock(
+                                warehouseId: $movement->warehouse_id,
+                                productId: $movement->product_id,
+                                quantity: $movement->quantity_in, // Reverse the quantity that was added
+                                type: StockMovement::TYPE_SUPPLIER_RETURN,
+                                referenceType: Purchase::class,
+                                referenceId: $purchase->id,
+                                unitCost: $movement->unit_cost,
+                                remarks: "Stock reversal - Purchase Order #{$purchase->purchase_number} cancelled. Original reason: {$reason}",
+                                userId: Auth::id()
+                            );
+                        } catch (\Exception $e) {
+                            Log::error('Stock reversal failed for movement', [
+                                'movement_id' => $movement->id,
+                                'purchase_id' => $purchase->id,
+                                'error' => $e->getMessage(),
+                            ]);
+                            throw new \Exception("Failed to reverse stock for {$movement->product->name}: {$e->getMessage()}");
+                        }
+                    }
+
+                    Log::info('Stock movements reversed for cancelled purchase', [
+                        'purchase_id' => $purchase->id,
+                        'movements_count' => $stockMovements->count(),
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Stock reversal process failed', [
+                        'purchase_id' => $purchase->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw new \Exception("Stock reversal failed: {$e->getMessage()}");
+                }
+            }
+
+            // Update purchase status
             $purchase->update([
                 'status' => Purchase::STATUS_CANCELLED,
                 'cancelled_at' => now(),
                 'notes' => ($purchase->notes ? $purchase->notes . "\n" : "") . "Cancelled: " . $reason,
             ]);
 
+            // Record purchase cancellation in payable history
+            $this->historyService->recordPurchaseCancelled($purchase, $reason, Auth::id());
+
             Log::warning('Purchase cancelled', [
                 'purchase_id' => $purchase->id,
                 'purchase_number' => $purchase->purchase_number,
                 'cancelled_by' => Auth::id(),
                 'reason' => $reason,
+                'was_confirmed' => $purchase->isConfirmed(),
             ]);
 
             return $purchase;
@@ -331,9 +439,40 @@ class PurchaseService
     protected function generatePurchaseNumber(): string
     {
         $year = now()->year;
-        $count = Purchase::whereYear('created_at', $year)->count() + 1;
         
-        return sprintf('PO-%d-%05d', $year, $count);
+        // Use pessimistic locking to prevent race conditions
+        $sequence = DB::table('purchase_sequences')
+            ->where('year', $year)
+            ->lockForUpdate()
+            ->first();
+        
+        if (!$sequence) {
+            // If sequence doesn't exist, create it
+            DB::table('purchase_sequences')->insert([
+                'year' => $year,
+                'next_number' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $nextNumber = 1;
+        } else {
+            $nextNumber = $sequence->next_number;
+        }
+        
+        // Ensure we never exceed 99999
+        if ($nextNumber > 99999) {
+            throw new \Exception("Purchase number limit exceeded for year {$year}");
+        }
+        
+        // Increment the sequence for next time
+        DB::table('purchase_sequences')
+            ->where('year', $year)
+            ->update([
+                'next_number' => $nextNumber + 1,
+                'updated_at' => now(),
+            ]);
+        
+        return sprintf('PO-%d-%05d', $year, $nextNumber);
     }
 
     /**
@@ -356,5 +495,56 @@ class PurchaseService
             'balance' => $purchase->balance,
             'payment_status' => $purchase->payment_status,
         ];
+    }
+
+    /**
+     * Calculate payment status based on paid vs total
+     * 
+     * @param Purchase $purchase
+     * @return string
+     */
+    private function calculatePaymentStatus(Purchase $purchase): string
+    {
+        if ($purchase->paid_amount == 0) {
+            return Purchase::PAYMENT_STATUS_UNPAID;
+        } elseif ($purchase->paid_amount >= $purchase->total_amount) {
+            return Purchase::PAYMENT_STATUS_PAID;
+        } else {
+            return Purchase::PAYMENT_STATUS_PARTIAL;
+        }
+    }
+
+    /**
+     * Create initial supplier ledger entry when purchase is confirmed
+     * 
+     * @param Purchase $purchase
+     * @throws \Exception
+     */
+    private function createSupplierLedgerEntry(Purchase $purchase): void
+    {
+        $suppLedgerModel = \App\Models\SupplierLedger::class;
+        
+        // Get previous balance for this supplier
+        $previousEntry = $suppLedgerModel::where('supplier_id', $purchase->supplier_id)
+            ->orderBy('date', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $previousBalance = $previousEntry ? $previousEntry->balance : 0;
+        $payableAmount = $purchase->total_amount - $purchase->paid_amount;
+        $newBalance = $previousBalance + $payableAmount;
+
+        $suppLedgerModel::create([
+            'supplier_id' => $purchase->supplier_id,
+            'type' => $suppLedgerModel::TYPE_PURCHASE,
+            'purchase_id' => $purchase->id,
+            'payable_added' => $payableAmount,
+            'payment_made' => $purchase->paid_amount,
+            'balance' => $newBalance,
+            'description' => "Purchase {$purchase->purchase_number} - Rs. " . number_format($payableAmount, 2) . " payable",
+            'reference_number' => $purchase->purchase_number,
+            'date' => $purchase->purchase_date,
+            'created_by' => Auth::id(),
+        ]);
     }
 }

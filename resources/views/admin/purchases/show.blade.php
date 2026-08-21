@@ -16,6 +16,14 @@
                 </nav>
             </div>
             <div class="btn-group">
+                @can('purchases.view')
+                <a href="{{ route('admin.purchases.print', $purchase) }}" 
+                   class="btn btn-primary" 
+                   target="_blank"
+                   title="Print Purchase Order">
+                    <i class="bi bi-printer me-1"></i> Print
+                </a>
+                @endcan
                 @if($purchase->isDraft())
                     @can('purchases.update')
                     <a href="{{ route('admin.purchases.edit', $purchase) }}" class="btn btn-warning">
@@ -222,7 +230,7 @@
                         </div>
                         <div class="d-flex justify-content-between">
                             <small class="text-muted">Balance Due</small>
-                            <strong class="text-warning">{{ number_format($purchase->balance, 2) }}</strong>
+                            <strong class="text-warning">{{ number_format($purchase->payable_amount, 2) }}</strong>
                         </div>
                     </div>
 

@@ -139,73 +139,28 @@
                                         </a>
                                         @endcan
                                     @endif
-                                </div>
 
-                                {{-- Action Dropdown --}}
-                                @if(!$transfer->isReceived() && !$transfer->isCancelled())
-                                <div class="btn-group btn-group-sm ms-1" role="group">
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary dropdown-toggle" 
-                                            data-bs-toggle="dropdown" 
-                                            aria-expanded="false">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        @if($transfer->isDraft() && $transfer->canBeSubmitted())
-                                            @can('transfers.create')
-                                            <li>
-                                                <form action="{{ route('admin.stock-transfers.submit', $transfer) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="dropdown-item"
-                                                            onclick="return confirm('Submit for approval?');">
-                                                        <i class="bi bi-check-circle me-1"></i> Submit for Approval
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                        
-                                        @if($transfer->isPendingApproval() && $transfer->canBeApproved())
-                                            @can('transfers.approve')
-                                            <li>
-                                                <form action="{{ route('admin.stock-transfers.approve', $transfer) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="dropdown-item text-success"
-                                                            onclick="return confirm('Approve this transfer?');">
-                                                        <i class="bi bi-check2-circle me-1"></i> Approve
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                        
-                                        @if($transfer->isApproved() && $transfer->canBeDispatched())
-                                            @can('transfers.approve')
-                                            <li>
-                                                <form action="{{ route('admin.stock-transfers.dispatch', $transfer) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="dropdown-item"
-                                                            onclick="return confirm('Dispatch transfer? Stock will be reduced from source warehouse.');">
-                                                        <i class="bi bi-box-seam me-1"></i> Dispatch
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                        
-                                        @if($transfer->canBeCancelled())
-                                            @can('transfers.create')
-                                            <li>
-                                                <button type="button" 
-                                                        class="dropdown-item text-danger"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#cancelModal{{ $transfer->id }}">
-                                                    <i class="bi bi-x-circle me-1"></i> Cancel
-                                                </button>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                    </ul>
+                                    @can('transfers.create')
+                                    <form action="{{ route('admin.stock-transfers.destroy', $transfer) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this transfer? This action cannot be undone.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    @endcan
+
+                                    @if($transfer->canBeCancelled())
+                                        @can('transfers.create')
+                                        <button type="button" 
+                                                class="btn btn-sm btn-warning" 
+                                                title="Cancel"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#cancelModal{{ $transfer->id }}">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                        @endcan
+                                    @endif
                                 </div>
 
                                 {{-- Cancel Modal --}}
@@ -239,7 +194,6 @@
                                     </div>
                                 </div>
                                 @endcan
-                                @endif
                             </td>
                         </tr>
                         @endforeach

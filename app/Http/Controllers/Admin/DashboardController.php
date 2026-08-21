@@ -42,6 +42,12 @@ class DashboardController extends Controller
         $salesSummary = $this->dashboardService->getSalesSummary();
         $purchaseSummary = $this->dashboardService->getPurchaseSummary();
         
+        // Management counts
+        $totalSales = $this->dashboardService->getTotalSalesCount();
+        $totalPurchases = $this->dashboardService->getTotalPurchasesCount();
+        $totalUdhar = $this->dashboardService->getTotalUdharAmount();
+        $totalPayables = $this->dashboardService->getTotalPayablesAmount();
+        
         // Charts data
         $dailySalesData = $this->dashboardService->getDailySalesData();
         $monthlySalesData = $this->dashboardService->getMonthlySalesData();
@@ -65,6 +71,12 @@ class DashboardController extends Controller
             'financialSummary' => $financialSummary,
             'salesSummary' => $salesSummary,
             'purchaseSummary' => $purchaseSummary,
+            
+            // Management counts
+            'totalSales' => $totalSales,
+            'totalPurchases' => $totalPurchases,
+            'totalUdhar' => $totalUdhar,
+            'totalPayables' => $totalPayables,
             
             // Charts
             'dailySalesData' => json_encode($dailySalesData),

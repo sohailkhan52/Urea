@@ -75,6 +75,7 @@
                                        id="transfer_date" 
                                        name="transfer_date" 
                                        value="{{ old('transfer_date', date('Y-m-d')) }}"
+                                       min="{{ date('Y-m-d') }}"
                                        required>
                                 @error('transfer_date')
                                 <div class="invalid-feedback">{{ $message }}</div>

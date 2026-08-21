@@ -22,6 +22,11 @@ class CompanyController extends Controller
     {
         $this->authorize('companies.view');
 
+        // Only super admin can manage companies
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can manage companies.');
+        }
+
         $query = Company::query();
 
         // Search
@@ -29,10 +34,10 @@ class CompanyController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhere('contact_person', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('contact_person', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 

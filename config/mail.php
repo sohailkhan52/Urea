@@ -115,4 +115,16 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Email Address
+    |--------------------------------------------------------------------------
+    |
+    | The email address where admin notifications will be sent.
+    | This is used for system notifications, sales alerts, payments, etc.
+    |
+    */
+
+    'admin_email' => env('ADMIN_EMAIL', 'admin@example.com'),
+
 ];

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\StockTransferScopeable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StockTransfer extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, StockTransferScopeable;
 
     // Status constants
     public const STATUS_DRAFT = 'draft';
@@ -157,6 +158,19 @@ class StockTransfer extends Model
     public function isCancelled(): bool
     {
         return $this->status === self::STATUS_CANCELLED;
+    }
+
+    /**
+     * Check if transfer is confirmed (approved or beyond)
+     */
+    public function isConfirmed(): bool
+    {
+        return in_array($this->status, [
+            self::STATUS_APPROVED,
+            self::STATUS_DISPATCHED,
+            self::STATUS_IN_TRANSIT,
+            self::STATUS_RECEIVED,
+        ]);
     }
 
     /**

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreSaleWithItemsRequest;
+use App\Http\Requests\Admin\UpdateSaleRequest;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
@@ -32,16 +34,20 @@ class SalesController extends Controller
     {
         $this->authorize('sales.view');
 
+        $user = auth()->user();
         $query = Sale::with(['customer', 'warehouse', 'creator']);
+
+        // Apply warehouse-level filtering automatically
+        $query = $query->forUserWarehouses($user);
 
         // Search by invoice number or customer name
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('invoice_number', 'like', "%{$search}%")
-                  ->orWhereHas('customer', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('customer', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -50,9 +56,13 @@ class SalesController extends Controller
             $query->where('customer_id', $request->customer_id);
         }
 
-        // Filter by warehouse
+        // Filter by warehouse - only if user has access
         if ($request->filled('warehouse_id')) {
-            $query->where('warehouse_id', $request->warehouse_id);
+            if ($user->canAccessWarehouse($request->warehouse_id)) {
+                $query->where('warehouse_id', $request->warehouse_id);
+            } else {
+                abort(403, 'You do not have access to this warehouse.');
+            }
         }
 
         // Filter by status
@@ -81,8 +91,23 @@ class SalesController extends Controller
 
         $sales = $query->latest()->paginate(15)->withQueryString();
 
-        $customers = Customer::active()->orderBy('name')->get();
-        $warehouses = Warehouse::active()->orderBy('name')->get();
+        // Get warehouses the user can see
+        $warehouses = $user->isSuperAdmin()
+            ? Warehouse::active()->orderBy('name')->get()
+            : $user->warehouses()->where('status', 'active')->orderBy('name')->get();
+
+        // Get customers - filter by warehouse for non-super-admins
+        if ($user->isSuperAdmin()) {
+            $customers = Customer::active()->orderBy('name')->get();
+        } else {
+            $userWarehouses = $user->warehouses()
+                ->select('warehouses.id')
+                ->pluck('warehouses.id');
+            $customers = Customer::active()
+                ->whereIn('warehouse_id', $userWarehouses)
+                ->orderBy('name')
+                ->get();
+        }
 
         return view('admin.sales.index', compact('sales', 'customers', 'warehouses'));
     }
@@ -94,39 +119,89 @@ class SalesController extends Controller
     {
         $this->authorize('sales.create');
 
-        $customers = Customer::active()->orderBy('name')->get();
-        $warehouses = Warehouse::active()->orderBy('name')->get();
+        $user = auth()->user();
+        
+        if ($user->isSuperAdmin()) {
+            $warehouses = Warehouse::active()->orderBy('name')->get();
+            $defaultWarehouse = Warehouse::getDefault();
+            // Super admin can see all customers
+            $customers = Customer::active()->orderBy('name')->get();
+        } else {
+            // Regular admin can only create sales for their assigned warehouse
+            $warehouses = $user->warehouses()->where('status', 'active')->orderBy('name')->get();
+            $defaultWarehouse = $user->getAssignedWarehouse();
+            
+            if ($warehouses->isEmpty()) {
+                abort(403, 'You do not have any warehouse assigned.');
+            }
+            
+            // Regular admin can only see customers from their assigned warehouse
+            $customers = Customer::active()
+                ->where('warehouse_id', $defaultWarehouse->id)
+                ->orderBy('name')
+                ->get();
+        }
+        
         $products = Product::active()->orderBy('name')->get();
 
-        return view('admin.sales.create', compact('customers', 'warehouses', 'products'));
+        return view('admin.sales.create-singlepage', compact('customers', 'warehouses', 'products', 'defaultWarehouse'));
     }
 
     /**
      * Store a newly created sale in storage.
+     * Now supports multi-item creation in a single form submission.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreSaleWithItemsRequest $request): RedirectResponse
     {
         $this->authorize('sales.create');
 
-        $request->validate([
-            'customer_id' => 'nullable|exists:customers,id',
-            'warehouse_id' => 'required|exists:warehouses,id',
-            'sale_date' => 'required|date',
-            'notes' => 'nullable|string|max:1000',
-        ]);
+        $user = auth()->user();
+
+        // Verify user has access to the selected warehouse
+        if (!$user->canAccessWarehouse($request->warehouse_id)) {
+            abort(403, 'You do not have permission to create sales in this warehouse.');
+        }
 
         try {
+            // Parse items from JSON
+            $items = $request->getItems();
+
+            if (empty($items)) {
+                return back()->withErrors(['items' => 'At least one product item is required.']);
+            }
+
+            // Create the sale as draft
             $sale = $this->salesService->createSale([
                 'customer_id' => $request->customer_id,
+                'walkin_customer_name' => $request->walkin_customer_name,
+                'walkin_customer_contact' => $request->walkin_customer_contact,
                 'warehouse_id' => $request->warehouse_id,
                 'sale_date' => $request->sale_date,
                 'notes' => $request->notes,
+                'discount' => $request->discount ?? 0,
             ]);
 
-            return redirect()->route('admin.sales.edit', $sale)
-                ->with('success', 'Sale created successfully. Add items below.');
+            // Add all items to the sale
+            foreach ($items as $item) {
+                $this->salesService->addItem(
+                    $sale,
+                    (int) $item['product_id'],
+                    (float) $item['quantity'],
+                    (float) $item['unit_price'],
+                    (float) ($item['discount'] ?? 0)
+                );
+            }
+
+            // Confirm the sale and reduce stock
+            $this->salesService->confirmSale($sale, 0);
+
+            return redirect()->route('admin.sales.show', $sale)
+                ->with('success', 'Sale created and confirmed successfully. Stock has been reduced.');
+
         } catch (\Exception $e) {
-            return back()->with('error', 'Error creating sale: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Error creating sale: ' . $e->getMessage());
         }
     }
 
@@ -136,6 +211,11 @@ class SalesController extends Controller
     public function show(Sale $sale): View
     {
         $this->authorize('sales.view');
+
+        // Verify user has access to this sale's warehouse
+        if (!auth()->user()->canAccessWarehouse($sale->warehouse_id)) {
+            abort(403, 'You do not have permission to view this sale.');
+        }
 
         $sale->load(['customer', 'warehouse', 'items.product', 'creator', 'confirmer']);
 
@@ -151,6 +231,11 @@ class SalesController extends Controller
     {
         $this->authorize('sales.update');
 
+        // Verify user has access to this sale's warehouse
+        if (!auth()->user()->canAccessWarehouse($sale->warehouse_id)) {
+            abort(403, 'You do not have permission to edit this sale.');
+        }
+
         if (!$sale->canBeEdited()) {
             abort(403, 'Only draft sales can be edited.');
         }
@@ -158,30 +243,174 @@ class SalesController extends Controller
         $sale->load(['customer', 'warehouse', 'items.product']);
 
         $customers = Customer::active()->orderBy('name')->get();
-        $warehouses = Warehouse::active()->orderBy('name')->get();
+        $user = auth()->user();
+        $warehouses = $user->isSuperAdmin()
+            ? Warehouse::active()->orderBy('name')->get()
+            : $user->warehouses()->where('status', 'active')->orderBy('name')->get();
         $products = Product::active()->orderBy('name')->get();
 
         $summary = $this->salesService->getSaleSummary($sale);
+        $stockService = $this->stockService;
 
-        return view('admin.sales.edit', compact('sale', 'customers', 'warehouses', 'products', 'summary'));
+        return view('admin.sales.edit', compact('sale', 'customers', 'warehouses', 'products', 'summary', 'stockService'));
+    }
+
+    /**
+     * Update sale details (customer, date, notes).
+     */
+    public function update(Sale $sale, UpdateSaleRequest $request): RedirectResponse
+    {
+        $this->authorize('sales.update');
+
+        if (!$sale->isDraft()) {
+            return back()->with('error', 'Only draft sales can be updated.');
+        }
+
+        try {
+            $sale->update($request->only(['customer_id', 'walkin_customer_name', 'walkin_customer_contact', 'sale_date', 'notes']));
+
+            return back()->with('success', 'Sale updated successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error updating sale: ' . $e->getMessage());
+        }
+    }
+
+    public function updateWithItems(Sale $sale, StoreSaleWithItemsRequest $request): RedirectResponse
+    {
+        $this->authorize('sales.update');
+
+        if (!$sale->isDraft()) {
+            return back()->with('error', 'Only draft sales can be updated.');
+        }
+
+        try {
+            // Determine the action: 'update' or 'confirm'
+            $action = $request->input('action', 'update');
+            $isConfirm = $action === 'confirm';
+
+            // Parse items from JSON
+            $items = $request->getItems();
+
+            if (empty($items)) {
+                return back()->withErrors(['items' => 'At least one product item is required.']);
+            }
+
+            // Update sale header
+            $sale->update([
+                'customer_id' => $request->customer_id,
+                'walkin_customer_name' => $request->walkin_customer_name,
+                'walkin_customer_contact' => $request->walkin_customer_contact,
+                'sale_date' => $request->sale_date,
+                'notes' => $request->notes,
+                'discount' => $request->discount ?? 0,
+            ]);
+
+            // Remove all existing items
+            $sale->items()->delete();
+
+            // Add all items to the sale
+            foreach ($items as $item) {
+                $this->salesService->addItem(
+                    $sale,
+                    (int) $item['product_id'],
+                    (float) $item['quantity'],
+                    (float) $item['unit_price'],
+                    (float) ($item['discount'] ?? 0)
+                );
+            }
+
+            // If action is 'confirm', confirm the sale immediately
+            if ($isConfirm) {
+                $this->salesService->confirmSale($sale);
+
+                return redirect()->route('admin.sales.show', $sale)
+                    ->with('success', 'Sale updated and confirmed successfully. Stock has been reduced.');
+            }
+
+            // Otherwise, stay on edit (draft state)
+            return back()->with('success', 'Sale updated successfully.');
+
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->with('error', 'Error updating sale: ' . $e->getMessage());
+        }
     }
 
     /**
      * Confirm sale and reduce stock.
+     * Also handles payment recording (full, partial, or credit sale).
      */
-    public function confirm(Sale $sale): RedirectResponse
+    public function confirm(Sale $sale, Request $request): RedirectResponse
     {
         $this->authorize('sales.approve');
+
+        // Verify user has access to this sale's warehouse
+        if (!auth()->user()->canAccessWarehouse($sale->warehouse_id)) {
+            abort(403, 'You do not have permission to confirm this sale.');
+        }
+
+        $request->validate([
+            'paid_amount' => 'nullable|numeric|min:0|max:' . $sale->total_amount,
+            'payment_method' => 'nullable|in:' . implode(',', array_keys(\App\Models\Payment::$methods)),
+            'reference_number' => 'nullable|string|max:100',
+            'payment_notes' => 'nullable|string|max:500',
+        ]);
 
         if (!$sale->canBeConfirmed()) {
             return back()->with('error', 'This sale cannot be confirmed.');
         }
 
         try {
+            $paidAmount = (float) ($request->paid_amount ?? 0);
+            
+            // Step 1: Confirm sale (creates stock movements, sets payment status to unpaid)
             $this->salesService->confirmSale($sale);
+            
+            // Step 2: If payment amount > 0, record the payment separately
+            if ($paidAmount > 0) {
+                try {
+                    $paymentService = app(\App\Services\PaymentService::class);
+                    $paymentService->recordPayment(
+                        saleId: $sale->id,
+                        amount: $paidAmount,
+                        paymentMethod: $request->payment_method ?? \App\Models\Payment::METHOD_CASH,
+                        paymentDate: now()->toDateString(),
+                        referenceNumber: $request->reference_number,
+                        notes: $request->payment_notes
+                    );
+                } catch (\Exception $paymentError) {
+                    \Illuminate\Support\Facades\Log::error('Payment recording failed after sale confirmation', [
+                        'sale_id' => $sale->id,
+                        'paid_amount' => $paidAmount,
+                        'error' => $paymentError->getMessage(),
+                    ]);
+                    
+                    $sale->refresh();
+                    
+                    return redirect()->route('admin.sales.show', $sale)
+                        ->with('error', 'Sale was confirmed but payment recording failed: ' . $paymentError->getMessage() . 
+                                '. Please record the payment manually from the sales details page.');
+                }
+            }
 
-            return redirect()->route('admin.sales.show', $sale)
-                ->with('success', 'Sale confirmed successfully! Stock has been reduced from warehouse.');
+            $sale->refresh();
+
+            $message = match($sale->payment_status) {
+                \App\Models\Sale::PAYMENT_STATUS_PAID => 
+                    "Sale confirmed successfully with full payment of Rs. " . 
+                    number_format($sale->paid_amount, 2) . ". Stock has been reduced.",
+                \App\Models\Sale::PAYMENT_STATUS_PARTIAL => 
+                    "Sale confirmed with partial payment of Rs. " . 
+                    number_format($sale->paid_amount, 2) . ". Outstanding balance: Rs. " . 
+                    number_format($sale->due_amount, 2),
+                \App\Models\Sale::PAYMENT_STATUS_UNPAID => 
+                    "Sale confirmed as credit (Udhar). Total amount: Rs. " . 
+                    number_format($sale->total_amount, 2),
+                default => "Sale confirmed successfully!"
+            };
+
+            return redirect()->route('admin.sales.show', $sale)->with('success', $message);
         } catch (\Exception $e) {
             return back()->with('error', 'Error confirming sale: ' . $e->getMessage());
         }
@@ -194,6 +423,11 @@ class SalesController extends Controller
     {
         $this->authorize('sales.cancel');
 
+        // Verify user has access to this sale's warehouse
+        if (!auth()->user()->canAccessWarehouse($sale->warehouse_id)) {
+            abort(403, 'You do not have permission to cancel this sale.');
+        }
+
         $request->validate([
             'reason' => 'nullable|string|max:500',
         ]);
@@ -205,6 +439,28 @@ class SalesController extends Controller
                 ->with('success', 'Sale cancelled successfully.');
         } catch (\Exception $e) {
             return back()->with('error', 'Error cancelling sale: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete sale permanently.
+     */
+    public function destroy(Sale $sale): RedirectResponse
+    {
+        $this->authorize('sales.delete');
+
+        // Verify user has access to this sale's warehouse
+        if (!auth()->user()->canAccessWarehouse($sale->warehouse_id)) {
+            abort(403, 'You do not have permission to delete this sale.');
+        }
+
+        try {
+            $sale->delete();
+
+            return redirect()->route('admin.sales.index')
+                ->with('success', 'Sale deleted successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error deleting sale: ' . $e->getMessage());
         }
     }
 
@@ -223,6 +479,16 @@ class SalesController extends Controller
         ]);
 
         try {
+            // Check if product has stock in the selected warehouse
+            $availableStock = $this->stockService->getCurrentStock(
+                $sale->warehouse_id,
+                $request->product_id
+            );
+
+            if ($availableStock <= 0) {
+                return back()->with('error', 'This product is out of stock in the selected warehouse.');
+            }
+
             $this->salesService->addItem(
                 $sale,
                 $request->product_id,
@@ -305,18 +571,41 @@ class SalesController extends Controller
      */
     public function recordPayment(Sale $sale, Request $request): RedirectResponse
     {
+        \Log::info('Payment recording started', ['sale_id' => $sale->id, 'user_id' => auth()->id(), 'request_data' => $request->all()]);
+        
         $this->authorize('sales.approve');
 
-        $request->validate([
-            'amount' => 'required|numeric|min:0.01|max:' . $sale->due_amount,
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01|max:999999.99',
         ]);
 
-        try {
-            $this->salesService->recordPayment($sale, $request->amount);
+        // Verify amount doesn't exceed due amount
+        $amount = (float) $validated['amount'];
+        $dueAmount = (float) $sale->due_amount;
+        
+        \Log::info('Payment validation', ['amount' => $amount, 'due_amount' => $dueAmount, 'sale_total' => $sale->total_amount, 'sale_paid' => $sale->paid_amount]);
+        
+        if ($amount > $dueAmount) {
+            \Log::warning('Payment amount exceeds due amount', ['amount' => $amount, 'due_amount' => $dueAmount]);
+            return back()->withErrors(['amount' => 'Payment amount cannot exceed amount due of ' . number_format($dueAmount, 2) . '.'])->withInput();
+        }
 
-            return back()->with('success', 'Payment recorded successfully.');
+        try {
+            \Log::info('Recording payment', ['sale_id' => $sale->id, 'amount' => $amount]);
+            $updatedSale = $this->salesService->recordPayment($sale, $amount);
+            
+            \Log::info('Payment recorded successfully', [
+                'sale_id' => $updatedSale->id, 
+                'amount' => $amount,
+                'new_paid_amount' => $updatedSale->paid_amount,
+                'new_due_amount' => $updatedSale->due_amount,
+                'payment_status' => $updatedSale->payment_status,
+            ]);
+            
+            return back()->with('success', 'Payment of ' . number_format($amount, 2) . ' recorded successfully. Remaining balance: ' . number_format($updatedSale->due_amount, 2));
         } catch (\Exception $e) {
-            return back()->with('error', 'Error recording payment: ' . $e->getMessage());
+            \Log::error('Error recording payment', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Error recording payment: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -345,13 +634,48 @@ class SalesController extends Controller
         ]);
 
         $availableStock = $this->stockService->getCurrentStock(
-            $request->product_id,
-            $request->warehouse_id
+            $request->warehouse_id,
+            $request->product_id
         );
 
         return response()->json([
             'available_stock' => $availableStock,
+            'available' => $availableStock,
             'message' => "Available: {$availableStock} units",
         ]);
+    }
+
+    /**
+     * Get products with stock for a specific warehouse (AJAX endpoint).
+     * Used by the single-page create view for dynamic product selection.
+     */
+    public function getWarehouseProducts(Warehouse $warehouse)
+    {
+        $this->authorize('sales.create');
+
+        // Get all active products
+        $products = Product::active()->orderBy('name')->get();
+
+        // Filter products with available stock in this warehouse
+        $productsWithStock = $products->map(function ($product) use ($warehouse) {
+            $availableStock = $this->stockService->getCurrentStock(
+                $warehouse->id,
+                $product->id
+            );
+
+            if ($availableStock > 0) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'available_stock' => $availableStock,
+                    'sale_price' => (float) $product->sale_price,
+                ];
+            }
+
+            return null;
+        })->filter()->values();
+
+        return response()->json($productsWithStock);
     }
 }

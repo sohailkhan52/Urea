@@ -26,9 +26,15 @@ class UpdateSaleRequest extends FormRequest
                 'nullable',
                 'exists:customers,id',
             ],
-            'warehouse_id' => [
-                'required',
-                'exists:warehouses,id',
+            'walkin_customer_name' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+            'walkin_customer_contact' => [
+                'nullable',
+                'string',
+                'max:50',
             ],
             'sale_date' => [
                 'required',
@@ -48,11 +54,11 @@ class UpdateSaleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'warehouse_id.required' => 'Warehouse is required.',
-            'warehouse_id.exists' => 'Invalid warehouse selected.',
             'sale_date.required' => 'Sale date is required.',
             'sale_date.date' => 'Sale date must be a valid date.',
             'customer_id.exists' => 'Invalid customer selected.',
+            'walkin_customer_name.max' => 'Walk-in customer name cannot exceed 100 characters.',
+            'walkin_customer_contact.max' => 'Walk-in customer contact cannot exceed 50 characters.',
             'notes.max' => 'Notes cannot exceed 1000 characters.',
         ];
     }

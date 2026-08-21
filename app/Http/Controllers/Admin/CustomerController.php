@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCustomerRequest;
 use App\Http\Requests\Admin\UpdateCustomerRequest;
 use App\Models\Customer;
+use App\Models\Warehouse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,17 +20,36 @@ class CustomerController extends Controller
     {
         $this->authorize('customers.view');
 
+        $user = auth()->user();
         $query = Customer::query();
+
+        // Filter customers by warehouse for non-super-admins
+        if (!$user->isSuperAdmin()) {
+            $userWarehouses = $user->warehouses()
+                ->select('warehouses.id')
+                ->pluck('warehouses.id');
+
+            if ($userWarehouses->isEmpty()) {
+                // User has no warehouse assigned, show no customers
+                $customers = collect();
+                $cities = collect();
+                
+                return view('admin.customers.index', compact('customers', 'cities'));
+            }
+
+            // Only show customers from user's assigned warehouse
+            $query->whereIn('warehouse_id', $userWarehouses);
+        }
 
         // Search by name, email, phone, cnic, or village
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('cnic', 'like', "%{$search}%")
-                  ->orWhere('village', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('cnic', 'like', "%{$search}%")
+                    ->orWhere('village', 'like', "%{$search}%");
             });
         }
 
@@ -50,8 +70,20 @@ class CustomerController extends Controller
 
         $customers = $query->latest()->paginate(15)->withQueryString();
 
-        // Get unique cities for filter
-        $cities = Customer::distinct('city')->whereNotNull('city')->pluck('city')->sort();
+        // Get unique cities for filter - create a fresh query for this
+        $citiesQuery = Customer::query();
+        
+        if (!$user->isSuperAdmin()) {
+            $userWarehouses = $user->warehouses()
+                ->select('warehouses.id')
+                ->pluck('warehouses.id');
+            $citiesQuery->whereIn('warehouse_id', $userWarehouses);
+        }
+        
+        $cities = $citiesQuery->whereNotNull('city')
+            ->distinct()
+            ->pluck('city')
+            ->sort();
 
         return view('admin.customers.index', compact('customers', 'cities'));
     }
@@ -64,8 +96,16 @@ class CustomerController extends Controller
         $this->authorize('customers.create');
 
         $types = Customer::$types;
+        
+        // Get warehouses for super admins, or just the current warehouse for regular admins
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            $warehouses = Warehouse::active()->orderBy('name')->get();
+        } else {
+            $warehouses = $user->warehouses()->active()->orderBy('name')->get();
+        }
 
-        return view('admin.customers.create', compact('types'));
+        return view('admin.customers.create', compact('types', 'warehouses'));
     }
 
     /**
@@ -76,7 +116,21 @@ class CustomerController extends Controller
         $this->authorize('customers.create');
 
         try {
-            $customer = Customer::create($request->validated());
+            $data = $request->validated();
+
+            // Auto-assign customer to user's warehouse if not super admin
+            if (!auth()->user()->isSuperAdmin()) {
+                $userWarehouse = auth()->user()->warehouses()->first();
+                if (!$userWarehouse) {
+                    return back()->with('error', 'You are not assigned to any warehouse.');
+                }
+                $data['warehouse_id'] = $userWarehouse->id;
+            }
+
+            $customer = Customer::create($data);
+
+            // Dispatch CustomerCreated event to trigger welcome email
+            \App\Events\CustomerCreated::dispatch($customer);
 
             return redirect()->route('admin.customers.show', $customer)
                 ->with('success', 'Customer created successfully.');
@@ -92,6 +146,11 @@ class CustomerController extends Controller
     {
         $this->authorize('customers.view');
 
+        // Check warehouse access for non-super-admins
+        if (!auth()->user()->isSuperAdmin() && $customer->warehouse_id && !auth()->user()->canAccessWarehouse($customer->warehouse_id)) {
+            abort(403, 'You do not have access to this customer.');
+        }
+
         return view('admin.customers.show', compact('customer'));
     }
 
@@ -102,9 +161,22 @@ class CustomerController extends Controller
     {
         $this->authorize('customers.update');
 
-        $types = Customer::$types;
+        // Check warehouse access for non-super-admins
+        if (!auth()->user()->isSuperAdmin() && $customer->warehouse_id && !auth()->user()->canAccessWarehouse($customer->warehouse_id)) {
+            abort(403, 'You do not have access to this customer.');
+        }
 
-        return view('admin.customers.edit', compact('customer', 'types'));
+        $types = Customer::$types;
+        
+        // Get warehouses for super admins, or just the current warehouse for regular admins
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            $warehouses = Warehouse::active()->orderBy('name')->get();
+        } else {
+            $warehouses = $user->warehouses()->active()->orderBy('name')->get();
+        }
+
+        return view('admin.customers.edit', compact('customer', 'types', 'warehouses'));
     }
 
     /**
@@ -131,6 +203,11 @@ class CustomerController extends Controller
     {
         $this->authorize('customers.delete');
 
+        // Check warehouse access for non-super-admins
+        if (!auth()->user()->isSuperAdmin() && $customer->warehouse_id && !auth()->user()->canAccessWarehouse($customer->warehouse_id)) {
+            abort(403, 'You do not have access to this customer.');
+        }
+
         try {
             if (!$customer->canBeDeleted()) {
                 return back()->with('error', 'This customer has associated transactions and cannot be deleted.');
@@ -152,6 +229,11 @@ class CustomerController extends Controller
     {
         $this->authorize('customers.update');
 
+        // Check warehouse access for non-super-admins
+        if (!auth()->user()->isSuperAdmin() && $customer->warehouse_id && !auth()->user()->canAccessWarehouse($customer->warehouse_id)) {
+            abort(403, 'You do not have access to this customer.');
+        }
+
         try {
             $customer->update(['status' => Customer::STATUS_ACTIVE]);
 
@@ -167,6 +249,11 @@ class CustomerController extends Controller
     public function deactivate(Customer $customer): RedirectResponse
     {
         $this->authorize('customers.update');
+
+        // Check warehouse access for non-super-admins
+        if (!auth()->user()->isSuperAdmin() && $customer->warehouse_id && !auth()->user()->canAccessWarehouse($customer->warehouse_id)) {
+            abort(403, 'You do not have access to this customer.');
+        }
 
         try {
             $customer->update(['status' => Customer::STATUS_INACTIVE]);
