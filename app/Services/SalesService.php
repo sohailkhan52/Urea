@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\StockMovement;
 use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
 use Illuminate\Support\Facades\DB;
@@ -31,8 +32,11 @@ class SalesService
             $sale = Sale::create([
                 'invoice_number' => $this->generateInvoiceNumber(),
                 'customer_id' => $data['customer_id'] ?? null,
+                'walkin_customer_name' => $data['walkin_customer_name'] ?? null,
+                'walkin_customer_contact' => $data['walkin_customer_contact'] ?? null,
                 'warehouse_id' => $data['warehouse_id'],
                 'sale_date' => $data['sale_date'],
+                'discount' => $data['discount'] ?? 0,
                 'status' => Sale::STATUS_DRAFT,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => auth()->id(),
@@ -59,6 +63,14 @@ class SalesService
             throw new \Exception('Can only add items to draft sales.');
         }
 
+        // Validate inputs
+        if ($quantity <= 0) {
+            throw new \Exception('Quantity must be greater than 0.');
+        }
+        if ($unitPrice < 0) {
+            throw new \Exception('Unit price cannot be negative.');
+        }
+
         // Check stock availability
         $availableStock = $this->stockService->getCurrentStock($sale->warehouse_id, $productId);
         if ($availableStock < $quantity) {
@@ -66,6 +78,29 @@ class SalesService
         }
 
         return DB::transaction(function () use ($sale, $productId, $quantity, $unitPrice, $discount) {
+            // Check if product is already in this sale
+            $existingItem = $sale->items()->where('product_id', $productId)->first();
+            
+            if ($existingItem) {
+                // Update existing item instead of creating duplicate
+                $newQuantity = $existingItem->quantity + $quantity;
+                
+                // Verify increased quantity is still available
+                $availableStock = $this->stockService->getCurrentStock($sale->warehouse_id, $productId);
+                if ($availableStock < $newQuantity) {
+                    throw new \Exception("Cannot increase quantity. Only {$availableStock} units available, but {$newQuantity} requested.");
+                }
+                
+                $existingItem->update([
+                    'quantity' => $newQuantity,
+                    'unit_price' => $unitPrice,
+                    'discount' => ($existingItem->discount + $discount),
+                ]);
+                
+                $this->recalculateSaleTotals($sale);
+                return $existingItem;
+            }
+
             $item = $sale->items()->create([
                 'product_id' => $productId,
                 'quantity' => $quantity,
@@ -204,21 +239,25 @@ class SalesService
                 );
             }
 
-            // Ensure paid amount is 0 for confirmation (payment recorded separately)
-            // NOTE: We only confirm the sale here without recording payment
-            // Payment will be recorded separately via PaymentService
-            $dueAmount = $sale->total_amount;
+            // Calculate payment status based on paid amount
+            $dueAmount = $sale->total_amount - $paidAmount;
+            
+            if ($paidAmount >= $sale->total_amount) {
+                $paymentStatus = Sale::PAYMENT_STATUS_PAID;
+            } elseif ($paidAmount == 0) {
+                $paymentStatus = Sale::PAYMENT_STATUS_UNPAID;
+            } else {
+                $paymentStatus = Sale::PAYMENT_STATUS_PARTIAL;
+            }
+
             $udharAmount = max(0, $dueAmount);
 
-            // Calculate payment status - initially unpaid (will update after payment recorded)
-            $paymentStatus = Sale::PAYMENT_STATUS_UNPAID;
-
-            // Update sale status and payment info
+            // Update sale status to CONFIRMED
             $sale->update([
                 'status' => Sale::STATUS_CONFIRMED,
                 'confirmed_at' => now(),
                 'confirmed_by' => auth()->id(),
-                'paid_amount' => 0,  // No payment recorded yet
+                'paid_amount' => $paidAmount,
                 'due_amount' => $dueAmount,
                 'udhar_amount' => $udharAmount,
                 'payment_status' => $paymentStatus,
@@ -267,11 +306,12 @@ class SalesService
                         warehouseId: $sale->warehouse_id,
                         productId: $item->product_id,
                         quantity: $item->quantity,
+                        type: StockMovement::TYPE_CUSTOMER_RETURN, // Customer return (reverse of sale)
                         unitCost: $item->unit_price,
-                        reason: "Reverse: Sale #{$sale->invoice_number} cancelled. {$reason}",
+                        remarks: "Sale #{$sale->invoice_number} cancelled. {$reason}",
                         referenceType: 'sale_reversal',
                         referenceId: $sale->id,
-                        createdBy: auth()->id()
+                        userId: auth()->id()
                     );
                 }
             }
@@ -309,10 +349,24 @@ class SalesService
                 throw new \Exception('Payment cannot exceed total amount.');
             }
 
+            // Calculate new payment status
+            $newDueAmount = $sale->total_amount - $newPaidAmount;
+            if ($newPaidAmount == 0) {
+                $paymentStatus = Sale::PAYMENT_STATUS_UNPAID;
+            } elseif ($newPaidAmount >= $sale->total_amount) {
+                $paymentStatus = Sale::PAYMENT_STATUS_PAID;
+            } else {
+                $paymentStatus = Sale::PAYMENT_STATUS_PARTIAL;
+            }
+
             $sale->update([
                 'paid_amount' => $newPaidAmount,
-                'due_amount' => $sale->total_amount - $newPaidAmount,
+                'due_amount' => $newDueAmount,
+                'payment_status' => $paymentStatus,
             ]);
+
+            // Refresh the model to ensure fresh data from database
+            $sale->refresh();
 
             return $sale;
         });
@@ -393,12 +447,39 @@ class SalesService
     protected function generateInvoiceNumber(): string
     {
         $year = now()->year;
-        $latestSale = Sale::whereYear('created_at', $year)
-            ->latest('id')
+        
+        // Use pessimistic locking to prevent race conditions
+        $sequence = DB::table('invoice_sequences')
+            ->where('year', $year)
+            ->lockForUpdate()
             ->first();
-
-        $nextNumber = ($latestSale ? (int)substr($latestSale->invoice_number, -5) + 1 : 1);
-
+        
+        if (!$sequence) {
+            // If sequence doesn't exist, create it
+            DB::table('invoice_sequences')->insert([
+                'year' => $year,
+                'next_number' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $nextNumber = 1;
+        } else {
+            $nextNumber = $sequence->next_number;
+        }
+        
+        // Ensure we never exceed 99999
+        if ($nextNumber > 99999) {
+            throw new \Exception("Invoice number limit exceeded for year {$year}");
+        }
+        
+        // Increment the sequence for next time
+        DB::table('invoice_sequences')
+            ->where('year', $year)
+            ->update([
+                'next_number' => $nextNumber + 1,
+                'updated_at' => now(),
+            ]);
+        
         return sprintf('INV-%d-%05d', $year, $nextNumber);
     }
 }

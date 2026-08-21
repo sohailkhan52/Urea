@@ -248,8 +248,16 @@ class PurchaseService
             // Update paid amount based on input
             $purchase->update(['paid_amount' => $amountPaid]);
 
-            // Calculate outstanding payable
+            // Calculate outstanding payable and payment status
             $payableAmount = $purchase->total_amount - $amountPaid;
+
+            if ($amountPaid >= $purchase->total_amount) {
+                $paymentStatus = Purchase::PAYMENT_STATUS_PAID;
+            } elseif ($amountPaid == 0) {
+                $paymentStatus = Purchase::PAYMENT_STATUS_UNPAID;
+            } else {
+                $paymentStatus = Purchase::PAYMENT_STATUS_PARTIAL;
+            }
 
             // Create payment record if amount paid is greater than 0
             if ($amountPaid > 0) {
@@ -279,16 +287,7 @@ class PurchaseService
                 }
             }
 
-            // Calculate payment status
-            if ($payableAmount <= 0) {
-                $paymentStatus = Purchase::PAYMENT_STATUS_PAID;
-            } elseif ($amountPaid > 0) {
-                $paymentStatus = Purchase::PAYMENT_STATUS_PARTIAL;
-            } else {
-                $paymentStatus = Purchase::PAYMENT_STATUS_UNPAID;
-            }
-
-            // Update purchase status
+            // Update purchase status to CONFIRMED
             $purchase->update([
                 'status' => Purchase::STATUS_CONFIRMED,
                 'payment_status' => $paymentStatus,
@@ -440,9 +439,40 @@ class PurchaseService
     protected function generatePurchaseNumber(): string
     {
         $year = now()->year;
-        $count = Purchase::whereYear('created_at', $year)->count() + 1;
         
-        return sprintf('PO-%d-%05d', $year, $count);
+        // Use pessimistic locking to prevent race conditions
+        $sequence = DB::table('purchase_sequences')
+            ->where('year', $year)
+            ->lockForUpdate()
+            ->first();
+        
+        if (!$sequence) {
+            // If sequence doesn't exist, create it
+            DB::table('purchase_sequences')->insert([
+                'year' => $year,
+                'next_number' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $nextNumber = 1;
+        } else {
+            $nextNumber = $sequence->next_number;
+        }
+        
+        // Ensure we never exceed 99999
+        if ($nextNumber > 99999) {
+            throw new \Exception("Purchase number limit exceeded for year {$year}");
+        }
+        
+        // Increment the sequence for next time
+        DB::table('purchase_sequences')
+            ->where('year', $year)
+            ->update([
+                'next_number' => $nextNumber + 1,
+                'updated_at' => now(),
+            ]);
+        
+        return sprintf('PO-%d-%05d', $year, $nextNumber);
     }
 
     /**

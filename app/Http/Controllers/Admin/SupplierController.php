@@ -21,6 +21,11 @@ class SupplierController extends Controller
     {
         $this->authorize('suppliers.view');
 
+        // Only super admin can view suppliers
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can manage suppliers.');
+        }
+
         $query = Supplier::query();
 
         // Search
@@ -95,6 +100,11 @@ class SupplierController extends Controller
     public function show(Supplier $supplier): View
     {
         $this->authorize('suppliers.view');
+
+        // Only super admin can view supplier details
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can view supplier details.');
+        }
 
         // TODO: Load purchases when Purchase module is implemented
         // $supplier->load(['purchases' => function ($query) {

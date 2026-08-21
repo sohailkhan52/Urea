@@ -4,195 +4,112 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="h3 mb-0">Create Warehouse</h1>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-0 mt-2">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.warehouses.index') }}">Warehouses</a></li>
-                        <li class="breadcrumb-item active">Create</li>
-                    </ol>
-                </nav>
-            </div>
-            <a href="{{ route('admin.warehouses.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i> Back to List
-            </a>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Create Warehouse</h1>
+        <a href="{{ route('admin.warehouses.index') }}" class="btn btn-secondary">Back</a>
     </div>
 
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-body">
-                    <form action="{{ route('admin.warehouses.store') }}" method="POST">
-                        @csrf
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            @foreach ($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
 
-                        <div class="row g-3">
-                            {{-- Warehouse Name --}}
-                            <div class="col-md-6">
-                                <label for="name" class="form-label">Warehouse Name <span class="text-danger">*</span></label>
-                                <input type="text" 
-                                       class="form-control @error('name') is-invalid @enderror" 
-                                       id="name" 
-                                       name="name" 
-                                       value="{{ old('name') }}"
-                                       placeholder="Enter warehouse name"
-                                       required>
-                                @error('name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">Example: Main Warehouse Islamabad</small>
-                            </div>
+    <form action="{{ route('admin.warehouses.store') }}" method="POST" enctype="multipart/form-data">
+        @csrf
 
-                            {{-- Warehouse Code --}}
-                            <div class="col-md-6">
-                                <label for="code" class="form-label">Warehouse Code <span class="text-danger">*</span></label>
-                                <input type="text" 
-                                       class="form-control @error('code') is-invalid @enderror" 
-                                       id="code" 
-                                       name="code" 
-                                       value="{{ old('code') }}"
-                                       placeholder="Enter warehouse code"
-                                       style="text-transform: uppercase;"
-                                       required>
-                                @error('code')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">Example: WH-ISB-001 (must be unique)</small>
-                            </div>
-
-                            {{-- Warehouse Type --}}
-                            <div class="col-md-6">
-                                <label for="type" class="form-label">Warehouse Type <span class="text-danger">*</span></label>
-                                <select class="form-select @error('type') is-invalid @enderror" 
-                                        id="type" 
-                                        name="type" 
-                                        required>
-                                    <option value="">Select warehouse type</option>
-                                    @foreach($warehouseTypes as $value => $label)
-                                    <option value="{{ $value }}" {{ old('type') === $value ? 'selected' : '' }}>
-                                        {{ $label }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('type')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            {{-- Branch --}}
-                            <div class="col-md-6">
-                                <label for="branch_id" class="form-label">Branch</label>
-                                <select class="form-select @error('branch_id') is-invalid @enderror" 
-                                        id="branch_id" 
-                                        name="branch_id">
-                                    <option value="">No branch (Main Warehouse)</option>
-                                    @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
-                                        {{ $branch->name }} - {{ $branch->city }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('branch_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">Leave empty for Main Warehouse</small>
-                            </div>
-
-                            {{-- Manager --}}
-                            <div class="col-md-12">
-                                <label for="manager_id" class="form-label">Warehouse Manager</label>
-                                <select class="form-select @error('manager_id') is-invalid @enderror" 
-                                        id="manager_id" 
-                                        name="manager_id">
-                                    <option value="">Not assigned yet</option>
-                                    @foreach($managers as $manager)
-                                    <option value="{{ $manager->id }}" {{ old('manager_id') == $manager->id ? 'selected' : '' }}>
-                                        {{ $manager->name }} - {{ $manager->email }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('manager_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">You can assign a manager later</small>
-                            </div>
-
-                            {{-- Address --}}
-                            <div class="col-md-12">
-                                <label for="address" class="form-label">Address <span class="text-danger">*</span></label>
-                                <textarea class="form-control @error('address') is-invalid @enderror" 
-                                          id="address" 
-                                          name="address" 
-                                          rows="3"
-                                          placeholder="Enter complete warehouse address"
-                                          required>{{ old('address') }}</textarea>
-                                @error('address')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            {{-- Status --}}
-                            <div class="col-md-12">
-                                <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
-                                <select class="form-select @error('status') is-invalid @enderror" 
-                                        id="status" 
-                                        name="status" 
-                                        required>
-                                    <option value="active" {{ old('status', 'active') === 'active' ? 'selected' : '' }}>Active</option>
-                                    <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
-                                </select>
-                                @error('status')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Warehouse Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name *</label>
+                            <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}" required>
+                            @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
-                        <div class="mt-4 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-1"></i> Create Warehouse
-                            </button>
-                            <a href="{{ route('admin.warehouses.index') }}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle me-1"></i> Cancel
-                            </a>
+                        <div class="mb-3">
+                            <label for="code" class="form-label">Code *</label>
+                            <input type="text" class="form-control @error('code') is-invalid @enderror" id="code" name="code" value="{{ old('code') }}" required>
+                            @error('code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
-                    </form>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address *</label>
+                            <textarea class="form-control @error('address') is-invalid @enderror" id="address" name="address" rows="3" required>{{ old('address') }}</textarea>
+                            @error('address')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status *</label>
+                            <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" required>
+                                <option value="">Select Status</option>
+                                <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                            @error('status')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Manager / Admin</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="admin_name" class="form-label">Name *</label>
+                            <input type="text" class="form-control @error('admin_name') is-invalid @enderror" id="admin_name" name="admin_name" value="{{ old('admin_name') }}" required>
+                            @error('admin_name')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="admin_email" class="form-label">Email *</label>
+                            <input type="email" class="form-control @error('admin_email') is-invalid @enderror" id="admin_email" name="admin_email" value="{{ old('admin_email') }}" required>
+                            @error('admin_email')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="admin_contact" class="form-label">Contact *</label>
+                            <input type="tel" class="form-control @error('admin_contact') is-invalid @enderror" id="admin_contact" name="admin_contact" value="{{ old('admin_contact') }}" required>
+                            @error('admin_contact')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="admin_profile_image" class="form-label">Profile Image</label>
+                            <input type="file" class="form-control @error('admin_profile_image') is-invalid @enderror" id="admin_profile_image" name="admin_profile_image" accept="image/*">
+                            <small class="form-text text-muted">Optional. Max 2MB</small>
+                            @error('admin_profile_image')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="admin_password" class="form-label">Password *</label>
+                            <input type="password" class="form-control @error('admin_password') is-invalid @enderror" id="admin_password" name="admin_password" required>
+                            <small class="form-text text-muted">Min 8 characters</small>
+                            @error('admin_password')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="admin_password_confirmation" class="form-label">Confirm Password *</label>
+                            <input type="password" class="form-control @error('admin_password_confirmation') is-invalid @enderror" id="admin_password_confirmation" name="admin_password_confirmation" required>
+                            @error('admin_password_confirmation')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-info-circle me-1"></i> Warehouse Guidelines
-                    </h5>
-                    <ul class="mb-0 small">
-                        <li><strong>Warehouse Code:</strong> Use a unique identifier (e.g., WH-ISB-001).</li>
-                        <li><strong>Main Warehouse:</strong> Central warehouse without a branch assignment.</li>
-                        <li><strong>Branch Warehouse:</strong> Warehouse assigned to a specific branch location.</li>
-                        <li><strong>Store:</strong> Smaller storage facility for retail operations.</li>
-                        <li><strong>Manager:</strong> Optional. Can be assigned later from user management.</li>
-                        <li><strong>Status:</strong> Set to Active to allow inventory operations.</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h6 class="card-title">
-                        <i class="bi bi-lightbulb me-1"></i> Quick Tips
-                    </h6>
-                    <ul class="mb-0 small text-muted">
-                        <li>Ensure the warehouse code is unique and meaningful.</li>
-                        <li>Main warehouses typically don't have a branch assignment.</li>
-                        <li>You can manage inventory after creating the warehouse.</li>
-                        <li>Deactivated warehouses cannot receive or dispatch stock.</li>
-                    </ul>
-                </div>
-            </div>
+        <div class="d-flex gap-2 justify-content-end mb-4">
+            <a href="{{ route('admin.warehouses.index') }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Create Warehouse</button>
         </div>
-    </div>
+    </form>
 </div>
 @endsection

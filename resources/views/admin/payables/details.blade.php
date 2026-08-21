@@ -9,9 +9,19 @@
             <h1 class="h3 mb-1">{{ $supplier->name }}</h1>
             <p class="text-muted mb-0">Payables Details & Outstanding Invoices</p>
         </div>
-        <a href="{{ route('admin.payables.index') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Back to Payables
-        </a>
+        <div class="btn-group" role="group">
+            @can('payables.view')
+            <a href="{{ route('admin.payables.print', $supplier) }}" 
+               class="btn btn-primary" 
+               target="_blank"
+               title="Print Payables Statement">
+                <i class="bi bi-printer me-1"></i> Print Statement
+            </a>
+            @endcan
+            <a href="{{ route('admin.payables.index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Payables
+            </a>
+        </div>
     </div>
 
     {{-- Supplier Summary Card --}}

@@ -38,6 +38,27 @@
                         @method('PUT')
 
                         <div class="row g-3">
+                            {{-- Warehouse (Super Admin Only) --}}
+                            @if(auth()->user()->isSuperAdmin())
+                            <div class="col-md-6">
+                                <label for="warehouse_id" class="form-label">Warehouse <span class="text-danger">*</span></label>
+                                <select class="form-select @error('warehouse_id') is-invalid @enderror" 
+                                        id="warehouse_id" 
+                                        name="warehouse_id" 
+                                        required>
+                                    <option value="">-- Select Warehouse --</option>
+                                    @foreach($warehouses as $warehouse)
+                                    <option value="{{ $warehouse->id }}" {{ old('warehouse_id', $customer->warehouse_id) == $warehouse->id ? 'selected' : '' }}>
+                                        {{ $warehouse->name }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                                @error('warehouse_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            @endif
+
                             {{-- Customer Type --}}
                             <div class="col-md-6">
                                 <label for="customer_type" class="form-label">Customer Type <span class="text-danger">*</span></label>

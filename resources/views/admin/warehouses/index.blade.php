@@ -18,38 +18,16 @@
         <div class="card-body">
             <form action="{{ route('admin.warehouses.index') }}" method="GET">
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label for="search" class="form-label">Search</label>
                         <input type="text" 
                                class="form-control" 
                                id="search" 
                                name="search" 
                                value="{{ request('search') }}"
-                               placeholder="Search by name, code, address, branch, or manager">
+                               placeholder="Search by name, code, address, or manager">
                     </div>
-                    <div class="col-md-2">
-                        <label for="branch_id" class="form-label">Branch</label>
-                        <select class="form-select" id="branch_id" name="branch_id">
-                            <option value="">All Branches</option>
-                            @foreach($branches as $branch)
-                            <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>
-                                {{ $branch->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="type" class="form-label">Type</label>
-                        <select class="form-select" id="type" name="type">
-                            <option value="">All Types</option>
-                            @foreach($warehouseTypes as $value => $label)
-                            <option value="{{ $value }}" {{ request('type') === $value ? 'selected' : '' }}>
-                                {{ $label }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
+                    <div class="col-md-4">
                         <label for="status" class="form-label">Status</label>
                         <select class="form-select" id="status" name="status">
                             <option value="">All Statuses</option>
@@ -80,8 +58,6 @@
                         <tr>
                             <th>Warehouse</th>
                             <th>Code</th>
-                            <th>Type</th>
-                            <th>Branch</th>
                             <th>Manager</th>
                             <th>Address</th>
                             <th style="width: 120px;">Status</th>
@@ -95,35 +71,15 @@
                                 <div class="fw-semibold">
                                     <i class="bi bi-house-door me-1"></i>
                                     {{ $warehouse->name }}
+                                    @if($warehouse->is_default)
+                                    <span class="badge bg-warning text-dark" title="Default Warehouse">
+                                        <i class="bi bi-star-fill"></i> Default
+                                    </span>
+                                    @endif
                                 </div>
                             </td>
                             <td>
                                 <code class="bg-light px-2 py-1 rounded">{{ $warehouse->code }}</code>
-                            </td>
-                            <td>
-                                @if($warehouse->type === 'main_warehouse')
-                                <span class="badge bg-primary">
-                                    <i class="bi bi-building me-1"></i>{{ $warehouse->type_label }}
-                                </span>
-                                @elseif($warehouse->type === 'branch_warehouse')
-                                <span class="badge bg-info">
-                                    <i class="bi bi-shop me-1"></i>{{ $warehouse->type_label }}
-                                </span>
-                                @else
-                                <span class="badge bg-secondary">
-                                    <i class="bi bi-shop-window me-1"></i>{{ $warehouse->type_label }}
-                                </span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($warehouse->branch)
-                                <small>
-                                    <i class="bi bi-geo-alt me-1"></i>
-                                    {{ $warehouse->branch->name }}
-                                </small>
-                                @else
-                                <small class="text-muted">—</small>
-                                @endif
                             </td>
                             <td>
                                 @if($warehouse->manager)
@@ -193,6 +149,21 @@
                                             <i class="bi bi-three-dots-vertical"></i>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end">
+                                            {{-- Set as Default --}}
+                                            @if($warehouse->status === 'active' && !$warehouse->is_default)
+                                            <li>
+                                                <form action="{{ route('admin.warehouses.setDefault', $warehouse) }}" method="POST">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="dropdown-item text-primary">
+                                                        <i class="bi bi-star me-1"></i> Set as Default
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            @endif
+                                            
+                                            {{-- Activation Status --}}
                                             @if($warehouse->status === 'inactive')
                                             <li>
                                                 <form action="{{ route('admin.warehouses.activate', $warehouse) }}" method="POST">

@@ -122,6 +122,19 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->name('companies.deactivate')
         ->middleware('permission:companies.update');
 
+    // Category Management
+    Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class)
+        ->middleware('permission:categories.view');
+    
+    // Category status actions
+    Route::patch('/categories/{category}/activate', [\App\Http\Controllers\Admin\CategoryController::class, 'activate'])
+        ->name('categories.activate')
+        ->middleware('permission:categories.update');
+    
+    Route::patch('/categories/{category}/deactivate', [\App\Http\Controllers\Admin\CategoryController::class, 'deactivate'])
+        ->name('categories.deactivate')
+        ->middleware('permission:categories.update');
+
     // Product Management
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)
         ->middleware('permission:products.view');
@@ -146,6 +159,11 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     
     Route::patch('/warehouses/{warehouse}/deactivate', [\App\Http\Controllers\Admin\WarehouseController::class, 'deactivate'])
         ->name('warehouses.deactivate')
+        ->middleware('permission:warehouses.update');
+    
+    // Set default warehouse
+    Route::patch('/warehouses/{warehouse}/set-default', [\App\Http\Controllers\Admin\WarehouseController::class, 'setDefault'])
+        ->name('warehouses.setDefault')
         ->middleware('permission:warehouses.update');
     
     // Warehouse inventory
@@ -214,6 +232,11 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     Route::resource('purchases', \App\Http\Controllers\Admin\PurchaseController::class)
         ->middleware('permission:purchases.view');
 
+    // AJAX: Get all products (for single-page create form) - MUST come BEFORE resource routes
+    Route::get('/purchases-products', [\App\Http\Controllers\Admin\PurchaseController::class, 'getProducts'])
+        ->name('purchases.getProducts')
+        ->middleware('permission:purchases.create');
+
     // Purchase actions
     Route::post('/purchases/{purchase}/confirm', [\App\Http\Controllers\Admin\PurchaseController::class, 'confirm'])
         ->name('purchases.confirm')
@@ -241,6 +264,11 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->name('purchases.updateExpenses')
         ->middleware('permission:purchases.update');
 
+    // Purchase print
+    Route::get('/purchases/{purchase}/print', [\App\Http\Controllers\Admin\PurchaseController::class, 'print'])
+        ->name('purchases.print')
+        ->middleware('permission:purchases.view');
+
     // Sales Management
     Route::resource('sales', \App\Http\Controllers\Admin\SalesController::class)
         ->middleware('permission:sales.view');
@@ -253,6 +281,11 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     Route::post('/sales/{sale}/cancel', [\App\Http\Controllers\Admin\SalesController::class, 'cancel'])
         ->name('sales.cancel')
         ->middleware('permission:sales.cancel');
+
+    // Update sale with items (for single-page edit form)
+    Route::put('/sales/{sale}/update-items', [\App\Http\Controllers\Admin\SalesController::class, 'updateWithItems'])
+        ->name('sales.updateWithItems')
+        ->middleware('permission:sales.update');
 
     // Sale items
     Route::post('/sales/{sale}/items', [\App\Http\Controllers\Admin\SalesController::class, 'addItem'])
@@ -286,6 +319,11 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->name('sales.checkStock')
         ->middleware('permission:sales.create');
 
+    // AJAX: Get warehouse products (for single-page create form)
+    Route::get('/sales/warehouse/{warehouse}/products', [\App\Http\Controllers\Admin\SalesController::class, 'getWarehouseProducts'])
+        ->name('sales.warehouseProducts')
+        ->middleware('permission:sales.create');
+
     // Udhar Management (Credit/Outstanding)
     Route::prefix('udhar')->name('udhar.')->middleware('permission:udhar.view')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\UdharController::class, 'index'])
@@ -296,6 +334,9 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         
         Route::get('/{customer}/ledger', [\App\Http\Controllers\Admin\UdharController::class, 'ledger'])
             ->name('ledger');
+        
+        Route::get('/{customer}/print', [\App\Http\Controllers\Admin\UdharController::class, 'printStatement'])
+            ->name('print');
         
         Route::get('/{customer}/history', [\App\Http\Controllers\Admin\UdharController::class, 'transactionHistory'])
             ->name('transaction-history');
@@ -318,6 +359,9 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         
         Route::get('/{supplier}/ledger', [\App\Http\Controllers\Admin\PayableController::class, 'ledger'])
             ->name('ledger');
+        
+        Route::get('/{supplier}/print', [\App\Http\Controllers\Admin\PayableController::class, 'printStatement'])
+            ->name('print');
         
         Route::get('/{supplier}/history', [\App\Http\Controllers\Admin\PayableController::class, 'transactionHistory'])
             ->name('transaction-history');

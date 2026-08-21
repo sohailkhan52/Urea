@@ -10,6 +10,14 @@
             <p class="text-muted mb-0">{{ $customer->name }}</p>
         </div>
         <div class="btn-group" role="group">
+            @can('udhar.view')
+            <a href="{{ route('admin.udhar.print', $customer) }}" 
+               class="btn btn-primary" 
+               target="_blank"
+               title="Print Udhar Statement">
+                <i class="bi bi-printer me-1"></i> Print Statement
+            </a>
+            @endcan
             <a href="{{ route('admin.udhar.index') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-1"></i> Back
             </a>

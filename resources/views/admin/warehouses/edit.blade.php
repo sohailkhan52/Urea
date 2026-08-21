@@ -40,6 +40,7 @@
                                        name="name" 
                                        value="{{ old('name', $warehouse->name) }}"
                                        placeholder="Enter warehouse name"
+                                       @if(!auth()->user()->isSuperAdmin()) readonly @endif
                                        required>
                                 @error('name')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -56,67 +57,12 @@
                                        value="{{ old('code', $warehouse->code) }}"
                                        placeholder="Enter warehouse code"
                                        style="text-transform: uppercase;"
+                                       @if(!auth()->user()->isSuperAdmin()) readonly @endif
                                        required>
                                 @error('code')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                                 <small class="text-muted">Must be unique</small>
-                            </div>
-
-                            {{-- Warehouse Type --}}
-                            <div class="col-md-6">
-                                <label for="type" class="form-label">Warehouse Type <span class="text-danger">*</span></label>
-                                <select class="form-select @error('type') is-invalid @enderror" 
-                                        id="type" 
-                                        name="type" 
-                                        required>
-                                    <option value="">Select warehouse type</option>
-                                    @foreach($warehouseTypes as $value => $label)
-                                    <option value="{{ $value }}" {{ old('type', $warehouse->type) === $value ? 'selected' : '' }}>
-                                        {{ $label }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('type')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            {{-- Branch --}}
-                            <div class="col-md-6">
-                                <label for="branch_id" class="form-label">Branch</label>
-                                <select class="form-select @error('branch_id') is-invalid @enderror" 
-                                        id="branch_id" 
-                                        name="branch_id">
-                                    <option value="">No branch (Main Warehouse)</option>
-                                    @foreach($branches as $branch)
-                                    <option value="{{ $branch->id }}" {{ old('branch_id', $warehouse->branch_id) == $branch->id ? 'selected' : '' }}>
-                                        {{ $branch->name }} - {{ $branch->city }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('branch_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">Leave empty for Main Warehouse</small>
-                            </div>
-
-                            {{-- Manager --}}
-                            <div class="col-md-12">
-                                <label for="manager_id" class="form-label">Warehouse Manager</label>
-                                <select class="form-select @error('manager_id') is-invalid @enderror" 
-                                        id="manager_id" 
-                                        name="manager_id">
-                                    <option value="">Not assigned</option>
-                                    @foreach($managers as $manager)
-                                    <option value="{{ $manager->id }}" {{ old('manager_id', $warehouse->manager_id) == $manager->id ? 'selected' : '' }}>
-                                        {{ $manager->name }} - {{ $manager->email }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('manager_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
                             </div>
 
                             {{-- Address --}}
@@ -127,6 +73,7 @@
                                           name="address" 
                                           rows="3"
                                           placeholder="Enter complete warehouse address"
+                                          @if(!auth()->user()->isSuperAdmin()) readonly @endif
                                           required>{{ old('address', $warehouse->address) }}</textarea>
                                 @error('address')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -138,7 +85,8 @@
                                 <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
                                 <select class="form-select @error('status') is-invalid @enderror" 
                                         id="status" 
-                                        name="status" 
+                                        name="status"
+                                        @if(!auth()->user()->isSuperAdmin()) disabled @endif
                                         required>
                                     <option value="active" {{ old('status', $warehouse->status) === 'active' ? 'selected' : '' }}>Active</option>
                                     <option value="inactive" {{ old('status', $warehouse->status) === 'inactive' ? 'selected' : '' }}>Inactive</option>
@@ -147,12 +95,43 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+
+                            {{-- Admins Assignment - Only for Super Admin --}}
+                            @if(auth()->user()->isSuperAdmin())
+                            <div class="col-md-12">
+                                <label for="admin_id" class="form-label">
+                                    <i class="bi bi-person me-1"></i> Assign Admin
+                                </label>
+                                <select class="form-select @error('admin_id') is-invalid @enderror" 
+                                        id="admin_id" 
+                                        name="admin_id">
+                                    <option value="">-- Select an Admin --</option>
+                                    @forelse($availableUsers as $user)
+                                    <option value="{{ $user->id }}" 
+                                            {{ old('admin_id', $currentAdmins[0] ?? null) == $user->id ? 'selected' : '' }}>
+                                        {{ $user->name }} ({{ $user->email }})
+                                    </option>
+                                    @empty
+                                    <option disabled>No users available</option>
+                                    @endforelse
+                                </select>
+                                @error('admin_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Each warehouse can only be assigned to one admin.
+                                </small>
+                            </div>
+                            @endif
                         </div>
 
                         <div class="mt-4 d-flex gap-2">
+                            @if(auth()->user()->isSuperAdmin())
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle me-1"></i> Update Warehouse
                             </button>
+                            @endif
                             <a href="{{ route('admin.warehouses.show', $warehouse) }}" class="btn btn-secondary">
                                 <i class="bi bi-x-circle me-1"></i> Cancel
                             </a>
@@ -188,10 +167,15 @@
                         <i class="bi bi-exclamation-triangle me-1"></i> Important Notes
                     </h6>
                     <ul class="mb-0 small text-muted">
-                        <li>Changing warehouse type may affect reporting and operations.</li>
+                        @if(auth()->user()->isSuperAdmin())
                         <li>Ensure the warehouse code remains unique across all warehouses.</li>
                         <li>Deactivating will prevent inventory transactions.</li>
-                        <li>Manager changes will be logged for audit purposes.</li>
+                        <li>Admin changes will be logged for audit purposes.</li>
+                        @else
+                        <li>You can view warehouse information here.</li>
+                        <li>Contact super admin to make any changes.</li>
+                        <li>Your access is limited to this warehouse only.</li>
+                        @endif
                     </ul>
                 </div>
             </div>

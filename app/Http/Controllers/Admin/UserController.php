@@ -24,6 +24,11 @@ class UserController extends Controller
     {
         $this->authorize('users.view');
 
+        // Only super admin can manage users
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can manage users.');
+        }
+
         $query = User::with('roles');
 
         // Search

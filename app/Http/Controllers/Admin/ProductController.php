@@ -24,7 +24,31 @@ class ProductController extends Controller
     {
         $this->authorize('products.view');
 
+        $user = auth()->user();
         $query = Product::with(['company', 'category']);
+
+        // Filter products by warehouse inventory for non-super-admins
+        if (!$user->isSuperAdmin()) {
+            $userWarehouses = $user->warehouses()
+                ->select('warehouses.id')
+                ->pluck('warehouses.id');
+
+            if ($userWarehouses->isEmpty()) {
+                // User has no warehouse assigned, show no products
+                $products = collect();
+                $companies = Company::active()->orderBy('name')->get();
+                $categories = Category::active()->orderBy('name')->get();
+                $userWarehouses = collect();
+                
+                return view('admin.products.index', compact('products', 'companies', 'categories', 'userWarehouses'));
+            }
+
+            // Only show products that exist in user's assigned warehouses
+            $query->whereHas('warehouseInventory', function ($q) use ($userWarehouses) {
+                $q->whereIn('warehouse_id', $userWarehouses)
+                  ->where('quantity', '>', 0);
+            });
+        }
 
         // Search
         if ($request->filled('search')) {
@@ -39,8 +63,8 @@ class ProductController extends Controller
             });
         }
 
-        // Filter by company
-        if ($request->filled('company_id')) {
+        // Filter by company (only for super admins)
+        if ($request->filled('company_id') && $user->isSuperAdmin()) {
             $query->where('company_id', $request->company_id);
         }
 
@@ -49,18 +73,27 @@ class ProductController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        // Filter by status
-        if ($request->filled('status')) {
+        // Filter by status (only for super admins)
+        if ($request->filled('status') && $user->isSuperAdmin()) {
             $query->where('status', $request->status);
         }
 
         $products = $query->latest()->paginate(15)->withQueryString();
         
-        // Get companies and categories for filters
-        $companies = Company::active()->orderBy('name')->get();
+        // Get companies and categories for filters (only for super admins)
+        if ($user->isSuperAdmin()) {
+            $companies = Company::active()->orderBy('name')->get();
+            $userWarehouses = collect();
+        } else {
+            $companies = collect();
+            $userWarehouses = $user->warehouses()
+                ->select('warehouses.id', 'warehouses.name')
+                ->orderBy('name')
+                ->get();
+        }
         $categories = Category::active()->orderBy('name')->get();
 
-        return view('admin.products.index', compact('products', 'companies', 'categories'));
+        return view('admin.products.index', compact('products', 'companies', 'categories', 'userWarehouses'));
     }
 
     /**
@@ -69,6 +102,11 @@ class ProductController extends Controller
     public function create(): View
     {
         $this->authorize('products.create');
+        
+        // Only super admins can create products
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can create products.');
+        }
 
         $companies = Company::active()->orderBy('name')->get();
         $categories = Category::active()->orderBy('name')->get();
@@ -123,6 +161,11 @@ class ProductController extends Controller
     public function edit(Product $product): View
     {
         $this->authorize('products.update');
+        
+        // Only super admins can edit products
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can edit products.');
+        }
 
         $product->load(['company', 'category']);
         $companies = Company::active()->orderBy('name')->get();
@@ -170,6 +213,11 @@ class ProductController extends Controller
     public function destroy(Product $product): RedirectResponse
     {
         $this->authorize('products.delete');
+        
+        // Only super admins can delete products
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can delete products.');
+        }
 
         // Check if product can be deleted
         if (!$product->canBeDeleted()) {
@@ -204,6 +252,11 @@ class ProductController extends Controller
     public function activate(Product $product): RedirectResponse
     {
         $this->authorize('products.update');
+        
+        // Only super admins can activate products
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can activate products.');
+        }
 
         if ($product->status === Product::STATUS_ACTIVE) {
             return back()->with('info', 'Product is already active.');
@@ -227,6 +280,11 @@ class ProductController extends Controller
     public function deactivate(Product $product): RedirectResponse
     {
         $this->authorize('products.update');
+        
+        // Only super admins can deactivate products
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can deactivate products.');
+        }
 
         if ($product->status === Product::STATUS_INACTIVE) {
             return back()->with('info', 'Product is already inactive.');

@@ -171,6 +171,16 @@
                                    title="View Ledger">
                                     <i class="bi bi-book"></i>
                                 </a>
+                                <form action="{{ route('admin.suppliers.destroy', $supplier['supplier_id']) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" 
+                                            class="btn btn-outline-danger" 
+                                            title="Delete"
+                                            onclick="return confirm('Are you sure you want to delete this supplier record? This action cannot be undone.');">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>

@@ -171,43 +171,6 @@
                                     </form>
                                     @endcan
                                 </div>
-
-                                {{-- Status Actions Dropdown --}}
-                                @can('customers.update')
-                                <div class="btn-group btn-group-sm ms-1" role="group">
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary dropdown-toggle" 
-                                            data-bs-toggle="dropdown" 
-                                            aria-expanded="false">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        @if($customer->status === 'inactive')
-                                        <li>
-                                            <form action="{{ route('admin.customers.activate', $customer) }}" method="POST">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item text-success">
-                                                    <i class="bi bi-check-circle me-1"></i> Activate
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @else
-                                        <li>
-                                            <form action="{{ route('admin.customers.deactivate', $customer) }}" 
-                                                  method="POST"
-                                                  onsubmit="return confirm('Are you sure you want to deactivate this customer?');">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item text-warning">
-                                                    <i class="bi bi-x-circle me-1"></i> Deactivate
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @endif
-                                    </ul>
-                                </div>
-                                @endcan
                             </td>
                         </tr>
                         @endforeach

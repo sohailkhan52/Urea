@@ -22,6 +22,11 @@ class CompanyController extends Controller
     {
         $this->authorize('companies.view');
 
+        // Only super admin can manage companies
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can manage companies.');
+        }
+
         $query = Company::query();
 
         // Search

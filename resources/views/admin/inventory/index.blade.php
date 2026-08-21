@@ -138,7 +138,9 @@
                             <th>Product</th>
                             <th>SKU</th>
                             <th>Warehouse</th>
+                            @if(auth()->user()->isSuperAdmin())
                             <th>Company</th>
+                            @endif
                             <th>Category</th>
                             <th class="text-end">Current Stock</th>
                             <th class="text-end">Min. Level</th>
@@ -168,9 +170,11 @@
                                     {{ $item->warehouse->name }}
                                 </small>
                             </td>
+                            @if(auth()->user()->isSuperAdmin())
                             <td>
                                 <small>{{ $item->product->company->name }}</small>
                             </td>
+                            @endif
                             <td>
                                 <span class="badge bg-secondary">{{ $item->product->category->name }}</span>
                             </td>

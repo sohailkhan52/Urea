@@ -114,6 +114,29 @@
             font-size: 1.1rem;
             width: 20px;
             text-align: center;
+            flex-shrink: 0;
+        }
+
+        .nav-link-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .nav-link-text-en {
+            font-size: 0.95rem;
+            line-height: 1.2;
+            flex: 1;
+        }
+
+        .nav-link-text-ur {
+            font-size: 0.75rem;
+            color: #b0b8c1;
+            line-height: 1.2;
+            text-align: right;
+            flex-shrink: 0;
         }
 
         /* Main Content Area */
@@ -301,59 +324,93 @@
             <div class="nav-section-title">Main</div>
             <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i>
-                <span>Dashboard</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Dashboard</span>
+                    <span class="nav-link-text-ur">ڈیش بورڈ</span>
+                </div>
             </a>
 
-            @permission('users.view')
+            @if(auth()->user()->isSuperAdmin())
             <div class="nav-section-title">User Management</div>
             <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                 <i class="bi bi-person-badge"></i>
-                <span>Users</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Users</span>
+                    <span class="nav-link-text-ur">صارفین</span>
+                </div>
             </a>
-            @endpermission
+            @endif
 
             @anypermission(['companies.view', 'products.view', 'warehouses.view', 'inventory.view', 'suppliers.view', 'customers.view'])
             <div class="nav-section-title">Inventory Management</div>
 
-            @permission('companies.view')
+            @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.companies.index') }}" class="nav-link {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}">
                 <i class="bi bi-building"></i>
-                <span>Companies</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Companies</span>
+                    <span class="nav-link-text-ur">کمپنیاں</span>
+                </div>
+            </a>
+            @endif
+
+            @permission('categories.view')
+            <a href="{{ route('admin.categories.index') }}" class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
+                <i class="bi bi-tags"></i>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Categories</span>
+                    <span class="nav-link-text-ur">زمرہ جات</span>
+                </div>
             </a>
             @endpermission
 
             @permission('products.view')
             <a href="{{ route('admin.products.index') }}" class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
                 <i class="bi bi-box-seam"></i>
-                <span>Products</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Products</span>
+                    <span class="nav-link-text-ur">مصنوعات</span>
+                </div>
             </a>
             @endpermission
 
-            @permission('warehouses.view')
+            @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.warehouses.index') }}" class="nav-link {{ request()->routeIs('admin.warehouses.*') ? 'active' : '' }}">
                 <i class="bi bi-building-fill-gear"></i>
-                <span>Warehouses</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Warehouses</span>
+                    <span class="nav-link-text-ur">گودام</span>
+                </div>
             </a>
-            @endpermission
+            @endif
 
             @permission('inventory.view')
             <a href="{{ route('admin.inventory.index') }}" class="nav-link {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}">
                 <i class="bi bi-collection"></i>
-                <span>Inventory</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Inventory</span>
+                    <span class="nav-link-text-ur">انوینٹری</span>
+                </div>
             </a>
             @endpermission
 
-            @permission('suppliers.view')
+            @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.suppliers.index') }}" class="nav-link {{ request()->routeIs('admin.suppliers.*') ? 'active' : '' }}">
                 <i class="bi bi-person-badge"></i>
-                <span>Suppliers</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Suppliers</span>
+                    <span class="nav-link-text-ur">سَپْلائِر</span>
+                </div>
             </a>
-            @endpermission
+            @endif
 
             @permission('customers.view')
             <a href="{{ route('admin.customers.index') }}" class="nav-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i>
-                <span>Customers</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Customers</span>
+                    <span class="nav-link-text-ur">گاہک</span>
+                </div>
             </a>
             @endpermission
             @endanypermission
@@ -361,49 +418,67 @@
             @anypermission(['purchases.view', 'sales.view', 'udhar.view', 'payables.view'])
             <div class="nav-section-title">Transactions</div>
 
-            @permission('purchases.view')
+            @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.purchases.index') }}" class="nav-link {{ request()->routeIs('admin.purchases.*') ? 'active' : '' }}">
                 <i class="bi bi-cart"></i>
-                <span>Purchases</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Purchases</span>
+                    <span class="nav-link-text-ur">خریداری</span>
+                </div>
             </a>
-            @endpermission
+            @endif
 
             @permission('sales.view')
             <a href="{{ route('admin.sales.index') }}" class="nav-link {{ request()->routeIs('admin.sales.*') ? 'active' : '' }}">
                 <i class="bi bi-receipt"></i>
-                <span>Sales</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Sales</span>
+                    <span class="nav-link-text-ur">فروخت</span>
+                </div>
             </a>
             @endpermission
 
             @permission('udhar.view')
             <a href="{{ route('admin.udhar.index') }}" class="nav-link {{ request()->routeIs('admin.udhar.*') ? 'active' : '' }}">
                 <i class="bi bi-credit-card"></i>
-                <span>Udhar Management</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Udhar Management</span>
+                    <span class="nav-link-text-ur">اُدھار</span>
+                </div>
             </a>
             @endpermission
 
-            @permission('payables.view')
+            @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.payables.index') }}" class="nav-link {{ request()->routeIs('admin.payables.*') ? 'active' : '' }}">
                 <i class="bi bi-file-earmark-check"></i>
-                <span>Supplier Payables</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Supplier Payables</span>
+                    <span class="nav-link-text-ur">واجب الادا</span>
+                </div>
             </a>
-            @endpermission
+            @endif
             @endanypermission
 
-            @permission('transfers.view')
+            @if(auth()->user()->isSuperAdmin())
             <div class="nav-section-title">Management</div>
             <a href="{{ route('admin.stock-transfers.index') }}" class="nav-link {{ request()->routeIs('admin.stock-transfers.*') ? 'active' : '' }}">
                 <i class="bi bi-arrow-left-right"></i>
-                <span>Stock Transfers</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Stock Transfers</span>
+                    <span class="nav-link-text-ur">سٹاک منتقلی</span>
+                </div>
             </a>
-            @endpermission
+            @endif
 
-            @permission('welcome-page.manage')
+            @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.welcome-page.index') }}" class="nav-link {{ request()->routeIs('admin.welcome-page.*') ? 'active' : '' }}">
                 <i class="bi bi-gear"></i>
-                <span>Welcome Page Settings</span>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Welcome Page Settings</span>
+                    <span class="nav-link-text-ur">ترحیب کی ترتیبات</span>
+                </div>
             </a>
-            @endpermission
+            @endif
 
             {{-- Reports section disabled - routes and views not yet implemented --}}
             {{-- @permission('reports.view')

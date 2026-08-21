@@ -30,6 +30,13 @@
                     </a>
                     @endcan
                 @endif
+                @if($sale->isConfirmed() && $sale->due_amount > 0)
+                    @can('sales.approve')
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                        <i class="bi bi-cash-coin me-1"></i> Record Payment
+                    </button>
+                    @endcan
+                @endif
                 <a href="{{ route('admin.sales.index') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-list me-1"></i> All Sales
                 </a>
@@ -304,6 +311,17 @@
                         @endcan
                     @endif
 
+                    {{-- Debug: Check if button should show --}}
+                    <!-- isConfirmed: {{ $sale->isConfirmed() ? 'true' : 'false' }} | due_amount: {{ $sale->due_amount }} | due_amount > 0: {{ $sale->due_amount > 0 ? 'true' : 'false' }} -->
+                    
+                    @if($sale->isConfirmed() && $sale->due_amount > 0)
+                        @can('sales.approve')
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                            <i class="bi bi-cash-coin me-1"></i> Record Payment
+                        </button>
+                        @endcan
+                    @endif
+
                     @if($sale->canBeCancelled())
                         @can('sales.cancel')
                         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
@@ -370,6 +388,55 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-danger">Cancel Sale</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endcan
+
+    {{-- Payment Modal --}}
+    @can('sales.approve')
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Record Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('admin.sales.recordPayment', $sale) }}" method="POST" id="paymentForm">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Amount Due</label>
+                            <h4 class="mb-0 text-danger">{{ number_format($sale->due_amount, 2) }} PKR</h4>
+                        </div>
+                        <div class="mb-3">
+                            <label for="payment_amount" class="form-label">Payment Amount <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">PKR</span>
+                                <input type="number" 
+                                       class="form-control @error('amount') is-invalid @enderror" 
+                                       id="payment_amount" 
+                                       name="amount" 
+                                       step="0.01"
+                                       min="0.01"
+                                       max="{{ (float)$sale->due_amount }}"
+                                       placeholder="Enter payment amount"
+                                       required
+                                       autofocus
+                                       value="{{ old('amount') }}">
+                            </div>
+                            @error('amount')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i> Record Payment
+                        </button>
                     </div>
                 </form>
             </div>

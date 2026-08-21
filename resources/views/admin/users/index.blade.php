@@ -81,6 +81,7 @@
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Roles</th>
+                        <th>Warehouses</th>
                         <th>Status</th>
                         <th>Last Login</th>
                         <th>Actions</th>
@@ -113,6 +114,22 @@
                                 @endforeach
                                 @if($user->roles->isEmpty())
                                     <span class="text-muted">No role</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($user->isSuperAdmin())
+                                    <span class="badge bg-info">All Warehouses</span>
+                                @else
+                                    @php $warehouses = $user->warehouses; @endphp
+                                    @if($warehouses->isNotEmpty())
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach($warehouses as $warehouse)
+                                                <span class="badge bg-secondary">{{ $warehouse->name }}</span>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
                                 @endif
                             </td>
                             <td>
@@ -221,7 +238,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
+                            <td colspan="8" class="text-center text-muted py-4">
                                 <i class="bi bi-inbox display-4 d-block mb-2" style="opacity: 0.3;"></i>
                                 No users found
                             </td>

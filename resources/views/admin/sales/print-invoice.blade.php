@@ -172,9 +172,7 @@
         <button onclick="window.print()" class="btn btn-primary">
             <i class="bi bi-printer"></i> Print Invoice
         </button>
-        <button onclick="window.history.back()" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Back
-        </button>
+
     </div>
 
     <div class="invoice-container">

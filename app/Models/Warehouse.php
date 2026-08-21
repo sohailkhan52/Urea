@@ -49,6 +49,7 @@ class Warehouse extends Model
         'address',
         'manager_id',
         'status',
+        'is_default',
     ];
 
     /**
@@ -59,6 +60,7 @@ class Warehouse extends Model
     protected function casts(): array
     {
         return [
+            'is_default' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',
@@ -97,6 +99,39 @@ class Warehouse extends Model
         return $this->type === self::TYPE_BRANCH;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | User & Access Control Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Get the manager/admin of this warehouse
+     */
+    public function manager(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    /**
+     * Get all users assigned to this warehouse (with access)
+     */
+    public function admins(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_warehouse_assignments')
+            ->where('revoked_at', null)
+            ->withPivot('access_level', 'assigned_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get all users with active access (no revoked dates)
+     */
+    public function activeAdmins(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->admins();
+    }
+
     /**
      * Check if this is a store
      */
@@ -114,19 +149,51 @@ class Warehouse extends Model
     }
 
     /**
-     * Get the manager (user) for the warehouse
-     */
-    public function manager(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-    {
-        return $this->belongsTo(User::class, 'manager_id');
-    }
-
-    /**
      * Get inventory items for this warehouse
      */
     public function inventory(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(WarehouseInventory::class);
+    }
+
+    /**
+     * Get purchases for this warehouse
+     */
+    public function purchases(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Purchase::class);
+    }
+
+    /**
+     * Get sales for this warehouse
+     */
+    public function sales(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Sale::class);
+    }
+
+    /**
+     * Get stock transfers from this warehouse (as source)
+     */
+    public function sourceTransfers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(StockTransfer::class, 'source_warehouse_id');
+    }
+
+    /**
+     * Get stock transfers to this warehouse (as destination)
+     */
+    public function destinationTransfers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(StockTransfer::class, 'destination_warehouse_id');
+    }
+
+    /**
+     * Get all stock movements for this warehouse
+     */
+    public function stockMovements(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(StockMovement::class);
     }
 
     /**
@@ -213,5 +280,33 @@ class Warehouse extends Model
     public function getTypeLabelAttribute(): string
     {
         return self::getTypes()[$this->type] ?? $this->type;
+    }
+
+    /**
+     * Set this warehouse as default
+     */
+    public function setAsDefault(): bool
+    {
+        // Remove default from all other warehouses
+        static::where('id', '!=', $this->id)->update(['is_default' => false]);
+        
+        // Set this as default
+        return $this->update(['is_default' => true]);
+    }
+
+    /**
+     * Get the default warehouse
+     */
+    public static function getDefault(): ?self
+    {
+        return static::where('is_default', true)->where('status', self::STATUS_ACTIVE)->first();
+    }
+
+    /**
+     * Scope to get only default warehouse
+     */
+    public function scopeIsDefault($query)
+    {
+        return $query->where('is_default', true);
     }
 }

@@ -16,6 +16,14 @@
                 </nav>
             </div>
             <div class="btn-group">
+                @can('purchases.view')
+                <a href="{{ route('admin.purchases.print', $purchase) }}" 
+                   class="btn btn-primary" 
+                   target="_blank"
+                   title="Print Purchase Order">
+                    <i class="bi bi-printer me-1"></i> Print
+                </a>
+                @endcan
                 @if($purchase->isDraft())
                     @can('purchases.update')
                     <a href="{{ route('admin.purchases.edit', $purchase) }}" class="btn btn-warning">

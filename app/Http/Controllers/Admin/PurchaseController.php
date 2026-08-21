@@ -29,7 +29,16 @@ class PurchaseController extends Controller
     {
         $this->authorize('purchases.view');
 
+        // Only super admin can view all purchases
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can manage purchases.');
+        }
+
+        $user = auth()->user();
         $query = Purchase::with(['supplier', 'warehouse']);
+
+        // Apply warehouse-level filtering automatically
+        $query = $query->forUserWarehouses($user);
 
         // Search
         if ($request->filled('search')) {
@@ -47,9 +56,14 @@ class PurchaseController extends Controller
             $query->where('supplier_id', $request->supplier_id);
         }
 
-        // Filter by warehouse
+        // Filter by warehouse - only if user has access to the requested warehouse
         if ($request->filled('warehouse_id')) {
-            $query->where('warehouse_id', $request->warehouse_id);
+            if ($user->canAccessWarehouse($request->warehouse_id)) {
+                $query->where('warehouse_id', $request->warehouse_id);
+            } else {
+                // User trying to access warehouse they don't have access to
+                abort(403, 'You do not have access to this warehouse.');
+            }
         }
 
         // Filter by status
@@ -59,8 +73,12 @@ class PurchaseController extends Controller
 
         $purchases = $query->latest()->paginate(15)->withQueryString();
 
+        // Get warehouses the user can see
+        $warehouses = $user->isSuperAdmin()
+            ? Warehouse::active()->orderBy('name')->get()
+            : $user->warehouses()->where('status', 'active')->orderBy('name')->get();
+
         $suppliers = Supplier::active()->orderBy('name')->get();
-        $warehouses = Warehouse::active()->orderBy('name')->get();
 
         return view('admin.purchases.index', compact('purchases', 'suppliers', 'warehouses'));
     }
@@ -73,38 +91,86 @@ class PurchaseController extends Controller
         $this->authorize('purchases.create');
 
         $suppliers = Supplier::active()->orderBy('name')->get();
-        $warehouses = Warehouse::active()->orderBy('name')->get();
-        $products = Product::active()->orderBy('name')->get();
+        
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            $warehouses = Warehouse::active()->orderBy('name')->get();
+            $defaultWarehouse = Warehouse::getDefault();
+        } else {
+            // Regular admin can only create purchases for their assigned warehouse
+            $warehouses = $user->warehouses()->where('status', 'active')->orderBy('name')->get();
+            $defaultWarehouse = $user->getAssignedWarehouse();
+            
+            if ($warehouses->isEmpty()) {
+                abort(403, 'You do not have any warehouse assigned.');
+            }
+        }
 
-        return view('admin.purchases.create', compact('suppliers', 'warehouses', 'products'));
+        return view('admin.purchases.create', compact('suppliers', 'warehouses', 'defaultWarehouse'));
     }
 
     /**
      * Store a newly created purchase in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(\App\Http\Requests\Admin\StorePurchaseWithItemsRequest $request): RedirectResponse
     {
         $this->authorize('purchases.create');
 
-        $request->validate([
-            'supplier_id' => 'required|exists:suppliers,id',
-            'warehouse_id' => 'required|exists:warehouses,id',
-            'purchase_date' => 'required|date',
-            'notes' => 'nullable|string|max:1000',
-        ]);
+        $user = auth()->user();
+
+        // Verify user has access to the selected warehouse
+        if (!$user->canAccessWarehouse($request->warehouse_id)) {
+            abort(403, 'You do not have permission to create purchases in this warehouse.');
+        }
 
         try {
-            $purchase = $this->purchaseService->createPurchase([
-                'supplier_id' => $request->supplier_id,
-                'warehouse_id' => $request->warehouse_id,
-                'purchase_date' => $request->purchase_date,
-                'notes' => $request->notes,
-            ]);
+            $purchase = \DB::transaction(function () use ($request) {
+                // Create purchase
+                $purchase = $this->purchaseService->createPurchase([
+                    'supplier_id' => $request->supplier_id,
+                    'warehouse_id' => $request->warehouse_id,
+                    'purchase_date' => $request->purchase_date,
+                    'notes' => $request->notes,
+                ]);
 
-            return redirect()->route('admin.purchases.edit', $purchase)
-                ->with('success', 'Purchase created successfully. Add items below.');
+                // Parse items if they're a JSON string
+                $items = $request->items;
+                if (is_string($items)) {
+                    $items = json_decode($items, true);
+                }
+
+                // Add items
+                if (is_array($items)) {
+                    foreach ($items as $itemData) {
+                        $this->purchaseService->addItem(
+                            $purchase,
+                            $itemData['product_id'],
+                            $itemData['quantity'],
+                            $itemData['unit_price']
+                        );
+                    }
+                }
+
+                // Update expenses
+                $this->purchaseService->updateExpenses($purchase, [
+                    'discount' => $request->discount ?? 0,
+                    'transport_cost' => $request->transport_cost ?? 0,
+                    'other_expenses' => $request->other_expenses ?? 0,
+                ]);
+
+                // Confirm the purchase immediately
+                $paidAmount = $request->paid_amount ?? 0;
+                $this->purchaseService->confirmPurchase($purchase, $paidAmount);
+
+                return $purchase;
+            });
+
+            return redirect()->route('admin.purchases.show', $purchase)
+                ->with('success', 'Purchase created and confirmed successfully! Stock has been added to warehouse.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Error creating purchase: ' . $e->getMessage());
+            return back()
+                ->withInput()
+                ->with('error', 'Error creating purchase: ' . $e->getMessage());
         }
     }
 
@@ -114,6 +180,11 @@ class PurchaseController extends Controller
     public function show(Purchase $purchase): View
     {
         $this->authorize('purchases.view');
+
+        // Verify user has access to this purchase's warehouse
+        if (!auth()->user()->canAccessWarehouse($purchase->warehouse_id)) {
+            abort(403, 'You do not have permission to view this purchase.');
+        }
 
         $purchase->load(['supplier', 'warehouse', 'items.product', 'creator', 'confirmer']);
 
@@ -129,6 +200,11 @@ class PurchaseController extends Controller
     {
         $this->authorize('purchases.update');
 
+        // Verify user has access to this purchase's warehouse
+        if (!auth()->user()->canAccessWarehouse($purchase->warehouse_id)) {
+            abort(403, 'You do not have permission to edit this purchase.');
+        }
+
         if (!$purchase->canBeEdited()) {
             abort(403, 'Only draft purchases can be edited.');
         }
@@ -136,7 +212,10 @@ class PurchaseController extends Controller
         $purchase->load(['supplier', 'warehouse', 'items.product']);
 
         $suppliers = Supplier::active()->orderBy('name')->get();
-        $warehouses = Warehouse::active()->orderBy('name')->get();
+        $user = auth()->user();
+        $warehouses = $user->isSuperAdmin()
+            ? Warehouse::active()->orderBy('name')->get()
+            : $user->warehouses()->where('status', 'active')->orderBy('name')->get();
         $products = Product::active()->orderBy('name')->get();
 
         $summary = $this->purchaseService->getPurchaseSummary($purchase);
@@ -150,6 +229,11 @@ class PurchaseController extends Controller
     public function confirm(Purchase $purchase, Request $request): RedirectResponse
     {
         $this->authorize('purchases.approve');
+
+        // Verify user has access to this purchase's warehouse
+        if (!auth()->user()->canAccessWarehouse($purchase->warehouse_id)) {
+            abort(403, 'You do not have permission to confirm this purchase.');
+        }
 
         if (!$purchase->canBeConfirmed()) {
             return back()->with('error', 'This purchase cannot be confirmed.');
@@ -176,6 +260,11 @@ class PurchaseController extends Controller
     {
         $this->authorize('purchases.cancel');
 
+        // Verify user has access to this purchase's warehouse
+        if (!auth()->user()->canAccessWarehouse($purchase->warehouse_id)) {
+            abort(403, 'You do not have permission to cancel this purchase.');
+        }
+
         $request->validate([
             'reason' => 'nullable|string|max:500',
         ]);
@@ -187,6 +276,28 @@ class PurchaseController extends Controller
                 ->with('success', 'Purchase cancelled successfully.');
         } catch (\Exception $e) {
             return back()->with('error', 'Error cancelling purchase: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete purchase permanently.
+     */
+    public function destroy(Purchase $purchase): RedirectResponse
+    {
+        $this->authorize('purchases.delete');
+
+        // Verify user has access to this purchase's warehouse
+        if (!auth()->user()->canAccessWarehouse($purchase->warehouse_id)) {
+            abort(403, 'You do not have permission to delete this purchase.');
+        }
+
+        try {
+            $purchase->delete();
+
+            return redirect()->route('admin.purchases.index')
+                ->with('success', 'Purchase deleted successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error deleting purchase: ' . $e->getMessage());
         }
     }
 
@@ -282,5 +393,42 @@ class PurchaseController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Error updating expenses: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Print purchase order.
+     */
+    public function print(Purchase $purchase): View
+    {
+        $this->authorize('purchases.view');
+
+        $purchase->load(['supplier', 'warehouse', 'items.product', 'creator']);
+
+        $summary = $this->purchaseService->getPurchaseSummary($purchase);
+
+        return view('admin.purchases.print', compact('purchase', 'summary'));
+    }
+
+    /**
+     * Get all products (AJAX for single-page form)
+     */
+    public function getProducts()
+    {
+        $this->authorize('purchases.create');
+
+        // Get all active products (for purchases, we don't need to check stock)
+        $products = Product::active()->orderBy('name')->get();
+
+        $productsData = $products->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'sku' => $product->sku,
+                'purchase_price' => (float) ($product->purchase_price ?? $product->sale_price),
+                'sale_price' => (float) $product->sale_price,
+            ];
+        });
+
+        return response()->json($productsData);
     }
 }

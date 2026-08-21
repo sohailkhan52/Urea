@@ -7,9 +7,11 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Products Management</h1>
         @can('products.create')
+        @if(auth()->user()->isSuperAdmin())
         <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle me-1"></i> Add Product
         </a>
+        @endif
         @endcan
     </div>
 
@@ -27,6 +29,7 @@
                                value="{{ request('search') }}"
                                placeholder="Search by name, SKU, barcode, or company">
                     </div>
+                    @if(auth()->user()->isSuperAdmin())
                     <div class="col-md-2">
                         <label for="company_id" class="form-label">Company</label>
                         <select class="form-select" id="company_id" name="company_id">
@@ -38,6 +41,7 @@
                             @endforeach
                         </select>
                     </div>
+                    @endif
                     <div class="col-md-2">
                         <label for="category_id" class="form-label">Category</label>
                         <select class="form-select" id="category_id" name="category_id">
@@ -49,6 +53,7 @@
                             @endforeach
                         </select>
                     </div>
+                    @if(auth()->user()->isSuperAdmin())
                     <div class="col-md-2">
                         <label for="status" class="form-label">Status</label>
                         <select class="form-select" id="status" name="status">
@@ -57,6 +62,7 @@
                             <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                         </select>
                     </div>
+                    @endif
                     <div class="col-md-2 d-flex align-items-end gap-2">
                         <button type="submit" class="btn btn-secondary">
                             <i class="bi bi-funnel me-1"></i> Filter
@@ -80,13 +86,17 @@
                         <tr>
                             <th style="width: 60px;">#</th>
                             <th>Product</th>
+                            @if(auth()->user()->isSuperAdmin())
                             <th>SKU</th>
                             <th>Company</th>
+                            @endif
                             <th>Category</th>
                             <th>Weight</th>
                             <th class="text-end">Sale Price</th>
                             <th style="width: 120px;">Status</th>
+                            @if(auth()->user()->isSuperAdmin())
                             <th style="width: 180px;" class="text-end">Actions</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -106,12 +116,14 @@
                                 </small>
                                 @endif
                             </td>
+                            @if(auth()->user()->isSuperAdmin())
                             <td>
                                 <code class="bg-light px-2 py-1 rounded">{{ $product->sku }}</code>
                             </td>
                             <td>
                                 <small>{{ $product->company->name }}</small>
                             </td>
+                            @endif
                             <td>
                                 <span class="badge bg-secondary">{{ $product->category->name }}</span>
                             </td>
@@ -128,6 +140,7 @@
                                 <span class="badge bg-warning">Inactive</span>
                                 @endif
                             </td>
+                            @if(auth()->user()->isSuperAdmin())
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm" role="group">
                                     @can('products.view')
@@ -197,6 +210,7 @@
                                 </div>
                                 @endcan
                             </td>
+                            @endif
                         </tr>
                         @endforeach
                     </tbody>
@@ -218,7 +232,7 @@
                     @endif
                 </p>
                 @can('products.create')
-                @if(!request()->hasAny(['search', 'company_id', 'category_id', 'status']))
+                @if(!request()->hasAny(['search', 'company_id', 'category_id', 'status']) && auth()->user()->isSuperAdmin())
                 <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
                     <i class="bi bi-plus-circle me-1"></i> Add Product
                 </a>

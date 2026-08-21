@@ -404,4 +404,41 @@ class DashboardService
             ->orderByDesc('outstanding_balance')
             ->get();
     }
+
+    /**
+     * Get total confirmed sales count
+     */
+    public function getTotalSalesCount(): int
+    {
+        return Sale::where('status', Sale::STATUS_CONFIRMED)->count();
+    }
+
+    /**
+     * Get total confirmed purchases count
+     */
+    public function getTotalPurchasesCount(): int
+    {
+        return Purchase::where('status', Purchase::STATUS_CONFIRMED)->count();
+    }
+
+    /**
+     * Get total udhar (outstanding receivables) amount
+     */
+    public function getTotalUdharAmount(): float
+    {
+        return (float) DB::table('sales')
+            ->where('status', Sale::STATUS_CONFIRMED)
+            ->sum('udhar_amount');
+    }
+
+    /**
+     * Get total payables (outstanding payables) amount
+     */
+    public function getTotalPayablesAmount(): float
+    {
+        return (float) DB::table('purchases')
+            ->where('status', Purchase::STATUS_CONFIRMED)
+            ->sum(DB::raw('total_amount - paid_amount'));
+    }
 }
+

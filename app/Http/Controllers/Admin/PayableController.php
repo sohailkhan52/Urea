@@ -36,6 +36,11 @@ class PayableController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
+        // Only super admin can view payables
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can manage supplier payables.');
+        }
+
         // Build filters array
         $filters = [
             'search' => $request->filled('search') ? $request->search : null,
@@ -329,6 +334,64 @@ class PayableController extends Controller
                 'date_from' => $dateFrom,
                 'date_to' => $dateTo,
             ],
+        ]);
+    }
+
+    /**
+     * Print supplier payable statement.
+     */
+    public function printStatement(Supplier $supplier, Request $request): View
+    {
+        if (!auth()->user()->hasPermission('payables.view')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Get all ledger entries for supplier
+        $query = SupplierLedger::where('supplier_id', $supplier->id)
+            ->with(['purchase', 'purchasePayment', 'creator'])
+            ->orderBy('date', 'asc');
+
+        // Filter by date range if provided
+        if ($request->filled('date_from')) {
+            $query->whereDate('date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('date', '<=', $request->date_to);
+        }
+
+        $ledgerEntries = $query->get();
+
+        // Prepare ledger data
+        $ledgerData = $ledgerEntries->map(function ($entry) {
+            return [
+                'id' => $entry->id,
+                'date' => $entry->date->format('Y-m-d'),
+                'type' => $entry->type,
+                'type_label' => $entry->type_label,
+                'description' => $entry->description,
+                'reference_number' => $entry->reference_number,
+                'purchase_number' => $entry->purchase ? $entry->purchase->purchase_number : 'N/A',
+                'payable_added' => (float)$entry->payable_added,
+                'payment_made' => (float)$entry->payment_made,
+                'balance' => (float)$entry->balance,
+            ];
+        });
+
+        // Get current balance
+        // If date filters are applied, use filtered results. Otherwise, get total payable balance from supplier
+        if ($request->filled('date_from') || $request->filled('date_to')) {
+            // Use last entry from filtered results
+            $currentBalance = $ledgerEntries->isNotEmpty() ? max(0, (float)$ledgerEntries->last()->balance) : 0;
+        } else {
+            // Get total payable from supplier summary (all-time balance)
+            $summary = $this->payableService->getSupplierPayableSummary($supplier->id);
+            $currentBalance = $summary['total_payable'] ?? 0;
+        }
+
+        return view('admin.payables.print-statement', [
+            'supplier' => $supplier,
+            'ledgerEntries' => $ledgerData,
+            'currentBalance' => $currentBalance,
         ]);
     }
 }

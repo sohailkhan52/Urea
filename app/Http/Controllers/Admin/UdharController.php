@@ -400,4 +400,60 @@ class UdharController extends Controller
             'summary' => $summary,
         ]);
     }
+
+    /**
+     * Print customer Udhar statement.
+     */
+    public function printStatement(Customer $customer, Request $request): View
+    {
+        $this->authorize('udhar.view');
+
+        // Get all ledger entries for customer
+        $query = CustomerLedger::where('customer_id', $customer->id)
+            ->with(['sale', 'payment', 'creator'])
+            ->orderBy('date', 'asc');
+
+        // Filter by date range if provided
+        if ($request->filled('date_from')) {
+            $query->whereDate('date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('date', '<=', $request->date_to);
+        }
+
+        $ledgerEntries = $query->get();
+
+        // Prepare ledger data
+        $ledgerData = $ledgerEntries->map(function ($entry) {
+            return [
+                'id' => $entry->id,
+                'date' => $entry->date->format('Y-m-d'),
+                'type' => $entry->type,
+                'type_label' => $entry->type_label,
+                'description' => $entry->description,
+                'invoice_number' => $entry->sale ? $entry->sale->invoice_number : ($entry->payment ? 'Payment #' . $entry->payment->id : 'N/A'),
+                'debit' => $entry->debit,
+                'credit' => $entry->credit,
+                'balance' => $entry->balance,
+                'reference_number' => $entry->reference_number,
+            ];
+        });
+
+        // Get current balance
+        // If date filters are applied, use filtered results. Otherwise, get total udhar balance from customer
+        if ($request->filled('date_from') || $request->filled('date_to')) {
+            // Use last entry from filtered results
+            $currentBalance = $ledgerEntries->isNotEmpty() ? $ledgerEntries->last()->balance : 0;
+        } else {
+            // Get total udhar from customer summary (all-time balance)
+            $summary = $this->udharService->getCustomerUdharSummary($customer->id);
+            $currentBalance = $summary['total_udhar'] ?? 0;
+        }
+
+        return view('admin.udhar.print-statement', [
+            'customer' => $customer,
+            'ledgerEntries' => $ledgerData,
+            'currentBalance' => $currentBalance,
+        ]);
+    }
 }

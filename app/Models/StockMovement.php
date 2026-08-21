@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\WarehouseScopeable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -23,7 +24,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class StockMovement extends Model
 {
-    use HasFactory;
+    use HasFactory, WarehouseScopeable;
 
     /**
      * Movement type constants

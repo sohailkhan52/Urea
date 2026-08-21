@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\WarehouseScopeable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -31,7 +32,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Sale extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, WarehouseScopeable;
 
     /**
      * Status constants
@@ -94,6 +95,7 @@ class Sale extends Model
             'paid_amount' => 'decimal:2',
             'due_amount' => 'decimal:2',
             'udhar_amount' => 'decimal:2',
+            'payment_status' => 'string',
         ];
     }
 
@@ -362,16 +364,16 @@ class Sale extends Model
     }
 
     /**
-     * Get payment status
+     * Get payment status label for display
      */
-    public function getPaymentStatusAttribute(): string
+    public function getPaymentStatusLabelAttribute(): string
     {
-        if ($this->paid_amount == 0) {
-            return 'Unpaid';
-        } elseif ($this->paid_amount >= $this->total_amount) {
-            return 'Paid';
-        } else {
-            return 'Partial';
-        }
+        $status = $this->getRawOriginal('payment_status') ?? $this->calculatePaymentStatus();
+        return match($status) {
+            self::PAYMENT_STATUS_PAID => 'Paid',
+            self::PAYMENT_STATUS_PARTIAL => 'Partial',
+            self::PAYMENT_STATUS_UNPAID => 'Unpaid',
+            default => ucfirst($status),
+        };
     }
 }

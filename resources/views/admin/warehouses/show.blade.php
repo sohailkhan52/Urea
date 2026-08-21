@@ -48,41 +48,12 @@
                             <p><code class="bg-light px-2 py-1 rounded">{{ $warehouse->code }}</code></p>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-muted small">Type</label>
-                            <p>
-                                @if($warehouse->type === 'main_warehouse')
-                                <span class="badge bg-primary">
-                                    <i class="bi bi-building me-1"></i>{{ $warehouse->type_label }}
-                                </span>
-                                @elseif($warehouse->type === 'branch_warehouse')
-                                <span class="badge bg-info">
-                                    <i class="bi bi-shop me-1"></i>{{ $warehouse->type_label }}
-                                </span>
-                                @else
-                                <span class="badge bg-secondary">
-                                    <i class="bi bi-shop-window me-1"></i>{{ $warehouse->type_label }}
-                                </span>
-                                @endif
-                            </p>
-                        </div>
-                        <div class="col-md-6">
                             <label class="form-label text-muted small">Status</label>
                             <p>
                                 @if($warehouse->status === 'active')
                                 <span class="badge bg-success">Active</span>
                                 @else
                                 <span class="badge bg-warning">Inactive</span>
-                                @endif
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small">Branch</label>
-                            <p>
-                                @if($warehouse->branch)
-                                <i class="bi bi-geo-alt me-1"></i>
-                                {{ $warehouse->branch->name }} ({{ $warehouse->branch->city }})
-                                @else
-                                <span class="text-muted">No branch assigned</span>
                                 @endif
                             </p>
                         </div>

@@ -26,6 +26,11 @@ class StockTransferController extends Controller
      */
     public function index(Request $request)
     {
+        // Only super admin can manage stock transfers
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can manage stock transfers.');
+        }
+
         $query = StockTransfer::with(['sourceWarehouse', 'destinationWarehouse', 'items'])
             ->orderBy('created_at', 'desc');
 

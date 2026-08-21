@@ -40,6 +40,11 @@ class WelcomePageController extends Controller
     {
         $this->authorize('welcome-page.manage');
 
+        // Only super admin can manage welcome page settings
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Only super admins can manage welcome page settings.');
+        }
+
         $settings = $this->welcomePageService->getSettings();
 
         return view('admin.welcome-page.index', compact('settings'));
