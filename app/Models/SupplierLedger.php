@@ -33,6 +33,7 @@ class SupplierLedger extends Model
     public const TYPE_OPENING_BALANCE = 'opening_balance';
     public const TYPE_PURCHASE = 'purchase';
     public const TYPE_PAYMENT = 'payment';
+    public const TYPE_RETURN = 'return';
     public const TYPE_ADJUSTMENT = 'adjustment';
 
     /**
@@ -42,6 +43,7 @@ class SupplierLedger extends Model
         self::TYPE_OPENING_BALANCE => 'Opening Balance',
         self::TYPE_PURCHASE => 'Purchase',
         self::TYPE_PAYMENT => 'Payment',
+        self::TYPE_RETURN => 'Return',
         self::TYPE_ADJUSTMENT => 'Adjustment',
     ];
 
@@ -126,6 +128,14 @@ class SupplierLedger extends Model
     }
 
     /**
+     * Get the purchase return that created this entry (if any)
+     */
+    public function purchaseReturn()
+    {
+        return $this->belongsTo(PurchaseReturn::class);
+    }
+
+    /**
      * Get type badge class
      */
     public function getTypeBadgeAttribute(): string
@@ -134,6 +144,7 @@ class SupplierLedger extends Model
             self::TYPE_OPENING_BALANCE => 'secondary',
             self::TYPE_PURCHASE => 'warning',
             self::TYPE_PAYMENT => 'success',
+            self::TYPE_RETURN => 'info',
             self::TYPE_ADJUSTMENT => 'info',
             default => 'secondary',
         };

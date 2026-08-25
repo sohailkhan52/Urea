@@ -6,11 +6,6 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Companies Management</h1>
-        @can('companies.create')
-        <a href="{{ route('admin.companies.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Add Company
-        </a>
-        @endcan
     </div>
 
     {{-- Search and Filter --}}
@@ -143,43 +138,6 @@
                                     </form>
                                     @endcan
                                 </div>
-
-                                {{-- Status Actions Dropdown --}}
-                                @can('companies.update')
-                                <div class="btn-group btn-group-sm ms-1" role="group">
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary dropdown-toggle" 
-                                            data-bs-toggle="dropdown" 
-                                            aria-expanded="false">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        @if($company->status === 'inactive')
-                                        <li>
-                                            <form action="{{ route('admin.companies.activate', $company) }}" method="POST">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item text-success">
-                                                    <i class="bi bi-check-circle me-1"></i> Activate
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @else
-                                        <li>
-                                            <form action="{{ route('admin.companies.deactivate', $company) }}" 
-                                                  method="POST"
-                                                  onsubmit="return confirm('Are you sure you want to deactivate this company?');">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item text-warning">
-                                                    <i class="bi bi-x-circle me-1"></i> Deactivate
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @endif
-                                    </ul>
-                                </div>
-                                @endcan
                             </td>
                         </tr>
                         @endforeach

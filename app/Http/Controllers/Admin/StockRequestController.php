@@ -32,6 +32,7 @@ class StockRequestController extends Controller
         $this->authorize('stock_requests.view');
 
         $user = auth()->user();
+
         $query = StockRequest::with(['warehouse', 'requester', 'items'])
             ->orderBy('created_at', 'desc');
 
@@ -99,14 +100,17 @@ class StockRequestController extends Controller
             $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
             $defaultWarehouse = Warehouse::getDefault();
         } else {
-            $warehouses = $user->warehouses()->where('status', 'active')->orderBy('name')->get();
-            $defaultWarehouse = $user->getAssignedWarehouse();
+            // Non-super-admin users always use the first warehouse (default warehouse)
+            $defaultWarehouse = Warehouse::getDefault();
             
-            if ($warehouses->isEmpty()) {
+            if (!$defaultWarehouse) {
                 return redirect()
                     ->route('admin.stock-requests.index')
-                    ->with('error', 'You do not have any warehouse assigned.');
+                    ->with('error', 'No default warehouse found. Please contact system administrator.');
             }
+            
+            // For non-super-admin users, only show the default warehouse
+            $warehouses = collect([$defaultWarehouse]);
         }
 
         $priorities = StockRequest::getPriorities();

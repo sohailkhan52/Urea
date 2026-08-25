@@ -228,6 +228,39 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->name('customers.deactivate')
         ->middleware('permission:customers.update');
 
+    // ============ PURCHASE RETURNS - MUST BE BEFORE RESOURCE ROUTE ============
+    Route::prefix('purchases')->name('purchases.')->group(function () {
+        Route::get('/returns', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'index'])
+            ->name('returns.index')
+            ->middleware('permission:purchases.view');
+        
+        Route::get('/returns/create', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'create'])
+            ->name('returns.create')
+            ->middleware('permission:purchases.create');
+        
+        Route::post('/returns', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'store'])
+            ->name('returns.store')
+            ->middleware('permission:purchases.create');
+        
+        Route::get('/returns/{return}', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'show'])
+            ->name('returns.show')
+            ->middleware('permission:purchases.view');
+        
+        Route::post('/returns/{return}/confirm', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'confirm'])
+            ->name('returns.confirm')
+            ->middleware('permission:purchases.approve');
+        
+        Route::post('/returns/{return}/cancel', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'cancel'])
+            ->name('returns.cancel')
+            ->middleware('permission:purchases.cancel');
+        
+        // AJAX endpoint for loading purchase details with returnable items
+        Route::get('/{purchase}/details', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'getPurchaseDetails'])
+            ->name('details')
+            ->middleware('permission:purchases.view');
+    });
+    // ============ END PURCHASE RETURNS ============
+
     // Purchase Management
     Route::resource('purchases', \App\Http\Controllers\Admin\PurchaseController::class)
         ->middleware('permission:purchases.view');
@@ -323,6 +356,33 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     Route::get('/sales/warehouse/{warehouse}/products', [\App\Http\Controllers\Admin\SalesController::class, 'getWarehouseProducts'])
         ->name('sales.warehouseProducts')
         ->middleware('permission:sales.create');
+
+    // Sales Returns Management
+    Route::prefix('sales')->name('sales.')->group(function () {
+        Route::get('/returns', [\App\Http\Controllers\Admin\SalesReturnController::class, 'index'])
+            ->name('returns.index')
+            ->middleware('permission:sales.view');
+        
+        Route::get('/returns/create', [\App\Http\Controllers\Admin\SalesReturnController::class, 'create'])
+            ->name('returns.create')
+            ->middleware('permission:sales.create');
+        
+        Route::post('/returns', [\App\Http\Controllers\Admin\SalesReturnController::class, 'store'])
+            ->name('returns.store')
+            ->middleware('permission:sales.create');
+        
+        Route::get('/returns/{return}', [\App\Http\Controllers\Admin\SalesReturnController::class, 'show'])
+            ->name('returns.show')
+            ->middleware('permission:sales.view');
+        
+        Route::post('/returns/{return}/confirm', [\App\Http\Controllers\Admin\SalesReturnController::class, 'confirm'])
+            ->name('returns.confirm')
+            ->middleware('permission:sales.approve');
+        
+        Route::post('/returns/{return}/cancel', [\App\Http\Controllers\Admin\SalesReturnController::class, 'cancel'])
+            ->name('returns.cancel')
+            ->middleware('permission:sales.cancel');
+    });
 
     // Udhar Management (Credit/Outstanding)
     Route::prefix('udhar')->name('udhar.')->middleware('permission:udhar.view')->group(function () {

@@ -169,68 +169,6 @@
                                     @endif
                                 </div>
 
-                                {{-- Action Dropdown --}}
-                                <div class="btn-group btn-group-sm ms-1" role="group">
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary dropdown-toggle" 
-                                            data-bs-toggle="dropdown" 
-                                            aria-expanded="false">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        @if($request->isPending() && $request->items()->count() > 0)
-                                            @can('stock_requests.create')
-                                            <li>
-                                                <form action="{{ route('admin.stock-requests.submit', $request) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="dropdown-item text-info"
-                                                            onclick="return confirm('Submit this request for review?');">
-                                                        <i class="bi bi-send me-1"></i> Submit for Review
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                        
-                                        @if($request->canBeApproved())
-                                            @can('stock_requests.approve')
-                                            <li>
-                                                <a href="{{ route('admin.stock-requests.show', $request) }}#approve-section" 
-                                                   class="dropdown-item text-success">
-                                                    <i class="bi bi-check-circle me-1"></i> Approve Request
-                                                </a>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                        
-                                        @if($request->canBeRejected())
-                                            @can('stock_requests.approve')
-                                            <li>
-                                                <button type="button" 
-                                                        class="dropdown-item text-danger"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#rejectModal{{ $request->id }}">
-                                                    <i class="bi bi-x-circle me-1"></i> Reject Request
-                                                </button>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                        
-                                        @if($request->canBeCancelled())
-                                            @can('stock_requests.cancel')
-                                            <li>
-                                                <button type="button" 
-                                                        class="dropdown-item text-warning"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#cancelModal{{ $request->id }}">
-                                                    <i class="bi bi-x-octagon me-1"></i> Cancel Request
-                                                </button>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                    </ul>
-                                </div>
-
                                 {{-- Reject Modal --}}
                                 @can('stock_requests.approve')
                                 @if($request->canBeRejected())

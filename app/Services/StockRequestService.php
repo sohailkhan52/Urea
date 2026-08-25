@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\StockRequest;
 use App\Models\StockRequestItem;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -27,8 +26,21 @@ class StockRequestService
         // Validate user has access to warehouse
         $user = auth()->user();
         
-        if (!$user->isSuperAdmin() && !$user->canAccessWarehouse($data['warehouse_id'])) {
-            throw new \Exception('You do not have permission to create requests for this warehouse.');
+        if ($user->isSuperAdmin()) {
+            // Super admin can use any warehouse
+            if (!$user->canAccessWarehouse($data['warehouse_id'])) {
+                throw new \Exception('You do not have permission to create requests for this warehouse.');
+            }
+        } else {
+            // Non-super-admin users are forced to use the default warehouse
+            $defaultWarehouse = \App\Models\Warehouse::getDefault();
+            
+            if (!$defaultWarehouse) {
+                throw new \Exception('No default warehouse found. Please contact system administrator.');
+            }
+            
+            // Override the warehouse_id to always use the default warehouse for non-super-admin
+            $data['warehouse_id'] = $defaultWarehouse->id;
         }
 
         return DB::transaction(function () use ($data, $user) {

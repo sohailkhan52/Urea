@@ -14,11 +14,6 @@
             <h1><i class="bi bi-people me-2"></i>Users</h1>
             <p class="text-muted mb-0">Manage system users and their access</p>
         </div>
-        @can('users.create')
-        <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>Add User
-        </a>
-        @endcan
     </div>
 </div>
 
@@ -173,67 +168,6 @@
                                     @endif
                                     @endcan
                                 </div>
-
-                                @can('users.update')
-                                <!-- Status Actions Dropdown -->
-                                <div class="dropdown d-inline ms-2">
-                                    <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" 
-                                            data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        @if($user->status !== 'active')
-                                        <li>
-                                            <form action="{{ route('admin.users.activate', $user) }}" method="POST">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item">
-                                                    <i class="bi bi-check-circle text-success me-2"></i>Activate
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @endif
-                                        
-                                        @if($user->id !== Auth::id() && $user->status !== 'inactive')
-                                        <li>
-                                            <form action="{{ route('admin.users.deactivate', $user) }}" method="POST"
-                                                  onsubmit="return confirm('Deactivate this user?')">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item">
-                                                    <i class="bi bi-x-circle text-warning me-2"></i>Deactivate
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @endif
-                                        
-                                        @if($user->id !== Auth::id() && $user->status !== 'suspended')
-                                        <li>
-                                            <form action="{{ route('admin.users.suspend', $user) }}" method="POST"
-                                                  onsubmit="return confirm('Suspend this user?')">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item">
-                                                    <i class="bi bi-ban text-danger me-2"></i>Suspend
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @endif
-                                        
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <form action="{{ route('admin.users.reset-password', $user) }}" method="POST"
-                                                  onsubmit="return confirm('Reset password for this user?')">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item">
-                                                    <i class="bi bi-key text-primary me-2"></i>Reset Password
-                                                </button>
-                                            </form>
-                                        </li>
-                                    </ul>
-                                </div>
-                                @endcan
                             </td>
                         </tr>
                     @empty
