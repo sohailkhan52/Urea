@@ -287,6 +287,44 @@ class PermissionSeeder extends Seeder
                 'description' => 'Receive stock transfers',
             ],
 
+            // Stock Requests (Multi-warehouse feature)
+            [
+                'name' => 'View Stock Requests',
+                'slug' => 'stock_requests.view',
+                'group' => 'stock_requests',
+                'description' => 'View stock requests',
+            ],
+            [
+                'name' => 'Create Stock Requests',
+                'slug' => 'stock_requests.create',
+                'group' => 'stock_requests',
+                'description' => 'Create new stock requests',
+            ],
+            [
+                'name' => 'Update Stock Requests',
+                'slug' => 'stock_requests.update',
+                'group' => 'stock_requests',
+                'description' => 'Edit stock requests',
+            ],
+            [
+                'name' => 'Approve Stock Requests',
+                'slug' => 'stock_requests.approve',
+                'group' => 'stock_requests',
+                'description' => 'Approve or reject stock requests',
+            ],
+            [
+                'name' => 'Cancel Stock Requests',
+                'slug' => 'stock_requests.cancel',
+                'group' => 'stock_requests',
+                'description' => 'Cancel stock requests',
+            ],
+            [
+                'name' => 'Delete Stock Requests',
+                'slug' => 'stock_requests.delete',
+                'group' => 'stock_requests',
+                'description' => 'Delete stock requests',
+            ],
+
             // Reports
             [
                 'name' => 'View Reports',

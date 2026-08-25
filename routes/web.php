@@ -418,6 +418,42 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->name('stock-transfers.checkStock')
         ->middleware('permission:transfers.create');
 
+    // Stock Request Management (Multi-warehouse feature)
+    Route::middleware('multi_warehouse')->group(function () {
+        Route::resource('stock-requests', \App\Http\Controllers\Admin\StockRequestController::class)
+            ->middleware('permission:stock_requests.view');
+
+        // Stock request actions
+        Route::post('/stock-requests/{stock_request}/submit', [\App\Http\Controllers\Admin\StockRequestController::class, 'submitForReview'])
+            ->name('stock-requests.submit')
+            ->middleware('permission:stock_requests.create');
+
+        Route::post('/stock-requests/{stock_request}/approve', [\App\Http\Controllers\Admin\StockRequestController::class, 'approve'])
+            ->name('stock-requests.approve')
+            ->middleware('permission:stock_requests.approve');
+
+        Route::post('/stock-requests/{stock_request}/reject', [\App\Http\Controllers\Admin\StockRequestController::class, 'reject'])
+            ->name('stock-requests.reject')
+            ->middleware('permission:stock_requests.approve');
+
+        Route::post('/stock-requests/{stock_request}/cancel', [\App\Http\Controllers\Admin\StockRequestController::class, 'cancel'])
+            ->name('stock-requests.cancel')
+            ->middleware('permission:stock_requests.cancel');
+
+        // Stock request items
+        Route::post('/stock-requests/{stock_request}/items', [\App\Http\Controllers\Admin\StockRequestController::class, 'addItem'])
+            ->name('stock-requests.addItem')
+            ->middleware('permission:stock_requests.update');
+
+        Route::put('/stock-requests/items/{stock_request_item}', [\App\Http\Controllers\Admin\StockRequestController::class, 'updateItem'])
+            ->name('stock-requests.updateItem')
+            ->middleware('permission:stock_requests.update');
+
+        Route::delete('/stock-requests/items/{stock_request_item}', [\App\Http\Controllers\Admin\StockRequestController::class, 'removeItem'])
+            ->name('stock-requests.removeItem')
+            ->middleware('permission:stock_requests.update');
+    });
+
     // Reports - COMMENTED OUT (Views not implemented yet)
     /*
     Route::prefix('reports')->name('reports.')->middleware('permission:reports.view')->group(function () {
@@ -499,6 +535,74 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
             Route::patch('/workflow-steps/{workflowStep}/toggle', [\App\Http\Controllers\Admin\WelcomePageController::class, 'toggleStep'])
                 ->name('workflow-steps.toggle');
         });
+
+    // Warehouse Chat & Messaging (Multi-warehouse feature)
+    Route::middleware('multi_warehouse')->prefix('chat')->name('chat.')->group(function () {
+        // Chat page and list
+        Route::get('/', [\App\Http\Controllers\Admin\ChatController::class, 'index'])
+            ->name('index');
+        
+        // API endpoints for chat
+        Route::get('/conversations', [\App\Http\Controllers\Admin\ChatController::class, 'listConversations'])
+            ->name('list-conversations');
+        
+        Route::get('/unread-count', [\App\Http\Controllers\Admin\ChatController::class, 'getUnreadCount'])
+            ->name('unread-count');
+        
+        // Conversation routes
+        Route::get('/{conversation}', [\App\Http\Controllers\Admin\ChatController::class, 'show'])
+            ->name('show');
+        
+        Route::get('/{conversation}/messages', [\App\Http\Controllers\Admin\ChatController::class, 'getMessages'])
+            ->name('get-messages');
+        
+        // Messaging
+        Route::post('/{conversation}/send', [\App\Http\Controllers\Admin\ChatController::class, 'sendMessage'])
+            ->name('send-message');
+        
+        Route::post('/{conversation}/messages/{message}/read', [\App\Http\Controllers\Admin\ChatController::class, 'markAsRead'])
+            ->name('mark-as-read');
+        
+        Route::post('/{conversation}/read', [\App\Http\Controllers\Admin\ChatController::class, 'markAllAsRead'])
+            ->name('mark-all-as-read');
+        
+        // Conversation actions
+        Route::post('/{conversation}/archive', [\App\Http\Controllers\Admin\ChatController::class, 'archiveConversation'])
+            ->name('archive');
+        
+        Route::post('/{conversation}/mute', [\App\Http\Controllers\Admin\ChatController::class, 'muteConversation'])
+            ->name('mute');
+    });
+
+    // Notifications Management
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])
+            ->name('index');
+        
+        // API Endpoints
+        Route::prefix('api')->name('api.')->group(function () {
+            Route::get('/unread-count', [\App\Http\Controllers\Admin\NotificationController::class, 'getUnreadCount'])
+                ->name('unread-count');
+            
+            Route::get('/recent', [\App\Http\Controllers\Admin\NotificationController::class, 'getRecent'])
+                ->name('recent');
+            
+            Route::post('/{notification}/read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])
+                ->name('mark-read');
+            
+            Route::post('/mark-all-read', [\App\Http\Controllers\Admin\NotificationController::class, 'markAllAsRead'])
+                ->name('mark-all-read');
+            
+            Route::post('/{notification}/delete', [\App\Http\Controllers\Admin\NotificationController::class, 'delete'])
+                ->name('delete');
+            
+            Route::get('/preferences', [\App\Http\Controllers\Admin\NotificationController::class, 'getPreferences'])
+                ->name('preferences');
+            
+            Route::post('/preferences/update', [\App\Http\Controllers\Admin\NotificationController::class, 'updatePreferences'])
+                ->name('preferences-update');
+        });
+    });
 
     // Future module routes will be added here following this pattern:
     // Route::resource('dealers', DealerController::class);

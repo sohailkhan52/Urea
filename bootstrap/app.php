@@ -3,6 +3,8 @@
 use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\CheckUserStatus;
+use App\Http\Middleware\EnsureMultiWarehouseEnabled;
+use App\Http\Middleware\EnsureWarehouseAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -26,6 +28,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => CheckRole::class,
             'permission' => CheckPermission::class,
             'user_status' => CheckUserStatus::class,
+            'multi_warehouse' => EnsureMultiWarehouseEnabled::class,
+            'warehouse_access' => EnsureWarehouseAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -16,6 +16,11 @@
 
     @stack('styles')
 
+    {{-- WebSocket Broadcasting Setup --}}
+    @php
+        $broadcastDriver = env('BROADCAST_DRIVER', 'log');
+    @endphp
+
     <style>
         :root {
             --sidebar-width: 260px;
@@ -470,6 +475,23 @@
             </a>
             @endif
 
+            {{-- Multi-Warehouse Features (only show when 2+ active warehouses) --}}
+            @multiwarehouse
+            @if(!auth()->user()->isSuperAdmin())
+            <div class="nav-section-title">Multi-Warehouse</div>
+            @endif
+            
+            @permission('stock_requests.view')
+            <a href="{{ route('admin.stock-requests.index') }}" class="nav-link {{ request()->routeIs('admin.stock-requests.*') ? 'active' : '' }}">
+                <i class="bi bi-box-seam"></i>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Stock Requests</span>
+                    <span class="nav-link-text-ur">سٹاک کی درخواستیں</span>
+                </div>
+            </a>
+            @endpermission
+            @endmultiwarehouse
+
             @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.welcome-page.index') }}" class="nav-link {{ request()->routeIs('admin.welcome-page.*') ? 'active' : '' }}">
                 <i class="bi bi-gear"></i>
@@ -479,6 +501,28 @@
                 </div>
             </a>
             @endif
+
+            {{-- Multi-Warehouse Chat --}}
+            @multiwarehouse
+            <div class="nav-section-title">Communication</div>
+            <a href="{{ route('admin.chat.index') }}" class="nav-link {{ request()->routeIs('admin.chat.*') ? 'active' : '' }}">
+                <i class="bi bi-chat-dots"></i>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Messages</span>
+                    <span class="nav-link-text-ur">پیغامات</span>
+                </div>
+                @php
+                    try {
+                        $unreadCount = auth()->check() ? app(\App\Services\ChatService::class)->getTotalUnreadCount(auth()->user()) : 0;
+                    } catch (\Exception $e) {
+                        $unreadCount = 0;
+                    }
+                @endphp
+                @if($unreadCount > 0)
+                    <span class="badge bg-danger ms-auto">{{ $unreadCount }}</span>
+                @endif
+            </a>
+            @endmultiwarehouse
 
             {{-- Reports section disabled - routes and views not yet implemented --}}
             {{-- @permission('reports.view')
@@ -514,6 +558,9 @@
             </nav>
 
             <div class="topbar-right">
+                {{-- Notification Bell --}}
+                @component('components.notification-bell') @endcomponent
+
                 <div class="dropdown">
                     <button class="btn btn-link text-dark text-decoration-none dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
                         <img src="{{ Auth::user()->profile_image_url }}" 
@@ -604,6 +651,46 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    {{-- WebSocket Broadcasting Libraries --}}
+    @if($broadcastDriver !== 'log' && $broadcastDriver !== 'null')
+        @if($broadcastDriver === 'websocket')
+            {{-- Development: Laravel WebSockets --}}
+            <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.0.0/dist/web/pusher.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.0/dist/echo.iife.js"></script>
+
+            <script>
+                window.Echo = new Echo({
+                    broadcaster: 'pusher',
+                    key: 'null-key',
+                    wsHost: window.location.hostname,
+                    wsPort: {{ env('LARAVEL_WEBSOCKETS_PORT', 6001) }},
+                    wssPort: {{ env('LARAVEL_WEBSOCKETS_PORT', 6001) }},
+                    forceTLS: false,
+                    encrypted: false,
+                    enabledTransports: ['ws', 'wss'],
+                });
+            </script>
+        @elseif($broadcastDriver === 'pusher')
+            {{-- Production: Pusher Service --}}
+            <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.0.0/dist/web/pusher.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.0/dist/echo.iife.js"></script>
+
+            <script>
+                window.Echo = new Echo({
+                    broadcaster: 'pusher',
+                    key: '{{ config('broadcasting.connections.pusher.key') }}',
+                    cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+                    forceTLS: true,
+                    auth: {
+                        headers: {
+                            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+                        }
+                    }
+                });
+            </script>
+        @endif
+    @endif
 
     <script>
         const sidebar = document.getElementById('sidebar');

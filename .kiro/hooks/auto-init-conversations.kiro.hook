@@ -1,0 +1,17 @@
+{
+  "enabled": false,
+  "name": "Auto-Initialize Conversations on Warehouse Changes",
+  "description": "When a warehouse is created, updated, or a new admin is assigned, automatically initialize the conversation and add participants so they can start messaging immediately. DISABLED: Run manually with 'php artisan messaging:initialize'",
+  "version": "1",
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": [
+      "write"
+    ]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "php artisan messaging:initialize",
+    "timeout": 30
+  }
+}

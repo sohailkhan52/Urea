@@ -29,6 +29,19 @@ class AppServiceProvider extends ServiceProvider
         
         $this->configureDefaults();
         $this->registerBladeDirectives();
+        $this->registerViewComposers();
+    }
+
+    /**
+     * Register view composers.
+     */
+    protected function registerViewComposers(): void
+    {
+        // Share multi-warehouse status with layout views
+        view()->composer(
+            ['layouts.admin', 'layouts.app', 'admin.*'],
+            \App\View\Composers\MultiWarehouseComposer::class
+        );
     }
 
     /**
@@ -54,6 +67,11 @@ class AppServiceProvider extends ServiceProvider
         // @allpermissions(['users.create', 'users.update'])
         \Illuminate\Support\Facades\Blade::if('allpermissions', function ($permissions) {
             return auth()->check() && auth()->user()->hasAllPermissions($permissions);
+        });
+
+        // @multiwarehouse - Check if multi-warehouse features are enabled
+        \Illuminate\Support\Facades\Blade::if('multiwarehouse', function () {
+            return isMultiWarehouseEnabled();
         });
     }
 

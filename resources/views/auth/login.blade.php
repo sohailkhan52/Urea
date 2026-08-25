@@ -175,6 +175,7 @@
                                type="checkbox" 
                                name="remember" 
                                id="remember" 
+                               value="1"
                                {{ old('remember') ? 'checked' : '' }}>
                         <label class="form-check-label" for="remember">
                             Remember me
