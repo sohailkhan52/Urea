@@ -119,6 +119,37 @@ class SalesReturnService
     }
 
     /**
+     * Add all remaining items from the sale to the return
+     */
+    public function addAllRemainingItems(SalesReturn $return, Sale $sale): void
+    {
+        if (!$return->isDraft()) {
+            throw new \Exception('Can only add items to draft returns.');
+        }
+
+        DB::transaction(function () use ($return, $sale) {
+            foreach ($sale->items as $item) {
+                $remainingQty = $this->getRemainingReturnableQuantity($item);
+                
+                if ($remainingQty > 0) {
+                    SalesReturnItem::create([
+                        'sales_return_id' => $return->id,
+                        'sale_item_id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'quantity' => $remainingQty,
+                        'unit_price' => $item->unit_price,
+                        'discount' => ($item->discount / $item->quantity) * $remainingQty,
+                        'reason' => null,
+                    ]);
+                }
+            }
+
+            // Recalculate return totals
+            $this->recalculateReturnTotals($return);
+        });
+    }
+
+    /**
      * Confirm sales return
      * 
      * @param SalesReturn $return

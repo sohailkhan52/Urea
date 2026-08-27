@@ -717,23 +717,6 @@
             </a>
             @endif
 
-            {{-- Multi-Warehouse Features (only show when 2+ active warehouses) --}}
-            @multiwarehouse
-            @if(!auth()->user()->isSuperAdmin())
-            <div class="nav-section-title">Multi-Warehouse</div>
-            
-            @permission('stock_requests.view')
-            <a href="{{ route('admin.stock-requests.index') }}" class="nav-link {{ request()->routeIs('admin.stock-requests.*') ? 'active' : '' }}">
-                <i class="bi bi-box-seam"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Stock Requests</span>
-                    <span class="nav-link-text-ur">سٹاک کی درخواستیں</span>
-                </div>
-            </a>
-            @endpermission
-            @endif
-            @endmultiwarehouse
-
             @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.welcome-page.index') }}" class="nav-link {{ request()->routeIs('admin.welcome-page.*') ? 'active' : '' }}">
                 <i class="bi bi-gear"></i>
@@ -744,40 +727,150 @@
             </a>
             @endif
 
-            {{-- Multi-Warehouse Chat --}}
-            @multiwarehouse
-            <div class="nav-section-title">Communication</div>
-            <a href="{{ route('admin.chat.index') }}" class="nav-link {{ request()->routeIs('admin.chat.*') ? 'active' : '' }}">
-                <i class="bi bi-chat-dots"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Messages</span>
-                    <span class="nav-link-text-ur">پیغامات</span>
-                </div>
-                @php
-                    try {
-                        $unreadCount = auth()->check() ? app(\App\Services\ChatService::class)->getTotalUnreadCount(auth()->user()) : 0;
-                    } catch (\Exception $e) {
-                        $unreadCount = 0;
-                    }
-                @endphp
-                @if($unreadCount > 0)
-                    <span class="badge bg-danger ms-auto">{{ $unreadCount }}</span>
-                @endif
-            </a>
-            @endmultiwarehouse
-
-            {{-- Reports section disabled - routes and views not yet implemented --}}
-            {{-- @permission('reports.view')
+            {{-- Reports Section --}}
+            @permission('reports.view')
             <div class="nav-section-title">Reports</div>
-            <a href="{{ route('admin.reports.sales.index') }}" class="nav-link {{ request()->routeIs('admin.reports.sales.*') ? 'active' : '' }}">
-                <i class="bi bi-graph-up"></i>
-                <span>Sales Reports</span>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.sales.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-graph-up"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Sales Reports</span>
+                        <span class="nav-link-text-ur">فروخت رپورٹس</span>
+                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.reports.sales.daily') }}" class="dropdown-item">
+                            <i class="bi bi-calendar-day me-2"></i> Daily Sales
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.reports.sales.product-wise') }}" class="dropdown-item">
+                            <i class="bi bi-box-seam me-2"></i> Product-Wise
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.reports.sales.customer-wise') }}" class="dropdown-item">
+                            <i class="bi bi-people me-2"></i> Customer-Wise
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.purchase.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-cart-plus"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Purchase Reports</span>
+                        <span class="nav-link-text-ur">خریداری رپورٹس</span>
+                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.reports.purchase.daily') }}" class="dropdown-item">
+                            <i class="bi bi-calendar-day me-2"></i> Daily Purchases
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.reports.purchase.supplier-wise') }}" class="dropdown-item">
+                            <i class="bi bi-truck me-2"></i> Supplier-Wise
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.reports.purchase.product-wise') }}" class="dropdown-item">
+                            <i class="bi bi-box-seam me-2"></i> Product-Wise
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <a href="{{ route('admin.reports.invoices') }}" class="nav-link {{ request()->routeIs('admin.reports.invoices') ? 'active' : '' }}">
+                <i class="bi bi-receipt"></i>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Invoice Report</span>
+                    <span class="nav-link-text-ur">انوائس رپورٹ</span>
+                </div>
             </a>
-            <a href="{{ route('admin.reports.inventory.index') }}" class="nav-link {{ request()->routeIs('admin.reports.inventory.*') ? 'active' : '' }}">
-                <i class="bi bi-file-earmark-bar-graph"></i>
-                <span>Stock Reports</span>
+
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.inventory.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Inventory Reports</span>
+                        <span class="nav-link-text-ur">انوینٹری رپورٹس</span>
+                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.reports.inventory.current-stock') }}" class="dropdown-item">
+                            <i class="bi bi-boxes me-2"></i> Current Stock
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.reports.inventory.stock-movements') }}" class="dropdown-item">
+                            <i class="bi bi-arrow-left-right me-2"></i> Stock Movements
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.customer.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-person-lines-fill"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Customer Reports</span>
+                        <span class="nav-link-text-ur">گاہک رپورٹس</span>
+                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.reports.customer.outstanding') }}" class="dropdown-item">
+                            <i class="bi bi-cash-stack me-2"></i> Outstanding Balances
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.reports.customer.payment-history') }}" class="dropdown-item">
+                            <i class="bi bi-clock-history me-2"></i> Payment History
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.supplier.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-truck"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Supplier Reports</span>
+                        <span class="nav-link-text-ur">سپلائر رپورٹس</span>
+                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.reports.supplier.outstanding') }}" class="dropdown-item">
+                            <i class="bi bi-cash-stack me-2"></i> Outstanding Balances
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.reports.supplier.payment-history') }}" class="dropdown-item">
+                            <i class="bi bi-clock-history me-2"></i> Payment History
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <a href="{{ route('admin.reports.profit-loss') }}" class="nav-link {{ request()->routeIs('admin.reports.profit-loss') ? 'active' : '' }}">
+                <i class="bi bi-currency-dollar"></i>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Profit & Loss</span>
+                    <span class="nav-link-text-ur">منافع و نقصان</span>
+                </div>
             </a>
-            @endpermission --}}
+            @endpermission
         </nav>
     </aside>
 

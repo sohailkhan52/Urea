@@ -47,32 +47,16 @@ class ReportsController extends Controller
     {
         $this->authorize('reports.view');
 
-        $filters = $request->only(['warehouse_id', 'product_id', 'category_id', 'low_stock_only']);
-        $perPage = $request->get('per_page', 50);
-        
-        $report = $this->reportService->getInventoryReport($filters, 1, $perPage);
+        $filters = $request->only(['warehouse_id', 'category_id', 'search', 'low_stock']);
+        $report = $this->reportService->getCurrentStockReport($filters);
+        $summary = $this->reportService->getInventorySummary($filters);
 
         return view('admin.reports.inventory.current-stock', [
             'report' => $report,
+            'summary' => $summary,
             'filters' => $filters,
             'warehouses' => Warehouse::all(),
             'categories' => Category::all(),
-            'products' => Product::where('status', 'active')->get(),
-        ]);
-    }
-
-    /**
-     * Warehouse Stock Report
-     */
-    public function warehouseStock(Request $request): View
-    {
-        $this->authorize('reports.view');
-
-        $perPage = $request->get('per_page', 50);
-        $report = $this->reportService->getWarehouseStockReport(1, $perPage);
-
-        return view('admin.reports.inventory.warehouse-stock', [
-            'report' => $report,
         ]);
     }
 
@@ -83,10 +67,8 @@ class ReportsController extends Controller
     {
         $this->authorize('reports.view');
 
-        $filters = $request->only(['warehouse_id', 'product_id', 'type', 'date_from', 'date_to']);
-        $perPage = $request->get('per_page', 50);
-        
-        $report = $this->reportService->getStockMovementReport($filters, 1, $perPage);
+        $filters = $request->only(['warehouse_id', 'product_id', 'movement_type', 'date_from', 'date_to', 'search']);
+        $report = $this->reportService->getStockMovementReport($filters);
 
         return view('admin.reports.inventory.stock-movements', [
             'report' => $report,
@@ -129,13 +111,13 @@ class ReportsController extends Controller
     {
         $this->authorize('reports.view');
 
-        $filters = $request->only(['warehouse_id', 'customer_id', 'date_from', 'date_to', 'payment_status']);
-        $perPage = $request->get('per_page', 50);
-        
-        $report = $this->reportService->getSalesReport($filters, 1, $perPage);
+        $filters = $request->only(['warehouse_id', 'customer_id', 'date_from', 'date_to', 'status', 'payment_status', 'search']);
+        $report = $this->reportService->getDailySalesReport($filters);
+        $summary = $this->reportService->getSalesSummary($filters);
 
         return view('admin.reports.sales.daily-sales', [
             'report' => $report,
+            'summary' => $summary,
             'filters' => $filters,
             'warehouses' => Warehouse::all(),
             'customers' => Customer::where('status', 'active')->get(),
@@ -149,15 +131,14 @@ class ReportsController extends Controller
     {
         $this->authorize('reports.view');
 
-        $filters = $request->only(['warehouse_id', 'date_from', 'date_to', 'min_quantity']);
-        $perPage = $request->get('per_page', 50);
-        
-        $report = $this->reportService->getProductWiseSalesReport($filters, 1, $perPage);
+        $filters = $request->only(['warehouse_id', 'category_id', 'date_from', 'date_to', 'search']);
+        $report = $this->reportService->getProductWiseSalesReport($filters);
 
         return view('admin.reports.sales.product-wise', [
             'report' => $report,
             'filters' => $filters,
             'warehouses' => Warehouse::all(),
+            'categories' => Category::all(),
         ]);
     }
 
@@ -168,33 +149,13 @@ class ReportsController extends Controller
     {
         $this->authorize('reports.view');
 
-        $filters = $request->only(['warehouse_id', 'date_from', 'date_to', 'min_sales']);
-        $perPage = $request->get('per_page', 50);
-        
-        $report = $this->reportService->getCustomerWiseSalesReport($filters, 1, $perPage);
+        $filters = $request->only(['warehouse_id', 'date_from', 'date_to', 'search']);
+        $report = $this->reportService->getCustomerWiseSalesReport($filters);
 
         return view('admin.reports.sales.customer-wise', [
             'report' => $report,
             'filters' => $filters,
             'warehouses' => Warehouse::all(),
-        ]);
-    }
-
-    /**
-     * Warehouse-wise Sales Report
-     */
-    public function warehouseSales(Request $request): View
-    {
-        $this->authorize('reports.view');
-
-        $filters = $request->only(['date_from', 'date_to']);
-        $perPage = $request->get('per_page', 50);
-        
-        $report = $this->reportService->getWarehouseSalesReport($filters, 1, $perPage);
-
-        return view('admin.reports.sales.warehouse-wise', [
-            'report' => $report,
-            'filters' => $filters,
         ]);
     }
 
@@ -218,13 +179,13 @@ class ReportsController extends Controller
     {
         $this->authorize('reports.view');
 
-        $filters = $request->only(['supplier_id', 'warehouse_id', 'date_from', 'date_to']);
-        $perPage = $request->get('per_page', 50);
-        
-        $report = $this->reportService->getPurchaseReport($filters, 1, $perPage);
+        $filters = $request->only(['supplier_id', 'warehouse_id', 'date_from', 'date_to', 'status', 'payment_status', 'search']);
+        $report = $this->reportService->getDailyPurchaseReport($filters);
+        $summary = $this->reportService->getPurchaseSummary($filters);
 
         return view('admin.reports.purchase.purchases', [
             'report' => $report,
+            'summary' => $summary,
             'filters' => $filters,
             'warehouses' => Warehouse::all(),
             'suppliers' => Supplier::where('status', 'active')->get(),
@@ -238,10 +199,8 @@ class ReportsController extends Controller
     {
         $this->authorize('reports.view');
 
-        $filters = $request->only(['date_from', 'date_to', 'min_purchases']);
-        $perPage = $request->get('per_page', 50);
-        
-        $report = $this->reportService->getSupplierWisePurchaseReport($filters, 1, $perPage);
+        $filters = $request->only(['date_from', 'date_to', 'search']);
+        $report = $this->reportService->getSupplierWisePurchaseReport($filters);
 
         return view('admin.reports.purchase.supplier-wise', [
             'report' => $report,
@@ -256,15 +215,15 @@ class ReportsController extends Controller
     {
         $this->authorize('reports.view');
 
-        $filters = $request->only(['supplier_id', 'date_from', 'date_to', 'min_quantity']);
-        $perPage = $request->get('per_page', 50);
-        
-        $report = $this->reportService->getProductWisePurchaseReport($filters, 1, $perPage);
+        $filters = $request->only(['supplier_id', 'warehouse_id', 'category_id', 'date_from', 'date_to', 'search']);
+        $report = $this->reportService->getProductWisePurchaseReport($filters);
 
         return view('admin.reports.purchase.product-wise', [
             'report' => $report,
             'filters' => $filters,
             'suppliers' => Supplier::where('status', 'active')->get(),
+            'warehouses' => Warehouse::all(),
+            'categories' => Category::all(),
         ]);
     }
 
@@ -285,29 +244,31 @@ class ReportsController extends Controller
     {
         $this->authorize('reports.view');
 
-        $perPage = $request->get('per_page', 50);
-        $report = $this->reportService->getCustomerOutstandingReport(1, $perPage);
+        $filters = $request->only(['warehouse_id', 'search']);
+        $report = $this->reportService->getCustomerOutstandingReport($filters);
 
         return view('admin.reports.customer.outstanding', [
             'report' => $report,
+            'filters' => $filters,
+            'warehouses' => Warehouse::all(),
         ]);
     }
 
     /**
      * Customer Payment History
      */
-    public function customerPaymentHistory(Request $request, int $customerId): View
+    public function customerPaymentHistory(Request $request): View
     {
         $this->authorize('reports.view');
 
-        $customer = Customer::findOrFail($customerId);
-        $perPage = $request->get('per_page', 50);
-        
-        $history = $this->reportService->getCustomerPaymentHistory($customerId, 1, $perPage);
+        $filters = $request->only(['customer_id', 'warehouse_id', 'date_from', 'date_to', 'search']);
+        $history = $this->reportService->getCustomerPaymentHistory($filters);
 
         return view('admin.reports.customer.payment-history', [
-            'customer' => $customer,
             'history' => $history,
+            'filters' => $filters,
+            'customers' => Customer::where('status', 'active')->get(),
+            'warehouses' => Warehouse::all(),
         ]);
     }
 
@@ -319,13 +280,117 @@ class ReportsController extends Controller
         $this->authorize('reports.view');
 
         $customer = Customer::findOrFail($customerId);
-        $perPage = $request->get('per_page', 50);
+        $filters = $request->only(['date_from', 'date_to']);
         
-        $ledger = $this->reportService->getCustomerLedger($customerId, 1, $perPage);
+        $ledger = $this->reportService->getCustomerLedger($customerId, $filters);
 
         return view('admin.reports.customer.ledger', [
             'customer' => $customer,
             'ledger' => $ledger,
+            'filters' => $filters,
+        ]);
+    }
+
+    /**
+     * Supplier Reports Index
+     */
+    public function supplierIndex(): View
+    {
+        $this->authorize('reports.view');
+
+        return view('admin.reports.supplier.index');
+    }
+
+    /**
+     * Supplier Outstanding Balances Report
+     */
+    public function supplierOutstanding(Request $request): View
+    {
+        $this->authorize('reports.view');
+
+        $filters = $request->only(['warehouse_id', 'search']);
+        $report = $this->reportService->getSupplierOutstandingReport($filters);
+
+        return view('admin.reports.supplier.outstanding', [
+            'report' => $report,
+            'filters' => $filters,
+            'warehouses' => Warehouse::all(),
+        ]);
+    }
+
+    /**
+     * Supplier Payment History
+     */
+    public function supplierPaymentHistory(Request $request): View
+    {
+        $this->authorize('reports.view');
+
+        $filters = $request->only(['supplier_id', 'warehouse_id', 'date_from', 'date_to', 'search']);
+        $history = $this->reportService->getSupplierPaymentHistory($filters);
+
+        return view('admin.reports.supplier.payment-history', [
+            'history' => $history,
+            'filters' => $filters,
+            'suppliers' => Supplier::where('status', 'active')->get(),
+            'warehouses' => Warehouse::all(),
+        ]);
+    }
+
+    /**
+     * Supplier Ledger
+     */
+    public function supplierLedger(Request $request, int $supplierId): View
+    {
+        $this->authorize('reports.view');
+
+        $supplier = Supplier::findOrFail($supplierId);
+        $filters = $request->only(['date_from', 'date_to']);
+        
+        $ledger = $this->reportService->getSupplierLedger($supplierId, $filters);
+
+        return view('admin.reports.supplier.ledger', [
+            'supplier' => $supplier,
+            'ledger' => $ledger,
+            'filters' => $filters,
+        ]);
+    }
+
+    /**
+     * Invoice Report
+     */
+    public function invoices(Request $request): View
+    {
+        $this->authorize('reports.view');
+
+        $filters = $request->only(['warehouse_id', 'customer_id', 'date_from', 'date_to', 'status', 'payment_status', 'search']);
+        $report = $this->reportService->getDailySalesReport($filters);
+        $summary = $this->reportService->getSalesSummary($filters);
+
+        return view('admin.reports.invoices', [
+            'report' => $report,
+            'summary' => $summary,
+            'filters' => $filters,
+            'warehouses' => Warehouse::all(),
+            'customers' => Customer::where('status', 'active')->get(),
+        ]);
+    }
+
+    /**
+     * Profit & Loss Report
+     */
+    public function profitLoss(Request $request): View
+    {
+        $this->authorize('reports.view');
+
+        $filters = $request->only(['warehouse_id', 'date_from', 'date_to']);
+        $report = $this->reportService->getProfitLossReport($filters);
+        $expenseBreakdown = $this->reportService->getExpenseBreakdown($filters);
+
+        return view('admin.reports.profit-loss', [
+            'report' => $report,
+            'expenseBreakdown' => $expenseBreakdown,
+            'filters' => $filters,
+            'warehouses' => Warehouse::all(),
         ]);
     }
 }

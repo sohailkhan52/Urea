@@ -156,17 +156,29 @@ class SalesReturnController extends Controller
 
         $user = auth()->user();
 
+        // Filter out items with 0 quantity before validation
+        $requestData = $request->all();
+        if ($request->filled('items') && is_array($request->input('items'))) {
+            $requestData['items'] = array_filter(
+                $request->input('items'),
+                fn($item) => (float)($item['quantity'] ?? 0) > 0
+            );
+            // Re-index the array after filtering
+            $requestData['items'] = array_values($requestData['items']);
+        }
+
         // Validate basic fields
-        $validated = $request->validate([
+        $validated = \Illuminate\Support\Facades\Validator::make($requestData, [
             'sale_id' => 'required|exists:sales,id',
             'return_date' => 'required|date',
+            'return_type' => 'required|in:WHOLE_ORDER,PARTIAL_ITEMS',
             'reason' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:1000',
-            'items' => 'required|array|min:1',
+            'items' => 'required_if:return_type,PARTIAL_ITEMS|array|min:1',
             'items.*.sale_item_id' => 'required|exists:sale_items,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.reason' => 'nullable|string|max:500',
-        ]);
+        ])->validate();
 
         $sale = Sale::findOrFail($validated['sale_id']);
 
@@ -179,16 +191,22 @@ class SalesReturnController extends Controller
             // Create return
             $return = $this->returnService->createReturn($sale, $validated);
 
-            // Add items
-            foreach ($validated['items'] as $itemData) {
-                $saleItem = $sale->items()->findOrFail($itemData['sale_item_id']);
-                
-                $this->returnService->addItem(
-                    $return,
-                    $saleItem,
-                    $itemData['quantity'],
-                    $itemData['reason'] ?? null
-                );
+            // Add items based on return type
+            if ($validated['return_type'] === 'WHOLE_ORDER') {
+                // Add all remaining items
+                $this->returnService->addAllRemainingItems($return, $sale);
+            } else {
+                // Add selected items
+                foreach ($validated['items'] as $itemData) {
+                    $saleItem = $sale->items()->findOrFail($itemData['sale_item_id']);
+                    
+                    $this->returnService->addItem(
+                        $return,
+                        $saleItem,
+                        $itemData['quantity'],
+                        $itemData['reason'] ?? null
+                    );
+                }
             }
 
             return redirect()->route('admin.sales.returns.show', $return)
@@ -228,6 +246,84 @@ class SalesReturnController extends Controller
         $summary = $this->returnService->getReturnSummary($return);
 
         return view('admin.sales-returns.show', compact('return', 'summary'));
+    }
+
+    /**
+     * Print sales return document
+     */
+    public function print(SalesReturn $return): View
+    {
+        $this->authorize('sales.view');
+
+        // Verify user has access to this return's warehouse
+        if (!auth()->user()->canAccessWarehouse($return->warehouse_id)) {
+            abort(403, 'You do not have permission to print this return.');
+        }
+
+        $return->load([
+            'sale',
+            'customer',
+            'warehouse',
+            'items.product',
+            'creator',
+            'confirmer'
+        ]);
+
+        $company = \App\Models\Company::first();
+
+        return view('admin.sales-returns.print', compact('return', 'company'));
+    }
+
+    /**
+     * Get sale details with returnable quantities (AJAX endpoint)
+     */
+    public function getSaleDetails(Request $request, Sale $sale)
+    {
+        $this->authorize('sales.view');
+        
+        $user = auth()->user();
+        
+        // Verify user has access to this sale's warehouse
+        if (!$user->canAccessWarehouse($sale->warehouse_id)) {
+            return response()->json(['error' => 'Access denied'], 403);
+        }
+
+        // Load sale with items and relationships
+        $sale->load(['items.product', 'customer', 'warehouse']);
+
+        // Get returnable quantities for each item
+        $items = [];
+        foreach ($sale->items as $item) {
+            $returnedQty = $this->returnService->getReturnedQuantity($item->id);
+            $remainingQty = $this->returnService->getRemainingReturnableQuantity($item);
+            
+            $items[] = [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'product_name' => $item->product->name,
+                'quantity' => $item->quantity,
+                'already_returned' => $returnedQty,
+                'remaining_quantity' => $remainingQty,
+                'unit_price' => $item->unit_price,
+                'discount' => $item->discount ?? 0,
+                'max_returnable' => $remainingQty,
+            ];
+        }
+
+        return response()->json([
+            'sale' => [
+                'id' => $sale->id,
+                'invoice_number' => $sale->invoice_number,
+                'customer' => $sale->customer->name,
+                'warehouse' => $sale->warehouse->name,
+                'sale_date' => $sale->sale_date->format('d M Y'),
+                'total_amount' => $sale->total_amount,
+                'paid_amount' => $sale->paid_amount,
+                'udhar_amount' => $sale->udhar_amount ?? 0,
+            ],
+            'items' => $items,
+            'is_fully_returned' => empty(array_filter($items, fn($item) => $item['remaining_quantity'] > 0)),
+        ]);
     }
 
     /**

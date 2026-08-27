@@ -308,6 +308,32 @@ class PurchaseReturnController extends Controller
     }
 
     /**
+     * Print purchase return document
+     */
+    public function print(PurchaseReturn $return): View
+    {
+        $this->authorize('purchases.view');
+
+        // Verify user has access to this return's warehouse
+        if (!auth()->user()->canAccessWarehouse($return->warehouse_id)) {
+            abort(403, 'You do not have permission to print this return.');
+        }
+
+        $return->load([
+            'purchase',
+            'supplier',
+            'warehouse',
+            'items.product',
+            'creator',
+            'confirmer'
+        ]);
+
+        $company = \App\Models\Company::first();
+
+        return view('admin.purchase-returns.print', compact('return', 'company'));
+    }
+
+    /**
      * Confirm the purchase return.
      */
     public function confirm(PurchaseReturn $return, Request $request): RedirectResponse

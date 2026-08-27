@@ -11,6 +11,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Warehouse;
 use App\Services\SalesService;
+use App\Services\SalesReturnService;
 use App\Services\StockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,11 +21,13 @@ class SalesController extends Controller
 {
     protected SalesService $salesService;
     protected StockService $stockService;
+    protected SalesReturnService $salesReturnService;
 
-    public function __construct(SalesService $salesService, StockService $stockService)
+    public function __construct(SalesService $salesService, StockService $stockService, SalesReturnService $salesReturnService)
     {
         $this->salesService = $salesService;
         $this->stockService = $stockService;
+        $this->salesReturnService = $salesReturnService;
     }
 
     /**
@@ -221,7 +224,7 @@ class SalesController extends Controller
 
         $summary = $this->salesService->getSaleSummary($sale);
 
-        return view('admin.sales.show', compact('sale', 'summary'));
+        return view('admin.sales.show', compact('sale', 'summary'))->with('salesReturnService', $this->salesReturnService);
     }
 
     /**

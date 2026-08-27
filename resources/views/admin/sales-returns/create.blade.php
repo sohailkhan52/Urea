@@ -7,126 +7,131 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Create Sales Return</h1>
         <a href="{{ route('admin.sales.returns.index') }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Back to Returns
+            <i class="bi bi-arrow-left me-1"></i> Back
         </a>
     </div>
 
     @if($errors->any())
-    <div class="alert alert-danger">
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Errors:</strong>
         <ul class="mb-0">
             @foreach($errors->all() as $error)
             <li>{{ $error }}</li>
             @endforeach
         </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     @endif
 
-    <form action="{{ route('admin.sales.returns.store') }}" method="POST" id="returnForm">
+    <form action="{{ route('admin.sales.returns.store') }}" method="POST">
         @csrf
 
-        {{-- Sale Selection --}}
+        {{-- Step 1: Select Sale --}}
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">Select Sale</h5>
+                <h5 class="mb-0">Step 1: Select Sale</h5>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-8">
                         <label for="sale_id" class="form-label">Sale Invoice <span class="text-danger">*</span></label>
                         <select class="form-select @error('sale_id') is-invalid @enderror" 
                                 id="sale_id" name="sale_id" required>
-                            <option value="">-- Select Sale --</option>
-                            @foreach($sales as $sale)
-                            <option value="{{ $sale->id }}"
-                                    data-customer="{{ $sale->customer->name }}"
-                                    data-warehouse="{{ $sale->warehouse->name }}"
-                                    data-total="{{ number_format($sale->total_amount, 2) }}"
-                                    data-status="{{ ucfirst($sale->status) }}"
-                                    {{ old('sale_id') == $sale->id ? 'selected' : '' }}>
-                                {{ $sale->invoice_number }} - {{ $sale->customer->name }} 
-                                ({{ $sale->sale_date->format('d M Y') }}) - Rs. {{ number_format($sale->total_amount, 2) }}
-                            </option>
+                            <option value="">-- Select a Sale --</option>
+                            @foreach($sales as $saleOption)
+                                @if($saleOption->customer)
+                                <option value="{{ $saleOption->id }}" {{ old('sale_id') == $saleOption->id ? 'selected' : '' }}>
+                                    {{ $saleOption->invoice_number }} - {{ $saleOption->customer->name }} 
+                                    (Rs. {{ number_format($saleOption->total_amount, 2) }})
+                                </option>
+                                @endif
                             @endforeach
                         </select>
                         @error('sale_id')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label for="return_date" class="form-label">Return Date <span class="text-danger">*</span></label>
                         <input type="date" class="form-control @error('return_date') is-invalid @enderror" 
                                id="return_date" name="return_date" 
-                               value="{{ old('return_date', date('Y-m-d')) }}" 
-                               max="{{ date('Y-m-d') }}" required>
+                               value="{{ old('return_date', date('Y-m-d')) }}" required>
                         @error('return_date')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
-                <div class="row mt-3" id="saleDetails" style="display: none;">
-                    <div class="col-12">
-                        <div class="alert alert-info">
-                            <strong>Sale Information:</strong>
-                            <div class="row mt-2">
-                                <div class="col-md-3">
-                                    <small><strong>Customer:</strong> <span id="saleCustomer"></span></small>
-                                </div>
-                                <div class="col-md-3">
-                                    <small><strong>Warehouse:</strong> <span id="saleWarehouse"></span></small>
-                                </div>
-                                <div class="col-md-3">
-                                    <small><strong>Total:</strong> Rs. <span id="saleTotal"></span></small>
-                                </div>
-                                <div class="col-md-3">
-                                    <small><strong>Status:</strong> <span id="saleStatus"></span></small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
-        {{-- Return Items --}}
+        {{-- Step 2: Select Return Type --}}
+        <div class="card mb-4" id="returnTypeCard" style="display: none;">
+            <div class="card-header">
+                <h5 class="mb-0">Step 2: Select Return Type</h5>
+            </div>
+            <div class="card-body">
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="return_type" id="wholeOrder" 
+                           value="WHOLE_ORDER" checked>
+                    <label class="form-check-label" for="wholeOrder">
+                        <strong>Return Whole Sale Order</strong>
+                        <p class="text-muted small mb-0">Return all remaining items from this sale</p>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="return_type" id="partial" 
+                           value="PARTIAL_ITEMS">
+                    <label class="form-check-label" for="partial">
+                        <strong>Select Products / Quantities</strong>
+                        <p class="text-muted small mb-0">Choose specific products and quantities to return</p>
+                    </label>
+                </div>
+                @error('return_type')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
+        </div>
+
+        {{-- Step 3: Select Items (for Partial Return) --}}
         <div class="card mb-4" id="itemsCard" style="display: none;">
             <div class="card-header">
-                <h5 class="mb-0">Return Items</h5>
+                <h5 class="mb-0">Step 3: Select Items to Return</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered" id="itemsTable">
+                    <table class="table table-bordered">
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 5%;">
                                     <input type="checkbox" id="selectAll" class="form-check-input">
                                 </th>
-                                <th style="width: 30%;">Product</th>
-                                <th style="width: 10%;" class="text-end">Unit Price</th>
-                                <th style="width: 10%;" class="text-end">Original Qty</th>
-                                <th style="width: 10%;" class="text-end">Returned</th>
-                                <th style="width: 10%;" class="text-end">Remaining</th>
-                                <th style="width: 10%;" class="text-end">Return Qty</th>
-                                <th style="width: 10%;" class="text-end">Discount</th>
-                                <th style="width: 15%;" class="text-end">Amount</th>
+                                <th>Product</th>
+                                <th class="text-end" style="width: 12%;">Unit Price</th>
+                                <th class="text-end" style="width: 10%;">Sold</th>
+                                <th class="text-end" style="width: 10%;">Already Returned</th>
+                                <th class="text-end" style="width: 10%;">Remaining</th>
+                                <th class="text-end" style="width: 15%;">Return Quantity</th>
+                                <th class="text-end" style="width: 12%;">Return Amount</th>
                             </tr>
                         </thead>
                         <tbody id="itemsBody">
-                            <!-- Items will be loaded via JavaScript -->
+                            <!-- Items will be loaded here -->
                         </tbody>
                         <tfoot>
-                            <tr>
-                                <th colspan="8" class="text-end">Total Return Amount:</th>
-                                <th class="text-end">
-                                    Rs. <span id="totalAmount">0.00</span>
-                                </th>
+                            <tr class="table-secondary">
+                                <th colspan="7" class="text-end">Total:</th>
+                                <th class="text-end">Rs. <span id="totalAmount">0.00</span></th>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
+                @error('items')
+                <div class="alert alert-danger">{{ $message }}</div>
+                @enderror
             </div>
         </div>
 
-        {{-- Additional Details --}}
+        {{-- Additional Info --}}
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">Additional Information</h5>
@@ -135,27 +140,19 @@
                 <div class="row">
                     <div class="col-md-6">
                         <label for="reason" class="form-label">Reason for Return</label>
-                        <textarea class="form-control @error('reason') is-invalid @enderror" 
-                                  id="reason" name="reason" rows="3" 
-                                  placeholder="Enter reason for return">{{ old('reason') }}</textarea>
-                        @error('reason')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                        <textarea class="form-control" id="reason" name="reason" rows="3" 
+                                  placeholder="Enter reason">{{ old('reason') }}</textarea>
                     </div>
                     <div class="col-md-6">
                         <label for="notes" class="form-label">Notes</label>
-                        <textarea class="form-control @error('notes') is-invalid @enderror" 
-                                  id="notes" name="notes" rows="3" 
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
                                   placeholder="Additional notes">{{ old('notes') }}</textarea>
-                        @error('notes')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Submit Buttons --}}
+        {{-- Submit --}}
         <div class="card">
             <div class="card-body">
                 <div class="d-flex justify-content-end gap-2">
@@ -173,135 +170,223 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const saleSelect = document.getElementById('sale_id');
+    const returnTypeCard = document.getElementById('returnTypeCard');
     const itemsCard = document.getElementById('itemsCard');
-    const saleDetails = document.getElementById('saleDetails');
+    const wholeOrderRadio = document.getElementById('wholeOrder');
+    const partialRadio = document.getElementById('partial');
     const itemsBody = document.getElementById('itemsBody');
     const submitBtn = document.getElementById('submitBtn');
     const selectAll = document.getElementById('selectAll');
-    
-    let saleItems = [];
+    const totalAmountSpan = document.getElementById('totalAmount');
 
     saleSelect.addEventListener('change', function() {
         if (this.value) {
-            const option = this.options[this.selectedIndex];
-            document.getElementById('saleCustomer').textContent = option.dataset.customer;
-            document.getElementById('saleWarehouse').textContent = option.dataset.warehouse;
-            document.getElementById('saleTotal').textContent = option.dataset.total;
-            document.getElementById('saleStatus').textContent = option.dataset.status;
-            saleDetails.style.display = 'block';
-            
+            returnTypeCard.style.display = 'block';
+            submitBtn.disabled = false;
             loadSaleItems(this.value);
         } else {
+            returnTypeCard.style.display = 'none';
             itemsCard.style.display = 'none';
-            saleDetails.style.display = 'none';
             submitBtn.disabled = true;
+            itemsBody.innerHTML = '';
         }
     });
 
-    function loadSaleItems(saleId) {
-        fetch(`/admin/sales/${saleId}`)
-            .then(response => response.json())
-            .then(data => {
-                saleItems = data.items;
-                renderItems();
-                itemsCard.style.display = 'block';
-            })
-            .catch(error => {
-                console.error('Error loading sale items:', error);
-                alert('Failed to load sale items. Please try again.');
-            });
-    }
+    document.querySelectorAll('input[name="return_type"]').forEach(radio => {
+        radio.addEventListener('change', handleReturnTypeChange);
+    });
 
-    function renderItems() {
-        itemsBody.innerHTML = '';
-        saleItems.forEach((item, index) => {
-            const remainingQty = parseFloat(item.remaining_quantity || item.quantity);
-            
-            const row = `
-                <tr>
-                    <td class="text-center">
-                        <input type="checkbox" class="form-check-input item-checkbox" data-index="${index}">
-                    </td>
-                    <td>${item.product.name}</td>
-                    <td class="text-end">Rs. ${parseFloat(item.unit_price).toFixed(2)}</td>
-                    <td class="text-end">${parseFloat(item.quantity).toFixed(2)}</td>
-                    <td class="text-end">${parseFloat(item.returned_quantity || 0).toFixed(2)}</td>
-                    <td class="text-end">${remainingQty.toFixed(2)}</td>
-                    <td>
-                        <input type="hidden" name="items[${index}][sale_item_id]" value="${item.id}">
-                        <input type="number" class="form-control form-control-sm text-end return-qty" 
-                               name="items[${index}][quantity]" 
-                               data-index="${index}"
-                               min="0.01" 
-                               max="${remainingQty}" 
-                               step="0.01" 
-                               value="0" 
-                               disabled>
-                    </td>
-                    <td class="text-end">Rs. ${parseFloat(item.discount || 0).toFixed(2)}</td>
-                    <td class="text-end item-amount" data-index="${index}">Rs. 0.00</td>
-                </tr>
-            `;
-            itemsBody.insertAdjacentHTML('beforeend', row);
-        });
-        
-        attachItemEventListeners();
-    }
-
-    function attachItemEventListeners() {
+    selectAll.addEventListener('change', function() {
         document.querySelectorAll('.item-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const index = this.dataset.index;
-                const qtyInput = document.querySelector(`input.return-qty[data-index="${index}"]`);
-                qtyInput.disabled = !this.checked;
-                if (!this.checked) {
-                    qtyInput.value = 0;
-                    calculateItemAmount(index);
-                }
-                calculateTotal();
-                checkSubmitButton();
-            });
-        });
-
-        document.querySelectorAll('.return-qty').forEach(input => {
-            input.addEventListener('input', function() {
-                const index = this.dataset.index;
-                calculateItemAmount(index);
-                calculateTotal();
-                checkSubmitButton();
-            });
-        });
-
-        selectAll.addEventListener('change', function() {
-            document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+            if (!checkbox.disabled) {
                 checkbox.checked = this.checked;
                 checkbox.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+
+    function handleReturnTypeChange() {
+        if (partialRadio.checked) {
+            itemsCard.style.display = 'block';
+        } else {
+            itemsCard.style.display = 'none';
+        }
+    }
+
+    function loadSaleItems(saleId) {
+        // Fetch items from API endpoint
+        fetch(`/admin/sales/${saleId}/details`)
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to load items');
+                return response.json();
+            })
+            .then(data => {
+                if (data.items) {
+                    renderItems(data.items);
+                } else {
+                    itemsBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No returnable items found</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading items:', error);
+                itemsBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading items. Please refresh and try again.</td></tr>';
+            });
+    }
+
+    function renderItems(items) {
+        itemsBody.innerHTML = '';
+
+        if (!items || items.length === 0) {
+            itemsBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No returnable items found</td></tr>';
+            return;
+        }
+
+        items.forEach((item, index) => {
+            const unitPrice = parseFloat(item.unit_price || 0);
+            const remaining = parseFloat(item.remaining_quantity || 0);
+            const alreadyReturned = parseFloat(item.already_returned || 0);
+            const sold = parseFloat(item.quantity || 0);
+            const productName = item.product_name || 'Unknown';
+            const saleItemId = item.id || '';
+            const isFullyReturned = remaining <= 0;
+
+            const row = document.createElement('tr');
+            
+            // If fully returned, disable the checkbox and show as disabled
+            const checkboxDisabled = isFullyReturned ? 'disabled' : '';
+            const rowClass = isFullyReturned ? 'table-secondary' : '';
+
+            row.innerHTML = `
+                <td>
+                    <input type="checkbox" class="form-check-input item-checkbox" 
+                           data-index="${index}" data-unit-price="${unitPrice}" 
+                           data-remaining="${remaining}" data-sale-item-id="${saleItemId}"
+                           ${checkboxDisabled}
+                           title="${isFullyReturned ? 'This item has been fully returned' : 'Select to return'}">
+                </td>
+                <td>
+                    <strong>${productName}</strong>
+                    ${isFullyReturned ? '<br><span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Fully Returned</span>' : ''}
+                </td>
+                <td class="text-end">Rs. ${unitPrice.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="text-end">${sold.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="text-end">${alreadyReturned.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="text-end">
+                    ${remaining.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </td>
+                <td class="text-end">
+                    <input type="number" class="form-control form-control-sm return-quantity" 
+                           data-index="${index}" step="0.01" min="0" max="${remaining}"
+                           placeholder="0" value="0" style="width: 100%; background-color: #fff;" disabled
+                           ${checkboxDisabled}>
+                    <small class="text-muted d-block">Max: ${remaining.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</small>
+                </td>
+                <td class="text-end">
+                    <span class="return-amount-display">Rs. 0.00</span>
+                    <input type="hidden" class="return-amount" name="items[${index}][amount]" value="0">
+                    <input type="hidden" class="item-sale-item-id" name="items[${index}][sale_item_id]" value="${saleItemId}">
+                    <input type="hidden" class="item-quantity" name="items[${index}][quantity]" value="0">
+                </td>
+            `;
+            
+            if (rowClass) row.classList.add(rowClass);
+            itemsBody.appendChild(row);
+        });
+
+        // Add event listeners to quantity inputs
+        document.querySelectorAll('.return-quantity').forEach(input => {
+            input.addEventListener('change', updateRowAmount);
+            input.addEventListener('keyup', updateRowAmount);
+        });
+
+        // Add event listeners to checkboxes
+        document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                // Don't allow checking disabled items
+                if (this.disabled) {
+                    this.checked = false;
+                    return;
+                }
+
+                const row = this.closest('tr');
+                const quantityInput = row.querySelector('.return-quantity');
+                
+                if (this.checked) {
+                    quantityInput.disabled = false;
+                    quantityInput.value = '0';
+                    quantityInput.focus();
+                } else {
+                    quantityInput.value = '0';
+                    quantityInput.disabled = true;
+                    quantityInput.dispatchEvent(new Event('change'));
+                }
+                
+                calculateTotal();
             });
         });
     }
 
-    function calculateItemAmount(index) {
-        const item = saleItems[index];
-        const qtyInput = document.querySelector(`input.return-qty[data-index="${index}"]`);
-        const qty = parseFloat(qtyInput.value) || 0;
-        const discountPerUnit = (item.discount || 0) / item.quantity;
-        const amount = (item.unit_price * qty) - (discountPerUnit * qty);
-        document.querySelector(`.item-amount[data-index="${index}"]`).textContent = 'Rs. ' + amount.toFixed(2);
+    function updateRowAmount(e) {
+        const row = e.target.closest('tr');
+        const quantityInput = row.querySelector('.return-quantity');
+        const amountSpan = row.querySelector('.return-amount-display');
+        const amountHidden = row.querySelector('.return-amount');
+        const quantityHidden = row.querySelector('.item-quantity');
+        const unitPrice = parseFloat(e.target.dataset?.unitPrice || row.querySelector('.item-checkbox').dataset.unitPrice);
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const remaining = parseFloat(e.target.dataset?.remaining || row.querySelector('.item-checkbox').dataset.remaining);
+
+        // Validate quantity doesn't exceed remaining
+        if (quantity > remaining) {
+            quantityInput.value = remaining;
+            quantityInput.classList.add('is-invalid');
+            alert(`Cannot return more than ${remaining.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2})} units`);
+        } else {
+            quantityInput.classList.remove('is-invalid');
+        }
+
+        const amount = quantity * unitPrice;
+        amountSpan.textContent = `Rs. ${amount.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        amountHidden.value = amount.toFixed(2);
+        quantityHidden.value = quantityInput.value;
+
+        calculateTotal();
     }
 
     function calculateTotal() {
         let total = 0;
-        document.querySelectorAll('.item-amount').forEach(el => {
-            const amountText = el.textContent.replace('Rs. ', '').replace(',', '');
-            total += parseFloat(amountText) || 0;
+        document.querySelectorAll('.return-amount').forEach(input => {
+            total += parseFloat(input.value) || 0;
         });
-        document.getElementById('totalAmount').textContent = total.toFixed(2);
+
+        totalAmountSpan.textContent = total.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
 
-    function checkSubmitButton() {
-        const hasSelectedItems = document.querySelectorAll('.item-checkbox:checked').length > 0;
-        const hasValidQuantities = Array.from(document.querySelectorAll('.return-qty:not([disabled])')).some(input => parseFloat(input.value) > 0);
-        submitBtn.disabled = !(hasSelectedItems && hasValidQuantities);
+    // Form submission validation
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // If partial items mode is selected, validate at least one item has quantity > 0
+            if (partialRadio.checked) {
+                let hasItems = false;
+                document.querySelectorAll('.item-quantity').forEach(input => {
+                    if (parseFloat(input.value) > 0) {
+                        hasItems = true;
+                    }
+                });
+
+                if (!hasItems) {
+                    e.preventDefault();
+                    alert('Please select at least one product and enter a return quantity.');
+                    return false;
+                }
+            }
+        });
+    }
+
+    // Load items if sale_id is pre-selected
+    if (saleSelect.value) {
+        saleSelect.dispatchEvent(new Event('change'));
     }
 });
 </script>
