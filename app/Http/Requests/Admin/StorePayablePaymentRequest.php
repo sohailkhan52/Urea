@@ -27,14 +27,22 @@ class StorePayablePaymentRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'purchase_id' => 'required|exists:purchases,id',
+        $rules = [
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|in:' . implode(',', array_keys(PurchasePayment::$methods)),
             'payment_date' => 'required|date',
             'reference_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:500',
         ];
+
+        // Only require purchase_id if it's not a bulk payment
+        if (!$this->has('bulk_payment') || !$this->bulk_payment) {
+            $rules['purchase_id'] = 'required|exists:purchases,id';
+        } else {
+            $rules['bulk_payment'] = 'required|boolean';
+        }
+
+        return $rules;
     }
 
     /**

@@ -170,6 +170,11 @@ class PayableController extends Controller
         }
 
         try {
+            // Check if this is a bulk payment
+            if ($request->has('bulk_payment') && $request->bulk_payment) {
+                return $this->recordBulkPayment($supplier, $request);
+            }
+
             $purchase = Purchase::findOrFail($request->purchase_id);
 
             // Verify purchase belongs to supplier
@@ -212,6 +217,82 @@ class PayableController extends Controller
                 ->with('success', $message);
         } catch (\Exception $e) {
             return back()->with('error', 'Error recording payment: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Record bulk payment against supplier's total payables
+     */
+    private function recordBulkPayment(Supplier $supplier, StorePayablePaymentRequest $request): RedirectResponse
+    {
+        try {
+            // Get all outstanding purchases for this supplier
+            $outstandingPurchases = Purchase::where('supplier_id', $supplier->id)
+                ->where('status', 'confirmed')
+                ->whereRaw('total_amount > paid_amount')
+                ->orderBy('purchase_date', 'asc') // Pay oldest first
+                ->get();
+
+            if ($outstandingPurchases->isEmpty()) {
+                return back()->with('error', 'No outstanding purchases found for this supplier.');
+            }
+
+            $totalOutstanding = $outstandingPurchases->sum(function($purchase) {
+                return $purchase->total_amount - $purchase->paid_amount;
+            });
+            
+            $paymentAmount = (float) $request->amount;
+
+            if ($paymentAmount > $totalOutstanding) {
+                return back()->with('error', 'Payment amount cannot exceed total outstanding payable of Rs. ' . number_format($totalOutstanding, 2));
+            }
+
+            $remainingAmount = $paymentAmount;
+            $paymentsRecorded = [];
+
+            // Distribute payment across outstanding purchases (oldest first)
+            foreach ($outstandingPurchases as $purchase) {
+                if ($remainingAmount <= 0) break;
+
+                $purchaseOutstanding = $purchase->total_amount - $purchase->paid_amount;
+                $amountForThisPurchase = min($remainingAmount, $purchaseOutstanding);
+
+                // Record payment for this purchase
+                $payment = $this->paymentService->recordPayment(
+                    purchaseId: $purchase->id,
+                    amount: $amountForThisPurchase,
+                    paymentMethod: $request->payment_method,
+                    paymentDate: $request->payment_date,
+                    referenceNumber: $request->reference_number,
+                    notes: $request->notes . " (Part of bulk payment Rs. " . number_format($paymentAmount, 2) . ")"
+                );
+
+                $paymentsRecorded[] = [
+                    'purchase' => $purchase,
+                    'amount' => $amountForThisPurchase,
+                    'payment' => $payment
+                ];
+
+                $remainingAmount -= $amountForThisPurchase;
+            }
+
+            $paidPurchasesCount = count($paymentsRecorded);
+            $fullyPaidCount = collect($paymentsRecorded)->filter(function($record) {
+                $record['purchase']->refresh();
+                return $record['purchase']->isPaid();
+            })->count();
+
+            $message = "Bulk payment of Rs. " . number_format($paymentAmount, 2) . " recorded successfully. ";
+            $message .= "Applied to {$paidPurchasesCount} purchase(s). ";
+            if ($fullyPaidCount > 0) {
+                $message .= "{$fullyPaidCount} purchase(s) now fully paid.";
+            }
+
+            return redirect()->route('admin.payables.details', $supplier)
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error recording bulk payment: ' . $e->getMessage());
         }
     }
 

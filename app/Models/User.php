@@ -424,4 +424,20 @@ class User extends Authenticatable
             ->where('warehouse_id', $warehouseId)
             ->exists();
     }
+
+    /**
+     * Get user's notifications
+     */
+    public function notifications(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    /**
+     * Get user's notification preferences
+     */
+    public function notificationPreferences(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(UserNotificationPreference::class);
+    }
 }

@@ -47,6 +47,14 @@ class WarehouseService
                 // Assign admin role to user
                 $admin->assignRole('admin');
 
+                // Initialize conversation for this warehouse
+                try {
+                    $initService = app(\App\Services\ConversationInitializationService::class);
+                    $initService->initializeWarehouseConversation($warehouse);
+                } catch (Exception $e) {
+                    Log::warning('Failed to initialize conversation for new warehouse: ' . $e->getMessage());
+                }
+
                 Log::info('Warehouse with manager created successfully', [
                     'warehouse_id' => $warehouse->id,
                     'warehouse_name' => $warehouse->name,
@@ -153,6 +161,14 @@ class WarehouseService
                         'warehouse_id' => $warehouse->id,
                         'new_manager_id' => $newAdmin->id,
                     ]);
+                }
+
+                // Update conversation participants
+                try {
+                    $initService = app(\App\Services\ConversationInitializationService::class);
+                    $initService->initializeWarehouseConversation($warehouse);
+                } catch (Exception $e) {
+                    Log::warning('Failed to update conversation for warehouse: ' . $e->getMessage());
                 }
 
                 Log::info('Warehouse manager updated', [

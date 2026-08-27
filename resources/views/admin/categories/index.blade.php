@@ -9,9 +9,6 @@
             <div>
                 <h1 class="h3 mb-0">Category Management</h1>
             </div>
-            <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i> Add Category
-            </a>
         </div>
     </div>
 
@@ -64,33 +61,13 @@
                                        title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    @if($category->isActive())
-                                        <form action="{{ route('admin.categories.deactivate', $category) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary" 
-                                                    title="Deactivate"
-                                                    onclick="return confirm('Deactivate this category?');">
-                                                <i class="bi bi-toggle-on"></i>
-                                            </button>
-                                        </form>
-                                    @else
-                                        <form action="{{ route('admin.categories.activate', $category) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="btn btn-sm btn-outline-success" 
-                                                    title="Activate">
-                                                <i class="bi bi-toggle-off"></i>
-                                            </button>
-                                        </form>
-                                    @endif
+                                    <button type="button" class="btn btn-sm btn-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal{{ $category->id }}"
+                                            @if($category->products()->exists()) disabled title="Cannot delete category with products" @endif>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-danger" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#deleteModal{{ $category->id }}"
-                                        @if($category->products()->exists()) disabled title="Cannot delete category with products" @endif>
-                                    <i class="bi bi-trash"></i>
-                                </button>
 
                                 {{-- Delete Modal --}}
                                 @if(!$category->products()->exists())

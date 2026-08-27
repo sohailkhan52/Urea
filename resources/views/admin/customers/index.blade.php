@@ -6,11 +6,6 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Customer Management</h1>
-        @can('customers.create')
-        <a href="{{ route('admin.customers.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Add Customer
-        </a>
-        @endcan
     </div>
 
     {{-- Search and Filter --}}
