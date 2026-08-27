@@ -729,148 +729,86 @@
 
             {{-- Reports Section --}}
             @permission('reports.view')
-            <div class="nav-section-title">Reports</div>
             <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.sales.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-graph-up"></i>
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-bar-chart"></i>
                     <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Sales Reports</span>
-                        <span class="nav-link-text-ur">فروخت رپورٹس</span>
+                        <span class="nav-link-text-en">Reports</span>
+                        <span class="nav-link-text-ur">رپورٹس</span>
                         <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
+                    {{-- Reports Dashboard --}}
                     <li>
-                        <a href="{{ route('admin.reports.sales.daily') }}" class="dropdown-item">
-                            <i class="bi bi-calendar-day me-2"></i> Daily Sales
+                        <a href="{{ route('admin.reports.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.index') ? 'active' : '' }}">
+                            <i class="bi bi-speedometer me-2"></i>
+                            <span class="nav-link-text-en">Reports Dashboard</span>
                         </a>
                     </li>
+                    <li><hr class="dropdown-divider"></li>
+
+                    {{-- Sales Reports --}}
                     <li>
-                        <a href="{{ route('admin.reports.sales.product-wise') }}" class="dropdown-item">
-                            <i class="bi bi-box-seam me-2"></i> Product-Wise
+                        <a href="{{ route('admin.reports.sales.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.sales.index') ? 'active' : '' }}">
+                            <i class="bi bi-graph-up me-2"></i>
+                            <span class="nav-link-text-en">Sales Reports</span>
                         </a>
                     </li>
+
+                    {{-- Purchase Reports --}}
                     <li>
-                        <a href="{{ route('admin.reports.sales.customer-wise') }}" class="dropdown-item">
-                            <i class="bi bi-people me-2"></i> Customer-Wise
+                        <a href="{{ route('admin.reports.purchase.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.purchase.index') ? 'active' : '' }}">
+                            <i class="bi bi-cart-plus me-2"></i>
+                            <span class="nav-link-text-en">Purchase Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Invoice Report --}}
+                    <li>
+                        <a href="{{ route('admin.reports.invoices') }}" class="dropdown-item {{ request()->routeIs('admin.reports.invoices') ? 'active' : '' }}">
+                            <i class="bi bi-receipt me-2"></i>
+                            <span class="nav-link-text-en">Invoice Report</span>
+                        </a>
+                    </li>
+
+                    {{-- Inventory Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.inventory.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.inventory.index') ? 'active' : '' }}">
+                            <i class="bi bi-file-earmark-bar-graph me-2"></i>
+                            <span class="nav-link-text-en">Inventory Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Customer Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.customer.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.customer.index') ? 'active' : '' }}">
+                            <i class="bi bi-person-lines-fill me-2"></i>
+                            <span class="nav-link-text-en">Customer Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Supplier Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.supplier.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.supplier.index') ? 'active' : '' }}">
+                            <i class="bi bi-truck me-2"></i>
+                            <span class="nav-link-text-en">Supplier Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Profit & Loss --}}
+                    <li>
+                        <a href="{{ route('admin.reports.profit-loss') }}" class="dropdown-item {{ request()->routeIs('admin.reports.profit-loss') ? 'active' : '' }}">
+                            <i class="bi bi-currency-dollar me-2"></i>
+                            <span class="nav-link-text-en">Profit & Loss</span>
                         </a>
                     </li>
                 </ul>
             </div>
-
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.purchase.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-cart-plus"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Purchase Reports</span>
-                        <span class="nav-link-text-ur">خریداری رپورٹس</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li>
-                        <a href="{{ route('admin.reports.purchase.daily') }}" class="dropdown-item">
-                            <i class="bi bi-calendar-day me-2"></i> Daily Purchases
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.reports.purchase.supplier-wise') }}" class="dropdown-item">
-                            <i class="bi bi-truck me-2"></i> Supplier-Wise
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.reports.purchase.product-wise') }}" class="dropdown-item">
-                            <i class="bi bi-box-seam me-2"></i> Product-Wise
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <a href="{{ route('admin.reports.invoices') }}" class="nav-link {{ request()->routeIs('admin.reports.invoices') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Invoice Report</span>
-                    <span class="nav-link-text-ur">انوائس رپورٹ</span>
-                </div>
-            </a>
-
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.inventory.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-file-earmark-bar-graph"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Inventory Reports</span>
-                        <span class="nav-link-text-ur">انوینٹری رپورٹس</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li>
-                        <a href="{{ route('admin.reports.inventory.current-stock') }}" class="dropdown-item">
-                            <i class="bi bi-boxes me-2"></i> Current Stock
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.reports.inventory.stock-movements') }}" class="dropdown-item">
-                            <i class="bi bi-arrow-left-right me-2"></i> Stock Movements
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.customer.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-person-lines-fill"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Customer Reports</span>
-                        <span class="nav-link-text-ur">گاہک رپورٹس</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li>
-                        <a href="{{ route('admin.reports.customer.outstanding') }}" class="dropdown-item">
-                            <i class="bi bi-cash-stack me-2"></i> Outstanding Balances
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.reports.customer.payment-history') }}" class="dropdown-item">
-                            <i class="bi bi-clock-history me-2"></i> Payment History
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.supplier.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-truck"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Supplier Reports</span>
-                        <span class="nav-link-text-ur">سپلائر رپورٹس</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li>
-                        <a href="{{ route('admin.reports.supplier.outstanding') }}" class="dropdown-item">
-                            <i class="bi bi-cash-stack me-2"></i> Outstanding Balances
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.reports.supplier.payment-history') }}" class="dropdown-item">
-                            <i class="bi bi-clock-history me-2"></i> Payment History
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <a href="{{ route('admin.reports.profit-loss') }}" class="nav-link {{ request()->routeIs('admin.reports.profit-loss') ? 'active' : '' }}">
-                <i class="bi bi-currency-dollar"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Profit & Loss</span>
-                    <span class="nav-link-text-ur">منافع و نقصان</span>
-                </div>
-            </a>
             @endpermission
+                <ul class="dropdown-menu dropdown-menu-dark">
+                </ul>
+            </div>
         </nav>
     </aside>
 

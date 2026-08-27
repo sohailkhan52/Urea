@@ -29,14 +29,6 @@ class DashboardController extends Controller
      */
     public function index(): View
     {
-        // Ensure warehouse conversations are initialized
-        try {
-            $initService = app(\App\Services\ConversationInitializationService::class);
-            $initService->initializeAllWarehouseConversations();
-        } catch (\Exception $e) {
-            \Log::warning('Failed to initialize conversations: ' . $e->getMessage());
-        }
-
         // Today's statistics
         $todayStats = $this->dashboardService->getTodayStats();
         

@@ -493,10 +493,14 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
 
     // Reports Module
     Route::prefix('reports')->name('reports.')->middleware('permission:reports.view')->group(function () {
+        // Dashboard (main reports landing page)
+        Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('index');
+
         // Inventory Reports
         Route::prefix('inventory')->name('inventory.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'inventoryIndex'])->name('index');
             Route::get('/current-stock', [\App\Http\Controllers\Admin\ReportsController::class, 'currentStock'])->name('current-stock');
+            Route::get('/warehouse-stock', [\App\Http\Controllers\Admin\ReportsController::class, 'warehouseStock'])->name('warehouse-stock');
             Route::get('/stock-movements', [\App\Http\Controllers\Admin\ReportsController::class, 'stockMovements'])->name('stock-movements');
         });
 
@@ -506,6 +510,7 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
             Route::get('/daily', [\App\Http\Controllers\Admin\ReportsController::class, 'dailySales'])->name('daily');
             Route::get('/product-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'productWiseSales'])->name('product-wise');
             Route::get('/customer-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'customerWiseSales'])->name('customer-wise');
+            Route::get('/warehouse-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'warehouseWiseSales'])->name('warehouse-wise');
         });
 
         // Purchase Reports
@@ -520,7 +525,7 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         Route::prefix('customer')->name('customer.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'customerIndex'])->name('index');
             Route::get('/outstanding', [\App\Http\Controllers\Admin\ReportsController::class, 'customerOutstanding'])->name('outstanding');
-            Route::get('/payment-history', [\App\Http\Controllers\Admin\ReportsController::class, 'customerPaymentHistory'])->name('payment-history');
+            Route::get('/{customer}/payment-history', [\App\Http\Controllers\Admin\ReportsController::class, 'customerPaymentHistory'])->name('payment-history');
             Route::get('/{customer}/ledger', [\App\Http\Controllers\Admin\ReportsController::class, 'customerLedger'])->name('ledger');
         });
 
@@ -528,7 +533,7 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         Route::prefix('supplier')->name('supplier.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierIndex'])->name('index');
             Route::get('/outstanding', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierOutstanding'])->name('outstanding');
-            Route::get('/payment-history', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierPaymentHistory'])->name('payment-history');
+            Route::get('/{supplier}/payment-history', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierPaymentHistory'])->name('payment-history');
             Route::get('/{supplier}/ledger', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierLedger'])->name('ledger');
         });
 
