@@ -28,11 +28,12 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
-        // Update last login timestamp
-        Auth::user()->updateLastLogin();
+        $user = Auth::user();
+        if ($user instanceof \App\Models\User) {
+            $user->updateLastLogin();
+        }
 
-        // Redirect to home page (welcome page with authenticated user view)
-        return redirect()->intended(route('home'));
+        return redirect()->route('admin.dashboard');
     }
 
     /**

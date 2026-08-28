@@ -154,11 +154,18 @@
                                     <th class="text-end">Qty</th>
                                     <th class="text-end">Unit Price</th>
                                     <th class="text-end">Item Discount</th>
+                                    <th class="text-end">Return Status</th>
                                     <th class="text-end">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($sale->items as $item)
+                                @php
+                                    $returnedQty = $salesReturnService->getReturnedQuantity($item->id);
+                                    $remainingQty = $salesReturnService->getRemainingReturnableQuantity($item);
+                                    $isFullyReturned = $remainingQty <= 0;
+                                    $isPartiallyReturned = $returnedQty > 0 && !$isFullyReturned;
+                                @endphp
                                 <tr>
                                     <td>
                                         <div class="fw-semibold">{{ $item->product->name }}</div>
@@ -174,6 +181,16 @@
                                     </td>
                                     <td class="text-end">
                                         {{ number_format($item->discount, 2) }}
+                                    </td>
+                                    <td class="text-end">
+                                        @if($isFullyReturned)
+                                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Fully Returned</span>
+                                        @elseif($isPartiallyReturned)
+                                            <span class="badge bg-warning"><i class="bi bi-exclamation-circle me-1"></i>Partially Returned</span>
+                                            <br><small class="text-muted">{{ number_format($returnedQty, 2) }} / {{ number_format($item->quantity, 2) }}</small>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
                                     </td>
                                     <td class="text-end">
                                         <strong>{{ number_format($item->total, 2) }}</strong>

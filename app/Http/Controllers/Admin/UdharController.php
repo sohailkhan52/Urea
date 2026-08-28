@@ -269,6 +269,11 @@ class UdharController extends Controller
         $this->authorize('udhar.create');
 
         try {
+            // Check if this is a bulk payment
+            if ($request->has('bulk_payment') && $request->bulk_payment) {
+                return $this->recordBulkPayment($customer, $request);
+            }
+
             $sale = Sale::findOrFail($request->sale_id);
 
             // Verify sale belongs to customer
@@ -305,6 +310,79 @@ class UdharController extends Controller
                 ->with('success', $message);
         } catch (\Exception $e) {
             return back()->with('error', 'Error recording payment: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Record bulk payment against customer's total udhar
+     */
+    private function recordBulkPayment(Customer $customer, StoreUdharPaymentRequest $request): RedirectResponse
+    {
+        try {
+            // Get all outstanding sales for this customer
+            $outstandingSales = Sale::where('customer_id', $customer->id)
+                ->whereIn('status', ['confirmed'])
+                ->where('due_amount', '>', 0)
+                ->orderBy('sale_date', 'asc') // Pay oldest first
+                ->get();
+
+            if ($outstandingSales->isEmpty()) {
+                return back()->with('error', 'No outstanding invoices found for this customer.');
+            }
+
+            $totalOutstanding = $outstandingSales->sum('due_amount');
+            $paymentAmount = (float) $request->amount;
+
+            if ($paymentAmount > $totalOutstanding) {
+                return back()->with('error', 'Payment amount cannot exceed total outstanding balance of Rs. ' . number_format($totalOutstanding, 2));
+            }
+
+            $remainingAmount = $paymentAmount;
+            $paymentsRecorded = [];
+
+            // Distribute payment across outstanding sales (oldest first)
+            foreach ($outstandingSales as $sale) {
+                if ($remainingAmount <= 0) break;
+
+                $saleOutstanding = $sale->due_amount;
+                $amountForThisSale = min($remainingAmount, $saleOutstanding);
+
+                // Record payment for this sale
+                $payment = $this->paymentService->recordPayment(
+                    saleId: $sale->id,
+                    amount: $amountForThisSale,
+                    paymentMethod: $request->payment_method,
+                    paymentDate: $request->payment_date,
+                    referenceNumber: $request->reference_number,
+                    notes: $request->notes . " (Part of bulk payment Rs. " . number_format($paymentAmount, 2) . ")"
+                );
+
+                $paymentsRecorded[] = [
+                    'sale' => $sale,
+                    'amount' => $amountForThisSale,
+                    'payment' => $payment
+                ];
+
+                $remainingAmount -= $amountForThisSale;
+            }
+
+            $paidInvoicesCount = count($paymentsRecorded);
+            $fullyPaidCount = collect($paymentsRecorded)->filter(function($record) {
+                $record['sale']->refresh();
+                return $record['sale']->isPaid();
+            })->count();
+
+            $message = "Bulk payment of Rs. " . number_format($paymentAmount, 2) . " recorded successfully. ";
+            $message .= "Applied to {$paidInvoicesCount} invoice(s). ";
+            if ($fullyPaidCount > 0) {
+                $message .= "{$fullyPaidCount} invoice(s) now fully paid.";
+            }
+
+            return redirect()->route('admin.udhar.details', $customer)
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error recording bulk payment: ' . $e->getMessage());
         }
     }
 

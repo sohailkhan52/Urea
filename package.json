@@ -4,7 +4,16 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "octane": "php artisan octane:start --server=roadrunner --workers=4 --watch",
+        "octane:prod": "php artisan octane:start --server=roadrunner --workers=8",
+        "horizon": "php artisan horizon",
+        "horizon:pause": "php artisan horizon:pause",
+        "horizon:unpause": "php artisan horizon:unpause",
+        "queue": "php artisan queue:work --sleep=3 --tries=3",
+        "queue:listen": "php artisan queue:listen --sleep=3 --tries=3",
+        "start": "Composer\\Config::disableProcessTimeout && concurrently -c \"#93c5fd,#c4b5fd,#fdba74,#fca5a5\" \"php artisan octane:start --server=roadrunner --workers=4 --watch\" \"php artisan horizon\" \"npm run dev\" --names='octane,horizon,vite'",
+        "prod": "Composer\\Config::disableProcessTimeout && concurrently -c \"#93c5fd,#c4b5fd\" \"php artisan octane:start --server=roadrunner --workers=8\" \"php artisan horizon\" --names='octane,horizon'"
     },
     "dependencies": {
         "@tailwindcss/vite": "^4.1.11",

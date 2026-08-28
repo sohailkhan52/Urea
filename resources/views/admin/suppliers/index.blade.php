@@ -6,11 +6,6 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Supplier Management</h1>
-        @can('suppliers.create')
-        <a href="{{ route('admin.suppliers.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Add Supplier
-        </a>
-        @endcan
     </div>
 
     {{-- Search and Filter --}}
@@ -168,42 +163,6 @@
                                     @endcan
                                 </div>
 
-                                {{-- Status Actions Dropdown --}}
-                                @can('suppliers.update')
-                                <div class="btn-group btn-group-sm ms-1" role="group">
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary dropdown-toggle" 
-                                            data-bs-toggle="dropdown" 
-                                            aria-expanded="false">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        @if($supplier->status === 'inactive')
-                                        <li>
-                                            <form action="{{ route('admin.suppliers.activate', $supplier) }}" method="POST">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item text-success">
-                                                    <i class="bi bi-check-circle me-1"></i> Activate
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @else
-                                        <li>
-                                            <form action="{{ route('admin.suppliers.deactivate', $supplier) }}" 
-                                                  method="POST"
-                                                  onsubmit="return confirm('Are you sure you want to deactivate this supplier?');">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item text-warning">
-                                                    <i class="bi bi-x-circle me-1"></i> Deactivate
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @endif
-                                    </ul>
-                                </div>
-                                @endcan
                             </td>
                         </tr>
                         @endforeach

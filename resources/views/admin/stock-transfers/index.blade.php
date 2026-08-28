@@ -106,10 +106,10 @@
                                 <small>{{ $transfer->transfer_date->format('M d, Y') }}</small>
                             </td>
                             <td>
-                                <small>{{ $transfer->sourceWarehouse->name }}</small>
+                                <small>{{ $transfer->sourceWarehouse?->name ?? 'N/A' }}</small>
                             </td>
                             <td>
-                                <small>{{ $transfer->destinationWarehouse->name }}</small>
+                                <small>{{ $transfer->destinationWarehouse?->name ?? 'N/A' }}</small>
                             </td>
                             <td>
                                 <span class="badge bg-light text-dark">{{ $transfer->items()->count() }} item(s)</span>

@@ -133,10 +133,18 @@
                                     <th class="text-end">Quantity</th>
                                     <th class="text-end">Unit Price</th>
                                     <th class="text-end">Total</th>
+                                    <th class="text-center">Return Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($purchase->items as $item)
+                                @php
+                                    $returnService = app(\App\Services\PurchaseReturnService::class);
+                                    $returnedQty = $returnService->getReturnedQuantity($item->id);
+                                    $remaining = $returnService->getRemainingReturnableQuantity($item);
+                                    $isFullyReturned = $remaining <= 0;
+                                    $isPartiallyReturned = $returnedQty > 0 && $remaining > 0;
+                                @endphp
                                 <tr>
                                     <td>
                                         <div class="fw-semibold">{{ $item->product->name }}</div>
@@ -152,6 +160,25 @@
                                     </td>
                                     <td class="text-end">
                                         <strong>{{ number_format($item->total, 2) }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        @if($isFullyReturned)
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i> Fully Returned
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">{{ number_format($returnedQty, 2) }} / {{ number_format($item->quantity, 2) }}</small>
+                                        @elseif($isPartiallyReturned)
+                                            <span class="badge bg-warning">
+                                                <i class="bi bi-exclamation-circle me-1"></i> Partially Returned
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">{{ number_format($returnedQty, 2) }} / {{ number_format($item->quantity, 2) }}</small>
+                                        @else
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-dash-circle me-1"></i> Not Returned
+                                            </span>
+                                        @endif
                                     </td>
                                 </tr>
                                 @endforeach

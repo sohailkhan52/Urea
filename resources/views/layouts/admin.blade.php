@@ -1,4 +1,7 @@
+{{-- @noinspection PhpUndefinedClassInspection --}}
+{{-- @noinspection PhpUndefinedClassInspection --}}
 <!DOCTYPE html>
+@php use Illuminate\Support\Facades\Auth; @endphp
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
@@ -15,6 +18,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
     @stack('styles')
+
+    {{-- WebSocket Broadcasting Setup --}}
+    @php
+        $broadcastDriver = env('BROADCAST_DRIVER', 'log');
+    @endphp
 
     <style>
         :root {
@@ -39,7 +47,7 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
-            overflow-x: hidden;
+            overflow-x: auto;
         }
 
         /* Sidebar Styles */
@@ -54,6 +62,31 @@
             overflow-y: auto;
             transition: all 0.3s;
             z-index: 1040;
+        }
+
+        /* Mobile backdrop overlay */
+        @media (max-width: 768px) {
+            .sidebar-backdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1039;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s, visibility 0.3s;
+                pointer-events: none;
+            }
+
+            .sidebar.show ~ .sidebar-backdrop {
+                display: block;
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
         }
 
         .sidebar-brand {
@@ -139,14 +172,80 @@
             flex-shrink: 0;
         }
 
+        /* Dropdown Menu Styles */
+        .nav-dropdown {
+            position: relative;
+        }
+
+        .nav-dropdown .dropdown-toggle {
+            cursor: pointer;
+        }
+
+        .nav-dropdown-indicator {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.75);
+            transition: transform 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 8px;
+        }
+
+        .nav-dropdown .dropdown-toggle[aria-expanded="true"] .nav-dropdown-indicator {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-nav .dropdown-menu {
+            border: none;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px 0;
+            position: relative !important;
+            float: none !important;
+            width: 100%;
+            box-shadow: none !important;
+            border-radius: 0;
+            margin: 0 !important;
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .nav-dropdown.open .dropdown-menu,
+        .nav-dropdown .dropdown-toggle[aria-expanded="true"] ~ .dropdown-menu {
+            display: block;
+            max-height: 500px;
+        }
+
+        .sidebar-nav .dropdown-menu .dropdown-item {
+            color: #ecf0f1;
+            padding: 10px 20px 10px 50px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: block;
+            width: 100%;
+            text-align: left;
+        }
+
+        .sidebar-nav .dropdown-menu .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .sidebar-nav .dropdown-menu .dropdown-item.active {
+            background: rgba(52, 152, 219, 0.3);
+            color: #3498db;
+        }
+
         /* Main Content Area */
         .main-wrapper {
             margin-left: var(--sidebar-width);
             min-height: 100vh;
             transition: all 0.3s;
-            overflow-x: hidden;
+            overflow-x: auto;
             width: calc(100% - var(--sidebar-width));
             box-sizing: border-box;
+            position: relative;
         }
 
         /* Top Navbar */
@@ -161,6 +260,7 @@
             top: 0;
             z-index: 1030;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            gap: 15px;
         }
 
         .topbar .breadcrumb {
@@ -254,20 +354,253 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 260px;
+                --topbar-height: 60px;
+            }
+
             .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: var(--sidebar-width);
                 margin-left: calc(-1 * var(--sidebar-width));
+                z-index: 1041;
             }
 
             .sidebar.show {
                 margin-left: 0;
+                box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
             }
 
             .main-wrapper {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .topbar {
                 margin-left: 0;
             }
 
             .toggle-sidebar {
                 display: block;
+            }
+
+            .sidebar-brand h4 {
+                font-size: 1rem;
+            }
+
+            .sidebar-brand small {
+                font-size: 0.65rem;
+            }
+
+            .nav-section-title {
+                padding: 10px 15px 5px;
+                font-size: 0.65rem;
+            }
+
+            .sidebar-nav .nav-link {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+
+            .sidebar-nav .dropdown-menu .dropdown-item {
+                padding: 8px 15px 8px 40px;
+                font-size: 0.85rem;
+            }
+
+            .page-header {
+                padding: 15px 15px;
+                margin: -15px -15px 15px;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .content {
+                padding: 15px;
+            }
+
+            .card-header {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+
+            .table {
+                font-size: 0.85rem;
+            }
+
+            .btn-sm {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Extra small devices (Mobile S - up to 375px) */
+        @media (max-width: 375px) {
+            :root {
+                --sidebar-width: 240px;
+                --topbar-height: 50px;
+            }
+
+            .topbar {
+                height: var(--topbar-height);
+                padding: 0 12px;
+                gap: 10px;
+            }
+
+            .sidebar-brand h4 {
+                font-size: 0.9rem;
+            }
+
+            .sidebar-brand small {
+                display: none;
+            }
+
+            .nav-section-title {
+                display: none;
+            }
+
+            .sidebar-nav .nav-link {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+
+            .sidebar-nav .nav-link i {
+                margin-right: 8px;
+            }
+
+            .sidebar-nav .nav-link-text-ur {
+                display: none;
+            }
+
+            .page-header {
+                padding: 12px 12px;
+                margin: -12px -12px 12px;
+            }
+
+            .page-header h1 {
+                font-size: 1.25rem;
+            }
+
+            .page-header p {
+                display: none;
+            }
+
+            .content {
+                padding: 12px;
+            }
+
+            .card {
+                margin-bottom: 15px;
+            }
+
+            .card-header {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+
+            .btn-sm {
+                padding: 0.35rem 0.5rem;
+                font-size: 0.75rem;
+            }
+
+            .d-flex.gap-2 {
+                gap: 0.5rem !important;
+            }
+
+            .table {
+                font-size: 0.75rem;
+            }
+
+            .table thead {
+                font-size: 0.7rem;
+            }
+
+            .form-control, .form-select {
+                padding: 0.4rem 0.5rem;
+                font-size: 0.85rem;
+            }
+
+            .topbar-right {
+                gap: 8px;
+            }
+
+            .breadcrumb {
+                display: none;
+            }
+        }
+
+        /* Small devices (Mobile M - 375px to 425px) */
+        @media (min-width: 376px) and (max-width: 425px) {
+            :root {
+                --sidebar-width: 250px;
+            }
+
+            .sidebar-brand small {
+                font-size: 0.7rem;
+            }
+
+            .sidebar-nav .nav-link-text-ur {
+                font-size: 0.65rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.35rem;
+            }
+
+            .table {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Medium devices (Tablet - 426px to 768px) */
+        @media (min-width: 426px) and (max-width: 768px) {
+            :root {
+                --sidebar-width: 260px;
+            }
+
+            .sidebar-nav .nav-link {
+                padding: 11px 18px;
+                font-size: 0.92rem;
+            }
+
+            .sidebar-nav .nav-link-text-ur {
+                font-size: 0.7rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.6rem;
+            }
+
+            .table {
+                font-size: 0.87rem;
+            }
+
+            .d-flex.gap-2 {
+                gap: 0.75rem !important;
+            }
+        }
+
+        /* Large devices and above (Desktop - 769px+) */
+        @media (min-width: 769px) {
+            :root {
+                --sidebar-width: 260px;
+            }
+
+            .sidebar {
+                margin-left: 0;
+            }
+
+            .main-wrapper {
+                margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
+            }
+
+            .toggle-sidebar {
+                display: none;
             }
         }
 
@@ -282,7 +615,24 @@
 
         /* Fix dropdown menu clipping in responsive tables */
         .table-responsive {
-            overflow: visible !important;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            display: block;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .table-responsive {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                white-space: nowrap;
+            }
+
+            .table-responsive table {
+                min-width: 100%;
+                margin-bottom: 0;
+            }
         }
 
         .table td .dropdown {
@@ -292,6 +642,71 @@
         .table td .dropdown-menu {
             position: absolute;
             z-index: 1050;
+        }
+
+        /* Modal Styles - Keep Bootstrap defaults */
+        .modal-content {
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header, .modal-footer {
+            border-color: #e3e6f0;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        /* Modal Z-Index Fixes */
+        .modal-backdrop {
+            z-index: 1060 !important;
+            backdrop-filter: none !important;
+            background-color: rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .modal {
+            z-index: 1070 !important;
+        }
+
+        .modal-dialog {
+            z-index: 1070 !important;
+        }
+
+        .modal-content {
+            z-index: 1070 !important;
+        }
+
+        .modal-header,
+        .modal-body,
+        .modal-footer {
+            z-index: 1070 !important;
+            pointer-events: auto !important;
+        }
+
+        .modal-footer button,
+        .modal-footer .btn,
+        .modal-footer form,
+        .modal-footer form button {
+            z-index: 1070 !important;
+            pointer-events: auto !important;
+        }
+
+        .modal-header .btn-close {
+            z-index: 1071 !important;
+            pointer-events: auto !important;
+        }
+
+        /* Ensure body can scroll when modal is closed */
+        body.modal-open {
+            overflow: hidden;
+            padding-right: var(--bs-scrollbar-width);
+        }
+
+        body:not(.modal-open) {
+            overflow: auto;
+            padding-right: 0;
         }
     </style>
 </head>
@@ -332,56 +747,136 @@
 
             @if(auth()->user()->isSuperAdmin())
             <div class="nav-section-title">User Management</div>
-            <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                <i class="bi bi-person-badge"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Users</span>
-                    <span class="nav-link-text-ur">صارفین</span>
-                </div>
-            </a>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-person-badge"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Users</span>
+                        <span class="nav-link-text-ur">صارفین</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.users.index') }}" class="dropdown-item">
+                            <i class="bi bi-list me-2"></i> View All
+                        </a>
+                    </li>
+                    @can('users.create')
+                    <li>
+                        <a href="{{ route('admin.users.create') }}" class="dropdown-item">
+                            <i class="bi bi-plus-circle me-2"></i> Add User
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </div>
             @endif
 
             @anypermission(['companies.view', 'products.view', 'warehouses.view', 'inventory.view', 'suppliers.view', 'customers.view'])
             <div class="nav-section-title">Inventory Management</div>
 
             @if(auth()->user()->isSuperAdmin())
-            <a href="{{ route('admin.companies.index') }}" class="nav-link {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}">
-                <i class="bi bi-building"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Companies</span>
-                    <span class="nav-link-text-ur">کمپنیاں</span>
-                </div>
-            </a>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-building"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Companies</span>
+                        <span class="nav-link-text-ur">کمپنیاں</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.companies.index') }}" class="dropdown-item">
+                            <i class="bi bi-list me-2"></i> View All
+                        </a>
+                    </li>
+                    @can('companies.create')
+                    <li>
+                        <a href="{{ route('admin.companies.create') }}" class="dropdown-item">
+                            <i class="bi bi-plus-circle me-2"></i> Add Company
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </div>
             @endif
 
             @permission('categories.view')
-            <a href="{{ route('admin.categories.index') }}" class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
-                <i class="bi bi-tags"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Categories</span>
-                    <span class="nav-link-text-ur">زمرہ جات</span>
-                </div>
-            </a>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-tags"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Categories</span>
+                        <span class="nav-link-text-ur">زمرہ جات</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.categories.index') }}" class="dropdown-item">
+                            <i class="bi bi-list me-2"></i> View All
+                        </a>
+                    </li>
+                    @can('categories.create')
+                    <li>
+                        <a href="{{ route('admin.categories.create') }}" class="dropdown-item">
+                            <i class="bi bi-plus-circle me-2"></i> Add Category
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </div>
             @endpermission
 
             @permission('products.view')
-            <a href="{{ route('admin.products.index') }}" class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
-                <i class="bi bi-box-seam"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Products</span>
-                    <span class="nav-link-text-ur">مصنوعات</span>
-                </div>
-            </a>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-box-seam"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Products</span>
+                        <span class="nav-link-text-ur">مصنوعات</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.products.index') }}" class="dropdown-item">
+                            <i class="bi bi-list me-2"></i> View All
+                        </a>
+                    </li>
+                    @can('products.create')
+                    <li>
+                        <a href="{{ route('admin.products.create') }}" class="dropdown-item">
+                            <i class="bi bi-plus-circle me-2"></i> Add Product
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </div>
             @endpermission
 
             @if(auth()->user()->isSuperAdmin())
-            <a href="{{ route('admin.warehouses.index') }}" class="nav-link {{ request()->routeIs('admin.warehouses.*') ? 'active' : '' }}">
-                <i class="bi bi-building-fill-gear"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Warehouses</span>
-                    <span class="nav-link-text-ur">گودام</span>
-                </div>
-            </a>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.warehouses.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-building-fill-gear"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Warehouses</span>
+                        <span class="nav-link-text-ur">گودام</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.warehouses.index') }}" class="dropdown-item">
+                            <i class="bi bi-list me-2"></i> View All
+                        </a>
+                    </li>
+                    @can('warehouses.create')
+                    <li>
+                        <a href="{{ route('admin.warehouses.create') }}" class="dropdown-item">
+                            <i class="bi bi-plus-circle me-2"></i> Add Warehouse
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </div>
             @endif
 
             @permission('inventory.view')
@@ -395,23 +890,55 @@
             @endpermission
 
             @if(auth()->user()->isSuperAdmin())
-            <a href="{{ route('admin.suppliers.index') }}" class="nav-link {{ request()->routeIs('admin.suppliers.*') ? 'active' : '' }}">
-                <i class="bi bi-person-badge"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Suppliers</span>
-                    <span class="nav-link-text-ur">سَپْلائِر</span>
-                </div>
-            </a>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.suppliers.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-person-badge"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Suppliers</span>
+                        <span class="nav-link-text-ur">سَپْلائِر</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.suppliers.index') }}" class="dropdown-item">
+                            <i class="bi bi-list me-2"></i> View All
+                        </a>
+                    </li>
+                    @can('suppliers.create')
+                    <li>
+                        <a href="{{ route('admin.suppliers.create') }}" class="dropdown-item">
+                            <i class="bi bi-plus-circle me-2"></i> Add Supplier
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </div>
             @endif
 
             @permission('customers.view')
-            <a href="{{ route('admin.customers.index') }}" class="nav-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Customers</span>
-                    <span class="nav-link-text-ur">گاہک</span>
-                </div>
-            </a>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-people"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Customers</span>
+                        <span class="nav-link-text-ur">گاہک</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.customers.index') }}" class="dropdown-item">
+                            <i class="bi bi-list me-2"></i> View All
+                        </a>
+                    </li>
+                    @can('customers.create')
+                    <li>
+                        <a href="{{ route('admin.customers.create') }}" class="dropdown-item">
+                            <i class="bi bi-plus-circle me-2"></i> Add Customer
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </div>
             @endpermission
             @endanypermission
 
@@ -419,23 +946,79 @@
             <div class="nav-section-title">Transactions</div>
 
             @if(auth()->user()->isSuperAdmin())
-            <a href="{{ route('admin.purchases.index') }}" class="nav-link {{ request()->routeIs('admin.purchases.*') ? 'active' : '' }}">
-                <i class="bi bi-cart"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Purchases</span>
-                    <span class="nav-link-text-ur">خریداری</span>
-                </div>
-            </a>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.purchases.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-cart"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Purchases</span>
+                        <span class="nav-link-text-ur">خریداری</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.purchases.index') }}" class="dropdown-item">
+                            <i class="bi bi-list me-2"></i> View All
+                        </a>
+                    </li>
+                    @can('purchases.create')
+                    <li>
+                        <a href="{{ route('admin.purchases.create') }}" class="dropdown-item">
+                            <i class="bi bi-plus-circle me-2"></i> Add Purchase
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.purchases.returns.create') }}" class="dropdown-item">
+                            <i class="bi bi-arrow-return-right me-2"></i> Add Return
+                        </a>
+                    </li>
+                    @endcan
+                    @can('purchases.view')
+                    <li>
+                        <a href="{{ route('admin.purchases.returns.index') }}" class="dropdown-item">
+                            <i class="bi bi-arrow-return-left me-2"></i> View Returns
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </div>
             @endif
 
             @permission('sales.view')
-            <a href="{{ route('admin.sales.index') }}" class="nav-link {{ request()->routeIs('admin.sales.*') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Sales</span>
-                    <span class="nav-link-text-ur">فروخت</span>
-                </div>
-            </a>
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.sales.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-receipt"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Sales</span>
+                        <span class="nav-link-text-ur">فروخت</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.sales.index') }}" class="dropdown-item">
+                            <i class="bi bi-list me-2"></i> View All
+                        </a>
+                    </li>
+                    @can('sales.create')
+                    <li>
+                        <a href="{{ route('admin.sales.create') }}" class="dropdown-item">
+                            <i class="bi bi-plus-circle me-2"></i> Add Sale
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.sales.returns.create') }}" class="dropdown-item">
+                            <i class="bi bi-arrow-return-right me-2"></i> Add Return
+                        </a>
+                    </li>
+                    @endcan
+                    @can('sales.view')
+                    <li>
+                        <a href="{{ route('admin.sales.returns.index') }}" class="dropdown-item">
+                            <i class="bi bi-arrow-return-left me-2"></i> View Returns
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </div>
             @endpermission
 
             @permission('udhar.view')
@@ -459,7 +1042,7 @@
             @endif
             @endanypermission
 
-            @if(auth()->user()->isSuperAdmin())
+            @if(auth()->user()->isSuperAdmin() && isMultiWarehouseEnabled())
             <div class="nav-section-title">Management</div>
             <a href="{{ route('admin.stock-transfers.index') }}" class="nav-link {{ request()->routeIs('admin.stock-transfers.*') ? 'active' : '' }}">
                 <i class="bi bi-arrow-left-right"></i>
@@ -480,20 +1063,119 @@
             </a>
             @endif
 
-            {{-- Reports section disabled - routes and views not yet implemented --}}
-            {{-- @permission('reports.view')
-            <div class="nav-section-title">Reports</div>
-            <a href="{{ route('admin.reports.sales.index') }}" class="nav-link {{ request()->routeIs('admin.reports.sales.*') ? 'active' : '' }}">
-                <i class="bi bi-graph-up"></i>
-                <span>Sales Reports</span>
-            </a>
-            <a href="{{ route('admin.reports.inventory.index') }}" class="nav-link {{ request()->routeIs('admin.reports.inventory.*') ? 'active' : '' }}">
-                <i class="bi bi-file-earmark-bar-graph"></i>
-                <span>Stock Reports</span>
-            </a>
-            @endpermission --}}
+            {{-- Expense Management --}}
+            @permission('expenses.view')
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.expenses.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-receipt"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Expense Management</span>
+                        <span class="nav-link-text-ur">اخراجات</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.expenses.index') }}" class="dropdown-item">
+                            <i class="bi bi-list me-2"></i> View Expense
+                        </a>
+                    </li>
+                    @can('expenses.create')
+                    <li>
+                        <a href="{{ route('admin.expenses.create') }}" class="dropdown-item">
+                            <i class="bi bi-plus-circle me-2"></i> Add Expense
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </div>
+            @endpermission
+
+            {{-- Reports Section --}}
+            @permission('reports.view')
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-bar-chart"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Reports</span>
+                        <span class="nav-link-text-ur">رپورٹس</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    {{-- Reports Dashboard --}}
+                    <li>
+                        <a href="{{ route('admin.reports.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.index') ? 'active' : '' }}">
+                            <i class="bi bi-speedometer me-2"></i>
+                            <span class="nav-link-text-en">Reports Dashboard</span>
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+
+                    {{-- Sales Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.sales.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.sales.index') ? 'active' : '' }}">
+                            <i class="bi bi-graph-up me-2"></i>
+                            <span class="nav-link-text-en">Sales Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Purchase Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.purchase.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.purchase.index') ? 'active' : '' }}">
+                            <i class="bi bi-cart-plus me-2"></i>
+                            <span class="nav-link-text-en">Purchase Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Invoice Report --}}
+                    <li>
+                        <a href="{{ route('admin.reports.invoices') }}" class="dropdown-item {{ request()->routeIs('admin.reports.invoices') ? 'active' : '' }}">
+                            <i class="bi bi-receipt me-2"></i>
+                            <span class="nav-link-text-en">Invoice Report</span>
+                        </a>
+                    </li>
+
+                    {{-- Inventory Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.inventory.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.inventory.index') ? 'active' : '' }}">
+                            <i class="bi bi-file-earmark-bar-graph me-2"></i>
+                            <span class="nav-link-text-en">Inventory Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Customer Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.customer.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.customer.index') ? 'active' : '' }}">
+                            <i class="bi bi-person-lines-fill me-2"></i>
+                            <span class="nav-link-text-en">Customer Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Supplier Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.supplier.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.supplier.index') ? 'active' : '' }}">
+                            <i class="bi bi-truck me-2"></i>
+                            <span class="nav-link-text-en">Supplier Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Profit & Loss --}}
+                    <li>
+                        <a href="{{ route('admin.reports.profit-loss') }}" class="dropdown-item {{ request()->routeIs('admin.reports.profit-loss') ? 'active' : '' }}">
+                            <i class="bi bi-currency-dollar me-2"></i>
+                            <span class="nav-link-text-en">Profit & Loss</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            @endpermission
+                <ul class="dropdown-menu dropdown-menu-dark">
+                </ul>
+            </div>
         </nav>
     </aside>
+
+    <!-- Sidebar Backdrop (Mobile overlay) -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <!-- Main Content Wrapper -->
     <div class="main-wrapper">
@@ -514,8 +1196,12 @@
             </nav>
 
             <div class="topbar-right">
+                {{-- Notification Bell --}}
+                @component('components.notification-bell') @endcomponent
+
                 <div class="dropdown">
                     <button class="btn btn-link text-dark text-decoration-none dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                        {{-- @noinspection PhpUndefinedClassInspection --}}
                         <img src="{{ Auth::user()->profile_image_url }}" 
                              alt="{{ Auth::user()->name }}" 
                              class="rounded-circle me-2" 
@@ -605,12 +1291,96 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+    {{-- WebSocket Broadcasting Libraries --}}
+    @if($broadcastDriver !== 'log' && $broadcastDriver !== 'null')
+        @if($broadcastDriver === 'websocket')
+            {{-- Development: Laravel WebSockets --}}
+            <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.0.0/dist/web/pusher.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.0/dist/echo.iife.js"></script>
+
+            {{-- @noinspection PhpUndefinedClassInspection --}}
+            <script>
+                window.Echo = new Echo({
+                    broadcaster: 'pusher',
+                    key: 'null-key',
+                    wsHost: window.location.hostname,
+                    wsPort: {{ env('LARAVEL_WEBSOCKETS_PORT', 6001) }},
+                    wssPort: {{ env('LARAVEL_WEBSOCKETS_PORT', 6001) }},
+                    forceTLS: false,
+                    encrypted: false,
+                    enabledTransports: ['ws', 'wss'],
+                });
+            </script>
+        @elseif($broadcastDriver === 'pusher')
+            {{-- Production: Pusher Service --}}
+            <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.0.0/dist/web/pusher.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.0/dist/echo.iife.js"></script>
+
+            {{-- @noinspection PhpUndefinedClassInspection --}}
+            <script>
+                window.Echo = new Echo({
+                    broadcaster: 'pusher',
+                    key: '{{ config('broadcasting.connections.pusher.key') }}',
+                    cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+                    forceTLS: true,
+                    auth: {
+                        headers: {
+                            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+                        }
+                    }
+                });
+            </script>
+        @endif
+    @endif
+
     <script>
         const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
 
         function toggleSidebar() {
             sidebar.classList.toggle('show');
         }
+
+        // Close sidebar when clicking on backdrop
+        if (backdrop) {
+            backdrop.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+            });
+        }
+
+        // Close sidebar when clicking on a nav link (mobile)
+        document.querySelectorAll('.sidebar-nav a:not([aria-expanded])').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('show');
+                }
+            });
+        });
+
+        // Close sidebar when window resizes to desktop size
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('show');
+            }
+        });
+
+        // Close sidebar when clicking on main-wrapper (mobile)
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth <= 768) {
+                // Don't close sidebar if clicking inside a modal
+                const isClickInsideModal = event.target.closest('.modal');
+                if (isClickInsideModal) {
+                    return;
+                }
+
+                const isClickInsideSidebar = sidebar.contains(event.target);
+                const isToggleButton = event.target.closest('.toggle-sidebar');
+                
+                if (!isClickInsideSidebar && !isToggleButton && sidebar.classList.contains('show')) {
+                    sidebar.classList.remove('show');
+                }
+            }
+        });
 
         // Restore sidebar scroll position on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -636,6 +1406,45 @@
                 bsAlert.close();
             });
         }, 5000);
+
+        // Handle dropdown toggles in sidebar navigation
+        document.querySelectorAll('.nav-dropdown .dropdown-toggle').forEach(function(toggle) {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const navDropdown = toggle.closest('.nav-dropdown');
+                const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+
+                document.querySelectorAll('.nav-dropdown .dropdown-toggle').forEach(function(otherToggle) {
+                    if (otherToggle !== toggle) {
+                        otherToggle.setAttribute('aria-expanded', 'false');
+                        otherToggle.closest('.nav-dropdown')?.classList.remove('open');
+                    }
+                });
+
+                const nextState = !isExpanded;
+                toggle.setAttribute('aria-expanded', String(nextState));
+                navDropdown?.classList.toggle('open', nextState);
+            });
+        });
+
+        // Ensure all modal buttons and forms work properly
+        document.addEventListener('click', function(e) {
+            // Don't interfere with modal buttons and close buttons
+            if (e.target.closest('.modal-footer button') || 
+                e.target.closest('.modal-footer .btn') ||
+                e.target.closest('.btn-close')) {
+                e.stopPropagation();
+            }
+        }, true);
+
+        // Ensure forms inside modals submit properly
+        document.addEventListener('submit', function(e) {
+            if (e.target.closest('.modal-footer form')) {
+                // Allow form to submit normally
+                return true;
+            }
+        }, false);
     </script>
 
     @stack('scripts')

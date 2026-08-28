@@ -7,48 +7,46 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        // Add a helper table to track purchase number sequences
-        Schema::create('purchase_sequences', function (Blueprint $table) {
-            $table->id();
-            $table->year('year');
-            $table->integer('next_number')->default(1);
-            $table->timestamps();
-            
-            // Ensure only one sequence per year
-            $table->unique('year');
-        });
-        
-        // Initialize sequences for existing years
-        $years = DB::table('purchases')
-            ->selectRaw('YEAR(created_at) as year')
-            ->distinct()
-            ->orderBy('year')
-            ->pluck('year');
-        
-        foreach ($years as $year) {
-            $maxNum = DB::table('purchases')
-                ->whereYear('created_at', $year)
-                ->get()
-                ->map(function ($purchase) {
-                    $parts = explode('-', $purchase->purchase_number);
-                    return isset($parts[2]) ? (int)$parts[2] : 0;
-                })
-                ->max();
-            
-            DB::table('purchase_sequences')->insert([
-                'year' => $year,
-                'next_number' => $maxNum + 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        if (!Schema::hasTable('purchase_sequences')) {
+            Schema::create('purchase_sequences', function (Blueprint $table) {
+                $table->id();
+                $table->year('year');
+                $table->integer('next_number')->default(1);
+                $table->timestamps();
+                $table->unique('year');
+            });
         }
         
-        // Initialize for current year if not exists
+        $years = DB::table('purchases')
+            ->pluck('created_at')
+            ->filter()
+            ->map(fn ($createdAt) => Carbon\Carbon::parse($createdAt)->year)
+            ->unique()
+            ->sort()
+            ->values();
+        
+        foreach ($years as $year) {
+            if (!DB::table('purchase_sequences')->where('year', $year)->exists()) {
+                $maxNum = DB::table('purchases')
+                    ->get(['created_at', 'purchase_number'])
+                    ->filter(fn ($purchase) => $purchase->created_at && Carbon\Carbon::parse($purchase->created_at)->year == $year)
+                    ->map(function ($purchase) {
+                        $parts = explode('-', $purchase->purchase_number);
+                        return isset($parts[2]) ? (int)$parts[2] : 0;
+                    })
+                    ->max();
+                
+                DB::table('purchase_sequences')->insert([
+                    'year' => $year,
+                    'next_number' => $maxNum + 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+        
         $currentYear = now()->year;
         if (!DB::table('purchase_sequences')->where('year', $currentYear)->exists()) {
             DB::table('purchase_sequences')->insert([
@@ -60,9 +58,6 @@ return new class extends Migration
         }
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('purchase_sequences');

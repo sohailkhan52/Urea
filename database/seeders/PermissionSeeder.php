@@ -287,6 +287,44 @@ class PermissionSeeder extends Seeder
                 'description' => 'Receive stock transfers',
             ],
 
+            // Stock Requests (Multi-warehouse feature)
+            [
+                'name' => 'View Stock Requests',
+                'slug' => 'stock_requests.view',
+                'group' => 'stock_requests',
+                'description' => 'View stock requests',
+            ],
+            [
+                'name' => 'Create Stock Requests',
+                'slug' => 'stock_requests.create',
+                'group' => 'stock_requests',
+                'description' => 'Create new stock requests',
+            ],
+            [
+                'name' => 'Update Stock Requests',
+                'slug' => 'stock_requests.update',
+                'group' => 'stock_requests',
+                'description' => 'Edit stock requests',
+            ],
+            [
+                'name' => 'Approve Stock Requests',
+                'slug' => 'stock_requests.approve',
+                'group' => 'stock_requests',
+                'description' => 'Approve or reject stock requests',
+            ],
+            [
+                'name' => 'Cancel Stock Requests',
+                'slug' => 'stock_requests.cancel',
+                'group' => 'stock_requests',
+                'description' => 'Cancel stock requests',
+            ],
+            [
+                'name' => 'Delete Stock Requests',
+                'slug' => 'stock_requests.delete',
+                'group' => 'stock_requests',
+                'description' => 'Delete stock requests',
+            ],
+
             // Reports
             [
                 'name' => 'View Reports',
@@ -379,6 +417,32 @@ class PermissionSeeder extends Seeder
                 'slug' => 'welcome-page.manage',
                 'group' => 'welcome-page',
                 'description' => 'Manage welcome page content, settings, features, and workflow',
+            ],
+
+            // Expense Management
+            [
+                'name' => 'View Expenses',
+                'slug' => 'expenses.view',
+                'group' => 'expenses',
+                'description' => 'View list of expenses',
+            ],
+            [
+                'name' => 'Create Expenses',
+                'slug' => 'expenses.create',
+                'group' => 'expenses',
+                'description' => 'Create new expenses',
+            ],
+            [
+                'name' => 'Edit Expenses',
+                'slug' => 'expenses.edit',
+                'group' => 'expenses',
+                'description' => 'Edit existing expenses',
+            ],
+            [
+                'name' => 'Delete Expenses',
+                'slug' => 'expenses.delete',
+                'group' => 'expenses',
+                'description' => 'Delete expenses',
             ],
         ];
 

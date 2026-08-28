@@ -9,9 +9,6 @@
             <div>
                 <h1 class="h3 mb-0">Category Management</h1>
             </div>
-            <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i> Add Category
-            </a>
         </div>
     </div>
 
@@ -64,59 +61,13 @@
                                        title="Edit">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    @if($category->isActive())
-                                        <form action="{{ route('admin.categories.deactivate', $category) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary" 
-                                                    title="Deactivate"
-                                                    onclick="return confirm('Deactivate this category?');">
-                                                <i class="bi bi-toggle-on"></i>
-                                            </button>
-                                        </form>
-                                    @else
-                                        <form action="{{ route('admin.categories.activate', $category) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="btn btn-sm btn-outline-success" 
-                                                    title="Activate">
-                                                <i class="bi bi-toggle-off"></i>
-                                            </button>
-                                        </form>
-                                    @endif
+                                    <button type="button" class="btn btn-sm btn-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal{{ $category->id }}"
+                                            @if($category->products()->exists()) disabled title="Cannot delete category with products" @endif>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-danger" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#deleteModal{{ $category->id }}"
-                                        @if($category->products()->exists()) disabled title="Cannot delete category with products" @endif>
-                                    <i class="bi bi-trash"></i>
-                                </button>
-
-                                {{-- Delete Modal --}}
-                                @if(!$category->products()->exists())
-                                <div class="modal fade" id="deleteModal{{ $category->id }}" tabindex="-1">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Delete Category</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p>Are you sure you want to delete this category?</p>
-                                                <p><strong>{{ $category->name }}</strong></p>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger">Delete</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endif
                             </td>
                         </tr>
                         @endforeach
@@ -140,4 +91,33 @@
         </div>
     </div>
 </div>
+
+{{-- Delete Modals --}}
+@foreach($categories as $category)
+    @if(!$category->products()->exists())
+    <div class="modal fade" id="deleteModal{{ $category->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title">Delete Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this category?</p>
+                    <p class="mb-0"><strong class="text-danger">{{ $category->name }}</strong></p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="deleteForm{{ $category->id }}" action="{{ route('admin.categories.destroy', $category) }}" method="POST" style="display: inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+@endforeach
+
 @endsection

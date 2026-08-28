@@ -6,13 +6,6 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Products Management</h1>
-        @can('products.create')
-        @if(auth()->user()->isSuperAdmin())
-        <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Add Product
-        </a>
-        @endif
-        @endcan
     </div>
 
     {{-- Search and Filter --}}
@@ -173,42 +166,7 @@
                                     @endcan
                                 </div>
 
-                                {{-- Status Actions Dropdown --}}
-                                @can('products.update')
-                                <div class="btn-group btn-group-sm ms-1" role="group">
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary dropdown-toggle" 
-                                            data-bs-toggle="dropdown" 
-                                            aria-expanded="false">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        @if($product->status === 'inactive')
-                                        <li>
-                                            <form action="{{ route('admin.products.activate', $product) }}" method="POST">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item text-success">
-                                                    <i class="bi bi-check-circle me-1"></i> Activate
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @else
-                                        <li>
-                                            <form action="{{ route('admin.products.deactivate', $product) }}" 
-                                                  method="POST"
-                                                  onsubmit="return confirm('Are you sure you want to deactivate this product?');">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="dropdown-item text-warning">
-                                                    <i class="bi bi-x-circle me-1"></i> Deactivate
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @endif
-                                    </ul>
-                                </div>
-                                @endcan
+
                             </td>
                             @endif
                         </tr>

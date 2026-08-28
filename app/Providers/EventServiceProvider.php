@@ -58,6 +58,12 @@ class EventServiceProvider extends ServiceProvider
             \App\Listeners\SendSupplierWelcomeEmail::class,
             \App\Listeners\LogNotificationActivity::class,
         ],
+
+        // Notification Events
+        \App\Events\NotificationCreated::class => [
+            \App\Listeners\SendNotificationEmail::class,
+            \App\Listeners\LogNotificationActivity::class,
+        ],
     ];
 
     /**

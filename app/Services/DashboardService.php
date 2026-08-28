@@ -139,24 +139,22 @@ class DashboardService
 
         $sales = Sale::where('status', Sale::STATUS_CONFIRMED)
             ->whereBetween('confirmed_at', [$start, $end])
-            ->select(
-                DB::raw('DATE(confirmed_at) as date'),
-                DB::raw('SUM(total_amount) as amount'),
-                DB::raw('COUNT(*) as count')
-            )
-            ->groupBy(DB::raw('DATE(confirmed_at)'))
-            ->orderBy('date')
-            ->get();
+            ->get(['confirmed_at', 'total_amount'])
+            ->groupBy(fn (Sale $sale) => $sale->confirmed_at->format('Y-m-d'))
+            ->map(fn ($salesForDate) => [
+                'amount' => $salesForDate->sum('total_amount'),
+                'count' => $salesForDate->count(),
+            ]);
 
         // Fill gaps with zero values
         $result = [];
         for ($i = 29; $i >= 0; $i--) {
             $date = Carbon::now()->subDays($i)->format('Y-m-d');
-            $saleForDate = $sales->firstWhere('date', $date);
+            $saleForDate = $sales->get($date);
             $result[] = [
                 'date' => $date,
-                'amount' => $saleForDate?->amount ?? 0,
-                'count' => $saleForDate?->count ?? 0,
+                'amount' => $saleForDate['amount'] ?? 0,
+                'count' => $saleForDate['count'] ?? 0,
             ];
         }
 
@@ -172,23 +170,21 @@ class DashboardService
     {
         $sales = Sale::where('status', Sale::STATUS_CONFIRMED)
             ->where('confirmed_at', '>=', Carbon::now()->subMonths(11)->startOfMonth())
-            ->select(
-                DB::raw('DATE_FORMAT(confirmed_at, "%Y-%m") as month'),
-                DB::raw('SUM(total_amount) as amount'),
-                DB::raw('COUNT(*) as count')
-            )
-            ->groupBy(DB::raw('DATE_FORMAT(confirmed_at, "%Y-%m")'))
-            ->orderBy('month')
-            ->get();
+            ->get(['confirmed_at', 'total_amount'])
+            ->groupBy(fn (Sale $sale) => $sale->confirmed_at->format('Y-m'))
+            ->map(fn ($salesForMonth) => [
+                'amount' => $salesForMonth->sum('total_amount'),
+                'count' => $salesForMonth->count(),
+            ]);
 
         $result = [];
         for ($i = 11; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i)->format('Y-m');
-            $saleForMonth = $sales->firstWhere('month', $month);
+            $saleForMonth = $sales->get($month);
             $result[] = [
                 'month' => $month,
-                'amount' => $saleForMonth?->amount ?? 0,
-                'count' => $saleForMonth?->count ?? 0,
+                'amount' => $saleForMonth['amount'] ?? 0,
+                'count' => $saleForMonth['count'] ?? 0,
             ];
         }
 
@@ -336,9 +332,9 @@ class DashboardService
             ->join('sales as s', 'si.sale_id', '=', 's.id')
             ->join('products as p', 'si.product_id', '=', 'p.id')
             ->where('s.status', Sale::STATUS_CONFIRMED)
-            ->whereBetween(DB::raw('DATE(s.confirmed_at)'), [
-                $startDate->format('Y-m-d'),
-                $endDate->format('Y-m-d')
+            ->whereBetween('s.confirmed_at', [
+                $startDate->copy()->startOfDay(),
+                $endDate->copy()->endOfDay(),
             ])
             ->select(
                 'p.id',

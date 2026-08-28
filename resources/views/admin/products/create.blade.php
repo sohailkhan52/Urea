@@ -179,9 +179,10 @@
                                        class="form-control @error('purchase_price') is-invalid @enderror" 
                                        id="purchase_price" 
                                        name="purchase_price" 
-                                       value="{{ old('purchase_price', 0) }}"
+                                       value="{{ old('purchase_price') }}"
                                        step="0.01"
                                        min="0"
+                                       placeholder="0.00"
                                        required>
                                 @error('purchase_price')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -195,9 +196,10 @@
                                        class="form-control @error('sale_price') is-invalid @enderror" 
                                        id="sale_price" 
                                        name="sale_price" 
-                                       value="{{ old('sale_price', 0) }}"
+                                       value="{{ old('sale_price') }}"
                                        step="0.01"
                                        min="0"
+                                       placeholder="0.00"
                                        required>
                                 @error('sale_price')
                                     <div class="invalid-feedback">{{ $message }}</div>

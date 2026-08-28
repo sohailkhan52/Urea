@@ -21,14 +21,22 @@ class StoreUdharPaymentRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'sale_id' => 'required|integer|exists:sales,id',
+        $rules = [
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|string|in:cash,bank_transfer,easypaisa,jazz_cash,cheque,other',
             'payment_date' => 'required|date',
             'reference_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:500',
         ];
+
+        // Only require sale_id if it's not a bulk payment
+        if (!$this->has('bulk_payment') || !$this->bulk_payment) {
+            $rules['sale_id'] = 'required|integer|exists:sales,id';
+        } else {
+            $rules['bulk_payment'] = 'required|boolean';
+        }
+
+        return $rules;
     }
 
     /**

@@ -16,66 +16,80 @@
     </div>
 
     {{-- Statistics Cards --}}
+    @php
+        $totalItemsLink = route('admin.inventory.index', ['stock_status' => 'in_stock']);
+        $totalQuantityLink = route('admin.inventory.index', ['stock_status' => 'in_stock']);
+        $lowStockLink = route('admin.inventory.index', ['stock_status' => 'low_stock']);
+        $outOfStockLink = route('admin.inventory.index', ['stock_status' => 'out_of_stock']);
+    @endphp
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card border-primary">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-1">Total Items</h6>
-                            <h3 class="mb-0">{{ number_format($stats['total_items']) }}</h3>
-                        </div>
-                        <div class="text-primary">
-                            <i class="bi bi-box-seam" style="font-size: 2rem;"></i>
+            <a href="{{ $totalItemsLink }}" class="text-decoration-none" title="View total items in stock">
+                <div class="card border-primary h-100 shadow-sm hover-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Total Items</h6>
+                                <h3 class="mb-0">{{ number_format($stats['total_items']) }}</h3>
+                            </div>
+                            <div class="text-primary">
+                                <i class="bi bi-box-seam" style="font-size: 2rem;"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="card border-info">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-1">Total Quantity</h6>
-                            <h3 class="mb-0">{{ number_format($stats['total_quantity']) }}</h3>
-                        </div>
-                        <div class="text-info">
-                            <i class="bi bi-boxes" style="font-size: 2rem;"></i>
+            <a href="{{ $totalQuantityLink }}" class="text-decoration-none" title="View items with total quantity in stock">
+                <div class="card border-info h-100 shadow-sm hover-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Total Quantity</h6>
+                                <h3 class="mb-0">{{ number_format($stats['total_quantity']) }}</h3>
+                            </div>
+                            <div class="text-info">
+                                <i class="bi bi-boxes" style="font-size: 2rem;"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="card border-warning">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-1">Low Stock</h6>
-                            <h3 class="mb-0">{{ number_format($stats['low_stock']) }}</h3>
-                        </div>
-                        <div class="text-warning">
-                            <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
+            <a href="{{ $lowStockLink }}" class="text-decoration-none" title="View low stock items">
+                <div class="card border-warning h-100 shadow-sm hover-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Low Stock</h6>
+                                <h3 class="mb-0">{{ number_format($stats['low_stock']) }}</h3>
+                            </div>
+                            <div class="text-warning">
+                                <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="card border-danger">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-1">Out of Stock</h6>
-                            <h3 class="mb-0">{{ number_format($stats['out_of_stock']) }}</h3>
-                        </div>
-                        <div class="text-danger">
-                            <i class="bi bi-x-circle" style="font-size: 2rem;"></i>
+            <a href="{{ $outOfStockLink }}" class="text-decoration-none" title="View out of stock items">
+                <div class="card border-danger h-100 shadow-sm hover-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Out of Stock</h6>
+                                <h3 class="mb-0">{{ number_format($stats['out_of_stock']) }}</h3>
+                            </div>
+                            <div class="text-danger">
+                                <i class="bi bi-x-circle" style="font-size: 2rem;"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 

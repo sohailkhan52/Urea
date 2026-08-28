@@ -198,11 +198,15 @@ class WarehouseController extends Controller
             ]);
         }
 
+        // Sync conversation participants with new admin assignment
+        // Removed: ConversationInitializationService is no longer used
+
         Log::info('Warehouse updated', [
             'updated_by' => Auth::id(),
             'warehouse_id' => $warehouse->id,
             'warehouse_name' => $warehouse->name,
             'warehouse_code' => $warehouse->code,
+            'admin_id' => $adminId,
         ]);
 
         return redirect()->route('admin.warehouses.index')

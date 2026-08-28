@@ -68,6 +68,30 @@ class Warehouse extends Model
     }
 
     /**
+     * Boot the model and register event listeners.
+     */
+    protected static function booted(): void
+    {
+        // Clear multi-warehouse feature cache when warehouse status changes
+        static::saved(function ($warehouse) {
+            // Clear cache if status changed or warehouse was created
+            if ($warehouse->wasRecentlyCreated || $warehouse->wasChanged('status')) {
+                app(\App\Services\MultiWarehouseFeatureService::class)->clearCache();
+            }
+        });
+
+        // Clear cache when warehouse is deleted
+        static::deleted(function ($warehouse) {
+            app(\App\Services\MultiWarehouseFeatureService::class)->clearCache();
+        });
+
+        // Clear cache when warehouse is restored (from soft delete)
+        static::restored(function ($warehouse) {
+            app(\App\Services\MultiWarehouseFeatureService::class)->clearCache();
+        });
+    }
+
+    /**
      * Check if warehouse is active
      */
     public function isActive(): bool

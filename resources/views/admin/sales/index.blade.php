@@ -6,11 +6,6 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Sales Management</h1>
-        @can('sales.create')
-        <a href="{{ route('admin.sales.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Create Sale
-        </a>
-        @endcan
     </div>
 
     {{-- Search and Filter --}}
@@ -214,95 +209,7 @@
                                     @endcan
                                 </div>
 
-                                {{-- Action Dropdown --}}
-                                @if($sale->isDraft() || $sale->isConfirmed())
-                                <div class="btn-group btn-group-sm ms-1" role="group">
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary dropdown-toggle" 
-                                            data-bs-toggle="dropdown" 
-                                            aria-expanded="false">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        @if($sale->isDraft() && $sale->canBeConfirmed())
-                                            @can('sales.approve')
-                                            <li>
-                                                <form action="{{ route('admin.sales.confirm', $sale) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="dropdown-item text-success"
-                                                            onclick="return confirm('Confirm this sale? Stock will be reduced from warehouse.');">
-                                                        <i class="bi bi-check-circle me-1"></i> Confirm
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                        
-                                        @if($sale->isConfirmed())
-                                            @can('sales.approve')
-                                            <li>
-                                                <a href="{{ route('admin.sales.print-invoice', $sale) }}" 
-                                                   class="dropdown-item"
-                                                   target="_blank">
-                                                    <i class="bi bi-printer me-1"></i> Print Invoice
-                                                </a>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                        
-                                        @if($sale->canBeCancelled())
-                                            @can('sales.cancel')
-                                            <li>
-                                                <button type="button" 
-                                                        class="dropdown-item text-danger"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#cancelModal{{ $sale->id }}">
-                                                    <i class="bi bi-x-circle me-1"></i> Cancel
-                                                </button>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                    </ul>
-                                </div>
 
-                                {{-- Cancel Modal --}}
-                                @can('sales.cancel')
-                                <div class="modal fade" id="cancelModal{{ $sale->id }}" tabindex="-1">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Cancel Sale</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <form action="{{ route('admin.sales.cancel', $sale) }}" method="POST">
-                                                @csrf
-                                                <div class="modal-body">
-                                                    <p>Are you sure you want to cancel this sale?</p>
-                                                    @if($sale->isConfirmed())
-                                                    <div class="alert alert-info mb-3">
-                                                        <i class="bi bi-info-circle me-1"></i>
-                                                        This confirmed sale will have its stock reversed.
-                                                    </div>
-                                                    @endif
-                                                    <div class="mb-3">
-                                                        <label for="reason{{ $sale->id }}" class="form-label">Reason (optional)</label>
-                                                        <textarea class="form-control" 
-                                                                  id="reason{{ $sale->id }}" 
-                                                                  name="reason" 
-                                                                  rows="3"
-                                                                  placeholder="Enter cancellation reason..."></textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                    <button type="submit" class="btn btn-danger">Cancel Sale</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endcan
-                                @endif
                             </td>
                         </tr>
                         @endforeach

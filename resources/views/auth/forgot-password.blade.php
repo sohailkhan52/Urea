@@ -15,8 +15,19 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: white;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -76,11 +87,13 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
             transition: transform 0.2s;
+            color: white;
         }
 
         .btn-submit:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
         }
 
         .alert {

@@ -6,11 +6,6 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Purchase Management</h1>
-        @can('purchases.create')
-        <a href="{{ route('admin.purchases.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Create Purchase
-        </a>
-        @endcan
     </div>
 
     {{-- Search and Filter --}}
@@ -174,77 +169,7 @@
                                     @endcan
                                 </div>
 
-                                {{-- Action Dropdown --}}
-                                @if($purchase->isDraft() || $purchase->isConfirmed())
-                                <div class="btn-group btn-group-sm ms-1" role="group">
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary dropdown-toggle" 
-                                            data-bs-toggle="dropdown" 
-                                            aria-expanded="false">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        @if($purchase->isDraft() && $purchase->canBeConfirmed())
-                                            @can('purchases.approve')
-                                            <li>
-                                                <form action="{{ route('admin.purchases.confirm', $purchase) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="dropdown-item text-success"
-                                                            onclick="return confirm('Confirm this purchase? Stock will be added to warehouse.');">
-                                                        <i class="bi bi-check-circle me-1"></i> Confirm
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                        
-                                        @if($purchase->canBeCancelled())
-                                            @can('purchases.cancel')
-                                            <li>
-                                                <button type="button" 
-                                                        class="dropdown-item text-danger"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#cancelModal{{ $purchase->id }}">
-                                                    <i class="bi bi-x-circle me-1"></i> Cancel
-                                                </button>
-                                            </li>
-                                            @endcan
-                                        @endif
-                                    </ul>
-                                </div>
 
-                                {{-- Cancel Modal --}}
-                                @can('purchases.cancel')
-                                <div class="modal fade" id="cancelModal{{ $purchase->id }}" tabindex="-1">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Cancel Purchase</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <form action="{{ route('admin.purchases.cancel', $purchase) }}" method="POST">
-                                                @csrf
-                                                <div class="modal-body">
-                                                    <p>Are you sure you want to cancel this purchase?</p>
-                                                    <div class="mb-3">
-                                                        <label for="reason{{ $purchase->id }}" class="form-label">Reason (optional)</label>
-                                                        <textarea class="form-control" 
-                                                                  id="reason{{ $purchase->id }}" 
-                                                                  name="reason" 
-                                                                  rows="3"
-                                                                  placeholder="Enter cancellation reason..."></textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                    <button type="submit" class="btn btn-danger">Cancel Purchase</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endcan
-                                @endif
                             </td>
                         </tr>
                         @endforeach

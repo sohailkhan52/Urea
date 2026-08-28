@@ -26,9 +26,42 @@ class AppServiceProvider extends ServiceProvider
     {
         // Fix for MySQL key length issue (1000 byte limit with utf8mb4)
         Schema::defaultStringLength(191);
-        
+
         $this->configureDefaults();
         $this->registerBladeDirectives();
+        $this->registerViewComposers();
+        $this->configureNativePhpDatabase();
+    }
+
+    /**
+     * Keep NativePHP and web mode on the same application database.
+     */
+    protected function configureNativePhpDatabase(): void
+    {
+        if (!config('nativephp-internal.running')) {
+            return;
+        }
+
+        config([
+            'database.default' => 'mysql',
+            'queue.failed.database' => 'mysql',
+            'queue.batching.database' => 'mysql',
+            'queue.connections.database.connection' => 'mysql',
+        ]);
+
+        DB::purge('mysql');
+    }
+
+    /**
+     * Register view composers.
+     */
+    protected function registerViewComposers(): void
+    {
+        // Share multi-warehouse status with layout views
+        view()->composer(
+            ['layouts.admin', 'layouts.app', 'admin.*'],
+            \App\View\Composers\MultiWarehouseComposer::class
+        );
     }
 
     /**
@@ -54,6 +87,11 @@ class AppServiceProvider extends ServiceProvider
         // @allpermissions(['users.create', 'users.update'])
         \Illuminate\Support\Facades\Blade::if('allpermissions', function ($permissions) {
             return auth()->check() && auth()->user()->hasAllPermissions($permissions);
+        });
+
+        // @multiwarehouse - Check if multi-warehouse features are enabled
+        \Illuminate\Support\Facades\Blade::if('multiwarehouse', function () {
+            return isMultiWarehouseEnabled();
         });
     }
 
