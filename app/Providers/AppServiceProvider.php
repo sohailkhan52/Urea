@@ -33,8 +33,8 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->registerBladeDirectives();
         $this->registerViewComposers();
-<<<<<<< HEAD
         $this->configureNativePhpDatabase();
+        $this->registerHorizon();
     }
 
     protected function ensureMySqlDatabaseExists(): void
@@ -87,8 +87,6 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         DB::purge('mysql');
-=======
-        $this->registerHorizon();
     }
 
     /**
@@ -109,7 +107,6 @@ class AppServiceProvider extends ServiceProvider
             // Set Horizon prefix for storage keys
             \Laravel\Horizon\Horizon::prefix(env('HORIZON_PREFIX', 'horizon:'));
         }
->>>>>>> b95f2b934ce52ad733e1c31560aec3cd9f57882c
     }
 
     /**
@@ -124,8 +121,8 @@ class AppServiceProvider extends ServiceProvider
         );
     }
 
-    /**
-     * Register custom Blade directives for roles and permissions.
+        /**
+         * Register custom Blade directives for roles and permissions.
      */
     protected function registerBladeDirectives(): void
     {
