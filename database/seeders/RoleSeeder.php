@@ -41,6 +41,7 @@ class RoleSeeder extends Seeder
                     'stock_requests.view', 'stock_requests.create', 'stock_requests.update', 'stock_requests.cancel', 'stock_requests.delete',
                     'udhar.view', 'udhar.create', 'udhar.export',
                     'reports.view',
+                    'expenses.view', 'expenses.create', 'expenses.edit', 'expenses.delete',
                     'welcome-page.manage',
                 ],
             ],

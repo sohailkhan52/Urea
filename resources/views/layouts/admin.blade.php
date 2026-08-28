@@ -61,6 +61,31 @@
             z-index: 1040;
         }
 
+        /* Mobile backdrop overlay */
+        @media (max-width: 768px) {
+            .sidebar-backdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1039;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s, visibility 0.3s;
+                pointer-events: none;
+            }
+
+            .sidebar.show ~ .sidebar-backdrop {
+                display: block;
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+        }
+
         .sidebar-brand {
             padding: 20px;
             text-align: center;
@@ -217,6 +242,8 @@
             overflow-x: hidden;
             width: calc(100% - var(--sidebar-width));
             box-sizing: border-box;
+            position: relative;
+            z-index: 1;
         }
 
         /* Top Navbar */
@@ -231,6 +258,7 @@
             top: 0;
             z-index: 1030;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            gap: 15px;
         }
 
         .topbar .breadcrumb {
@@ -324,20 +352,253 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 260px;
+                --topbar-height: 60px;
+            }
+
             .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: var(--sidebar-width);
                 margin-left: calc(-1 * var(--sidebar-width));
+                z-index: 1041;
             }
 
             .sidebar.show {
                 margin-left: 0;
+                box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
             }
 
             .main-wrapper {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .topbar {
                 margin-left: 0;
             }
 
             .toggle-sidebar {
                 display: block;
+            }
+
+            .sidebar-brand h4 {
+                font-size: 1rem;
+            }
+
+            .sidebar-brand small {
+                font-size: 0.65rem;
+            }
+
+            .nav-section-title {
+                padding: 10px 15px 5px;
+                font-size: 0.65rem;
+            }
+
+            .sidebar-nav .nav-link {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+
+            .sidebar-nav .dropdown-menu .dropdown-item {
+                padding: 8px 15px 8px 40px;
+                font-size: 0.85rem;
+            }
+
+            .page-header {
+                padding: 15px 15px;
+                margin: -15px -15px 15px;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .content {
+                padding: 15px;
+            }
+
+            .card-header {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+
+            .table {
+                font-size: 0.85rem;
+            }
+
+            .btn-sm {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Extra small devices (Mobile S - up to 375px) */
+        @media (max-width: 375px) {
+            :root {
+                --sidebar-width: 240px;
+                --topbar-height: 50px;
+            }
+
+            .topbar {
+                height: var(--topbar-height);
+                padding: 0 12px;
+                gap: 10px;
+            }
+
+            .sidebar-brand h4 {
+                font-size: 0.9rem;
+            }
+
+            .sidebar-brand small {
+                display: none;
+            }
+
+            .nav-section-title {
+                display: none;
+            }
+
+            .sidebar-nav .nav-link {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+
+            .sidebar-nav .nav-link i {
+                margin-right: 8px;
+            }
+
+            .sidebar-nav .nav-link-text-ur {
+                display: none;
+            }
+
+            .page-header {
+                padding: 12px 12px;
+                margin: -12px -12px 12px;
+            }
+
+            .page-header h1 {
+                font-size: 1.25rem;
+            }
+
+            .page-header p {
+                display: none;
+            }
+
+            .content {
+                padding: 12px;
+            }
+
+            .card {
+                margin-bottom: 15px;
+            }
+
+            .card-header {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+
+            .btn-sm {
+                padding: 0.35rem 0.5rem;
+                font-size: 0.75rem;
+            }
+
+            .d-flex.gap-2 {
+                gap: 0.5rem !important;
+            }
+
+            .table {
+                font-size: 0.75rem;
+            }
+
+            .table thead {
+                font-size: 0.7rem;
+            }
+
+            .form-control, .form-select {
+                padding: 0.4rem 0.5rem;
+                font-size: 0.85rem;
+            }
+
+            .topbar-right {
+                gap: 8px;
+            }
+
+            .breadcrumb {
+                display: none;
+            }
+        }
+
+        /* Small devices (Mobile M - 375px to 425px) */
+        @media (min-width: 376px) and (max-width: 425px) {
+            :root {
+                --sidebar-width: 250px;
+            }
+
+            .sidebar-brand small {
+                font-size: 0.7rem;
+            }
+
+            .sidebar-nav .nav-link-text-ur {
+                font-size: 0.65rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.35rem;
+            }
+
+            .table {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Medium devices (Tablet - 426px to 768px) */
+        @media (min-width: 426px) and (max-width: 768px) {
+            :root {
+                --sidebar-width: 260px;
+            }
+
+            .sidebar-nav .nav-link {
+                padding: 11px 18px;
+                font-size: 0.92rem;
+            }
+
+            .sidebar-nav .nav-link-text-ur {
+                font-size: 0.7rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.6rem;
+            }
+
+            .table {
+                font-size: 0.87rem;
+            }
+
+            .d-flex.gap-2 {
+                gap: 0.75rem !important;
+            }
+        }
+
+        /* Large devices and above (Desktop - 769px+) */
+        @media (min-width: 769px) {
+            :root {
+                --sidebar-width: 260px;
+            }
+
+            .sidebar {
+                margin-left: 0;
+            }
+
+            .main-wrapper {
+                margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
+            }
+
+            .toggle-sidebar {
+                display: none;
             }
         }
 
@@ -408,7 +669,6 @@
                     <div class="nav-link-wrapper">
                         <span class="nav-link-text-en">Users</span>
                         <span class="nav-link-text-ur">صارفین</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
@@ -438,7 +698,6 @@
                     <div class="nav-link-wrapper">
                         <span class="nav-link-text-en">Companies</span>
                         <span class="nav-link-text-ur">کمپنیاں</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
@@ -465,7 +724,6 @@
                     <div class="nav-link-wrapper">
                         <span class="nav-link-text-en">Categories</span>
                         <span class="nav-link-text-ur">زمرہ جات</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
@@ -492,7 +750,6 @@
                     <div class="nav-link-wrapper">
                         <span class="nav-link-text-en">Products</span>
                         <span class="nav-link-text-ur">مصنوعات</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
@@ -519,7 +776,6 @@
                     <div class="nav-link-wrapper">
                         <span class="nav-link-text-en">Warehouses</span>
                         <span class="nav-link-text-ur">گودام</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
@@ -556,7 +812,6 @@
                     <div class="nav-link-wrapper">
                         <span class="nav-link-text-en">Suppliers</span>
                         <span class="nav-link-text-ur">سَپْلائِر</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
@@ -583,7 +838,6 @@
                     <div class="nav-link-wrapper">
                         <span class="nav-link-text-en">Customers</span>
                         <span class="nav-link-text-ur">گاہک</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
@@ -614,7 +868,6 @@
                     <div class="nav-link-wrapper">
                         <span class="nav-link-text-en">Purchases</span>
                         <span class="nav-link-text-ur">خریداری</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
@@ -653,7 +906,6 @@
                     <div class="nav-link-wrapper">
                         <span class="nav-link-text-en">Sales</span>
                         <span class="nav-link-text-ur">فروخت</span>
-                        <i class="bi bi-chevron-down nav-dropdown-indicator"></i>
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
@@ -717,23 +969,6 @@
             </a>
             @endif
 
-            {{-- Multi-Warehouse Features (only show when 2+ active warehouses) --}}
-            @multiwarehouse
-            @if(!auth()->user()->isSuperAdmin())
-            <div class="nav-section-title">Multi-Warehouse</div>
-            
-            @permission('stock_requests.view')
-            <a href="{{ route('admin.stock-requests.index') }}" class="nav-link {{ request()->routeIs('admin.stock-requests.*') ? 'active' : '' }}">
-                <i class="bi bi-box-seam"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Stock Requests</span>
-                    <span class="nav-link-text-ur">سٹاک کی درخواستیں</span>
-                </div>
-            </a>
-            @endpermission
-            @endif
-            @endmultiwarehouse
-
             @if(auth()->user()->isSuperAdmin())
             <a href="{{ route('admin.welcome-page.index') }}" class="nav-link {{ request()->routeIs('admin.welcome-page.*') ? 'active' : '' }}">
                 <i class="bi bi-gear"></i>
@@ -744,42 +979,119 @@
             </a>
             @endif
 
-            {{-- Multi-Warehouse Chat --}}
-            @multiwarehouse
-            <div class="nav-section-title">Communication</div>
-            <a href="{{ route('admin.chat.index') }}" class="nav-link {{ request()->routeIs('admin.chat.*') ? 'active' : '' }}">
-                <i class="bi bi-chat-dots"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Messages</span>
-                    <span class="nav-link-text-ur">پیغامات</span>
-                </div>
-                @php
-                    try {
-                        $unreadCount = auth()->check() ? app(\App\Services\ChatService::class)->getTotalUnreadCount(auth()->user()) : 0;
-                    } catch (\Exception $e) {
-                        $unreadCount = 0;
-                    }
-                @endphp
-                @if($unreadCount > 0)
-                    <span class="badge bg-danger ms-auto">{{ $unreadCount }}</span>
-                @endif
-            </a>
-            @endmultiwarehouse
+            {{-- Expense Management --}}
+            @permission('expenses.view')
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.expenses.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-receipt"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Expense Management</span>
+                        <span class="nav-link-text-ur">اخراجات</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    <li>
+                        <a href="{{ route('admin.expenses.index') }}" class="dropdown-item">
+                            <i class="bi bi-list me-2"></i> View Expense
+                        </a>
+                    </li>
+                    @can('expenses.create')
+                    <li>
+                        <a href="{{ route('admin.expenses.create') }}" class="dropdown-item">
+                            <i class="bi bi-plus-circle me-2"></i> Add Expense
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </div>
+            @endpermission
 
-            {{-- Reports section disabled - routes and views not yet implemented --}}
-            {{-- @permission('reports.view')
-            <div class="nav-section-title">Reports</div>
-            <a href="{{ route('admin.reports.sales.index') }}" class="nav-link {{ request()->routeIs('admin.reports.sales.*') ? 'active' : '' }}">
-                <i class="bi bi-graph-up"></i>
-                <span>Sales Reports</span>
-            </a>
-            <a href="{{ route('admin.reports.inventory.index') }}" class="nav-link {{ request()->routeIs('admin.reports.inventory.*') ? 'active' : '' }}">
-                <i class="bi bi-file-earmark-bar-graph"></i>
-                <span>Stock Reports</span>
-            </a>
-            @endpermission --}}
+            {{-- Reports Section --}}
+            @permission('reports.view')
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-bar-chart"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Reports</span>
+                        <span class="nav-link-text-ur">رپورٹس</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    {{-- Reports Dashboard --}}
+                    <li>
+                        <a href="{{ route('admin.reports.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.index') ? 'active' : '' }}">
+                            <i class="bi bi-speedometer me-2"></i>
+                            <span class="nav-link-text-en">Reports Dashboard</span>
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+
+                    {{-- Sales Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.sales.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.sales.index') ? 'active' : '' }}">
+                            <i class="bi bi-graph-up me-2"></i>
+                            <span class="nav-link-text-en">Sales Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Purchase Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.purchase.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.purchase.index') ? 'active' : '' }}">
+                            <i class="bi bi-cart-plus me-2"></i>
+                            <span class="nav-link-text-en">Purchase Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Invoice Report --}}
+                    <li>
+                        <a href="{{ route('admin.reports.invoices') }}" class="dropdown-item {{ request()->routeIs('admin.reports.invoices') ? 'active' : '' }}">
+                            <i class="bi bi-receipt me-2"></i>
+                            <span class="nav-link-text-en">Invoice Report</span>
+                        </a>
+                    </li>
+
+                    {{-- Inventory Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.inventory.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.inventory.index') ? 'active' : '' }}">
+                            <i class="bi bi-file-earmark-bar-graph me-2"></i>
+                            <span class="nav-link-text-en">Inventory Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Customer Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.customer.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.customer.index') ? 'active' : '' }}">
+                            <i class="bi bi-person-lines-fill me-2"></i>
+                            <span class="nav-link-text-en">Customer Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Supplier Reports --}}
+                    <li>
+                        <a href="{{ route('admin.reports.supplier.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.supplier.index') ? 'active' : '' }}">
+                            <i class="bi bi-truck me-2"></i>
+                            <span class="nav-link-text-en">Supplier Reports</span>
+                        </a>
+                    </li>
+
+                    {{-- Profit & Loss --}}
+                    <li>
+                        <a href="{{ route('admin.reports.profit-loss') }}" class="dropdown-item {{ request()->routeIs('admin.reports.profit-loss') ? 'active' : '' }}">
+                            <i class="bi bi-currency-dollar me-2"></i>
+                            <span class="nav-link-text-en">Profit & Loss</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            @endpermission
+                <ul class="dropdown-menu dropdown-menu-dark">
+                </ul>
+            </div>
         </nav>
     </aside>
+
+    <!-- Sidebar Backdrop (Mobile overlay) -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <!-- Main Content Wrapper -->
     <div class="main-wrapper">
@@ -936,10 +1248,46 @@
 
     <script>
         const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
 
         function toggleSidebar() {
             sidebar.classList.toggle('show');
         }
+
+        // Close sidebar when clicking on backdrop
+        if (backdrop) {
+            backdrop.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+            });
+        }
+
+        // Close sidebar when clicking on a nav link (mobile)
+        document.querySelectorAll('.sidebar-nav a:not([aria-expanded])').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('show');
+                }
+            });
+        });
+
+        // Close sidebar when window resizes to desktop size
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('show');
+            }
+        });
+
+        // Close sidebar when clicking on main-wrapper (mobile)
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth <= 768) {
+                const isClickInsideSidebar = sidebar.contains(event.target);
+                const isToggleButton = event.target.closest('.toggle-sidebar');
+                
+                if (!isClickInsideSidebar && !isToggleButton && sidebar.classList.contains('show')) {
+                    sidebar.classList.remove('show');
+                }
+            }
+        });
 
         // Restore sidebar scroll position on page load
         document.addEventListener('DOMContentLoaded', function() {

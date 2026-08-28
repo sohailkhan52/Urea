@@ -10,20 +10,19 @@
             <h1 class="h3 mb-2">Purchase Return: <strong>{{ $return->return_number }}</strong></h1>
             <p class="text-muted mb-0">PO: <a href="{{ route('admin.purchases.show', $return->purchase) }}">{{ $return->purchase->purchase_number }}</a></p>
         </div>
-        <a href="{{ route('admin.purchases.returns.index') }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Back to List
-        </a>
+        <div class="btn-group">
+            @if($return->status === 'confirmed')
+            <a href="{{ route('admin.purchases.returns.print', $return) }}" class="btn btn-primary" target="_blank">
+                <i class="bi bi-printer me-1"></i> Print
+            </a>
+            @endif
+            <a href="{{ route('admin.purchases.returns.index') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to List
+            </a>
+        </div>
     </div>
 
-    {{-- Messages --}}
-    @if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle me-2"></i>
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    @endif
-
+    {{-- Error Messages (keep errors as they're specific to this page) --}}
     @if($errors->any())
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         <i class="bi bi-exclamation-circle me-2"></i>

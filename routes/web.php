@@ -246,6 +246,10 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
             ->name('returns.show')
             ->middleware('permission:purchases.view');
         
+        Route::get('/returns/{return}/print', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'print'])
+            ->name('returns.print')
+            ->middleware('permission:purchases.view');
+        
         Route::post('/returns/{return}/confirm', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'confirm'])
             ->name('returns.confirm')
             ->middleware('permission:purchases.approve');
@@ -375,6 +379,10 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
             ->name('returns.show')
             ->middleware('permission:sales.view');
         
+        Route::get('/returns/{return}/print', [\App\Http\Controllers\Admin\SalesReturnController::class, 'print'])
+            ->name('returns.print')
+            ->middleware('permission:sales.view');
+        
         Route::post('/returns/{return}/confirm', [\App\Http\Controllers\Admin\SalesReturnController::class, 'confirm'])
             ->name('returns.confirm')
             ->middleware('permission:sales.approve');
@@ -383,6 +391,11 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
             ->name('returns.cancel')
             ->middleware('permission:sales.cancel');
     });
+
+    // Get sale details for returns (AJAX endpoint) - MUST be before resource route
+    Route::get('/sales/{sale}/details', [\App\Http\Controllers\Admin\SalesReturnController::class, 'getSaleDetails'])
+        ->name('sales.details')
+        ->middleware('permission:sales.view');
 
     // Udhar Management (Credit/Outstanding)
     Route::prefix('udhar')->name('udhar.')->middleware('permission:udhar.view')->group(function () {
@@ -478,45 +491,11 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->name('stock-transfers.checkStock')
         ->middleware('permission:transfers.create');
 
-    // Stock Request Management (Multi-warehouse feature)
-    Route::middleware('multi_warehouse')->group(function () {
-        Route::resource('stock-requests', \App\Http\Controllers\Admin\StockRequestController::class)
-            ->middleware('permission:stock_requests.view');
-
-        // Stock request actions
-        Route::post('/stock-requests/{stock_request}/submit', [\App\Http\Controllers\Admin\StockRequestController::class, 'submitForReview'])
-            ->name('stock-requests.submit')
-            ->middleware('permission:stock_requests.create');
-
-        Route::post('/stock-requests/{stock_request}/approve', [\App\Http\Controllers\Admin\StockRequestController::class, 'approve'])
-            ->name('stock-requests.approve')
-            ->middleware('permission:stock_requests.approve');
-
-        Route::post('/stock-requests/{stock_request}/reject', [\App\Http\Controllers\Admin\StockRequestController::class, 'reject'])
-            ->name('stock-requests.reject')
-            ->middleware('permission:stock_requests.approve');
-
-        Route::post('/stock-requests/{stock_request}/cancel', [\App\Http\Controllers\Admin\StockRequestController::class, 'cancel'])
-            ->name('stock-requests.cancel')
-            ->middleware('permission:stock_requests.cancel');
-
-        // Stock request items
-        Route::post('/stock-requests/{stock_request}/items', [\App\Http\Controllers\Admin\StockRequestController::class, 'addItem'])
-            ->name('stock-requests.addItem')
-            ->middleware('permission:stock_requests.update');
-
-        Route::put('/stock-requests/items/{stock_request_item}', [\App\Http\Controllers\Admin\StockRequestController::class, 'updateItem'])
-            ->name('stock-requests.updateItem')
-            ->middleware('permission:stock_requests.update');
-
-        Route::delete('/stock-requests/items/{stock_request_item}', [\App\Http\Controllers\Admin\StockRequestController::class, 'removeItem'])
-            ->name('stock-requests.removeItem')
-            ->middleware('permission:stock_requests.update');
-    });
-
-    // Reports - COMMENTED OUT (Views not implemented yet)
-    /*
+    // Reports Module
     Route::prefix('reports')->name('reports.')->middleware('permission:reports.view')->group(function () {
+        // Dashboard (main reports landing page)
+        Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('index');
+
         // Inventory Reports
         Route::prefix('inventory')->name('inventory.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'inventoryIndex'])->name('index');
@@ -531,13 +510,13 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
             Route::get('/daily', [\App\Http\Controllers\Admin\ReportsController::class, 'dailySales'])->name('daily');
             Route::get('/product-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'productWiseSales'])->name('product-wise');
             Route::get('/customer-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'customerWiseSales'])->name('customer-wise');
-            Route::get('/warehouse-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'warehouseSales'])->name('warehouse-wise');
+            Route::get('/warehouse-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'warehouseWiseSales'])->name('warehouse-wise');
         });
 
         // Purchase Reports
         Route::prefix('purchase')->name('purchase.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'purchaseIndex'])->name('index');
-            Route::get('/purchases', [\App\Http\Controllers\Admin\ReportsController::class, 'purchases'])->name('purchases');
+            Route::get('/daily', [\App\Http\Controllers\Admin\ReportsController::class, 'purchases'])->name('daily');
             Route::get('/supplier-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierWisePurchases'])->name('supplier-wise');
             Route::get('/product-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'productWisePurchases'])->name('product-wise');
         });
@@ -549,8 +528,28 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
             Route::get('/{customer}/payment-history', [\App\Http\Controllers\Admin\ReportsController::class, 'customerPaymentHistory'])->name('payment-history');
             Route::get('/{customer}/ledger', [\App\Http\Controllers\Admin\ReportsController::class, 'customerLedger'])->name('ledger');
         });
+
+        // Supplier Reports
+        Route::prefix('supplier')->name('supplier.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierIndex'])->name('index');
+            Route::get('/outstanding', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierOutstanding'])->name('outstanding');
+            Route::get('/{supplier}/payment-history', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierPaymentHistory'])->name('payment-history');
+            Route::get('/{supplier}/ledger', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierLedger'])->name('ledger');
+        });
+
+        // Invoice Report
+        Route::get('/invoices', [\App\Http\Controllers\Admin\ReportsController::class, 'invoices'])->name('invoices');
+
+        // Profit & Loss Report
+        Route::get('/profit-loss', [\App\Http\Controllers\Admin\ReportsController::class, 'profitLoss'])->name('profit-loss');
+
+        // Expense Report
+        Route::get('/expenses', [\App\Http\Controllers\Admin\ReportsController::class, 'expenses'])->name('expenses');
     });
-    */
+
+    // Expense Management
+    Route::resource('expenses', \App\Http\Controllers\Admin\ExpenseController::class)
+        ->middleware('permission:expenses.view');
 
     // Welcome Page Management
     Route::prefix('welcome-page')
@@ -595,44 +594,6 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
             Route::patch('/workflow-steps/{workflowStep}/toggle', [\App\Http\Controllers\Admin\WelcomePageController::class, 'toggleStep'])
                 ->name('workflow-steps.toggle');
         });
-
-    // Warehouse Chat & Messaging (Multi-warehouse feature)
-    Route::middleware('multi_warehouse')->prefix('chat')->name('chat.')->group(function () {
-        // Chat page and list
-        Route::get('/', [\App\Http\Controllers\Admin\ChatController::class, 'index'])
-            ->name('index');
-        
-        // API endpoints for chat
-        Route::get('/conversations', [\App\Http\Controllers\Admin\ChatController::class, 'listConversations'])
-            ->name('list-conversations');
-        
-        Route::get('/unread-count', [\App\Http\Controllers\Admin\ChatController::class, 'getUnreadCount'])
-            ->name('unread-count');
-        
-        // Conversation routes
-        Route::get('/{conversation}', [\App\Http\Controllers\Admin\ChatController::class, 'show'])
-            ->name('show');
-        
-        Route::get('/{conversation}/messages', [\App\Http\Controllers\Admin\ChatController::class, 'getMessages'])
-            ->name('get-messages');
-        
-        // Messaging
-        Route::post('/{conversation}/send', [\App\Http\Controllers\Admin\ChatController::class, 'sendMessage'])
-            ->name('send-message');
-        
-        Route::post('/{conversation}/messages/{message}/read', [\App\Http\Controllers\Admin\ChatController::class, 'markAsRead'])
-            ->name('mark-as-read');
-        
-        Route::post('/{conversation}/read', [\App\Http\Controllers\Admin\ChatController::class, 'markAllAsRead'])
-            ->name('mark-all-as-read');
-        
-        // Conversation actions
-        Route::post('/{conversation}/archive', [\App\Http\Controllers\Admin\ChatController::class, 'archiveConversation'])
-            ->name('archive');
-        
-        Route::post('/{conversation}/mute', [\App\Http\Controllers\Admin\ChatController::class, 'muteConversation'])
-            ->name('mute');
-    });
 
     // Notifications Management
     Route::prefix('notifications')->name('notifications.')->group(function () {

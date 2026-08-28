@@ -418,6 +418,32 @@ class PermissionSeeder extends Seeder
                 'group' => 'welcome-page',
                 'description' => 'Manage welcome page content, settings, features, and workflow',
             ],
+
+            // Expense Management
+            [
+                'name' => 'View Expenses',
+                'slug' => 'expenses.view',
+                'group' => 'expenses',
+                'description' => 'View list of expenses',
+            ],
+            [
+                'name' => 'Create Expenses',
+                'slug' => 'expenses.create',
+                'group' => 'expenses',
+                'description' => 'Create new expenses',
+            ],
+            [
+                'name' => 'Edit Expenses',
+                'slug' => 'expenses.edit',
+                'group' => 'expenses',
+                'description' => 'Edit existing expenses',
+            ],
+            [
+                'name' => 'Delete Expenses',
+                'slug' => 'expenses.delete',
+                'group' => 'expenses',
+                'description' => 'Delete expenses',
+            ],
         ];
 
         foreach ($permissions as $permission) {

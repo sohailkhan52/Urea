@@ -1,0 +1,56 @@
+EXPENSE MANAGEMENT SETUP INSTRUCTIONS
+=====================================
+
+The Expense Management feature has been implemented but needs to be activated.
+
+QUICK SETUP (2 OPTIONS):
+
+OPTION 1 - Using Web Browser (Easiest):
+1. Open your browser and go to: http://localhost:8000/setup-expenses.php
+2. Wait for the setup to complete
+3. Refresh your Laravel app
+4. Log in and you'll see "Expense Management" in the sidebar
+
+OPTION 2 - Using Command Line:
+1. Open terminal/command prompt
+2. Navigate to project directory: cd d:\wampp64\www\urea
+3. Run the setup command: php artisan setup:expenses
+4. Refresh your browser
+
+OPTION 3 - Manual Database Setup:
+If neither option works, you can run these commands manually:
+   php artisan migrate
+   php artisan db:seed --class=PermissionSeeder
+   php artisan db:seed --class=RoleSeeder
+
+WHAT WAS IMPLEMENTED:
+✓ Expense Model with soft deletes and warehouse support
+✓ ExpenseController with CRUD operations
+✓ ExpensePolicy for authorization
+✓ Database migration for expenses table
+✓ Three views: index (list), create, edit
+✓ Sidebar menu integration
+✓ Permissions system integration
+✓ P&L report integration
+
+FILES CREATED/MODIFIED:
+- app/Models/Expense.php
+- app/Http/Controllers/Admin/ExpenseController.php
+- app/Policies/ExpensePolicy.php
+- app/Console/Commands/SetupExpenseFeature.php
+- database/migrations/2026_08_25_000008_create_expenses_table.php
+- resources/views/admin/expenses/*.blade.php
+- resources/views/layouts/admin.blade.php (sidebar added)
+- database/seeders/RoleSeeder.php (permissions added)
+- routes/web.php (routes added)
+
+FEATURES INCLUDED:
+- Create, read, update, delete expenses
+- Warehouse-based authorization
+- 20 items per page pagination
+- Search by expense item
+- Latest expenses first
+- Soft delete for audit trail
+- Print functionality
+- P&L integration (expenses reduce net profit)
+- Created by user tracking (immutable)
