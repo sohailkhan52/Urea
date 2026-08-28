@@ -28,7 +28,8 @@ class InventoryController extends Controller
         $this->authorize('inventory.view');
 
         $user = auth()->user();
-        $query = WarehouseInventory::with(['product.company', 'product.category', 'warehouse']);
+        $query = WarehouseInventory::with(['product.company', 'product.category', 'warehouse'])
+            ->whereHas('product'); // Ensure product exists
 
         // Apply warehouse-level filtering for non-super-admins
         if (!$user->isSuperAdmin()) {
@@ -91,7 +92,7 @@ class InventoryController extends Controller
             } elseif ($request->stock_status === 'low_stock') {
                 // Low stock items (complex filter)
                 $query->whereHas('product', function ($q) {
-                    $q->whereColumn('warehouse_inventory.quantity', '<', 'products.minimum_stock_level')
+                    $q->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
                       ->where('warehouse_inventory.quantity', '>', 0);
                 });
             }
@@ -183,7 +184,7 @@ class InventoryController extends Controller
      */
     protected function getInventoryStats($user = null): array
     {
-        $query = WarehouseInventory::query();
+        $query = WarehouseInventory::whereHas('product'); // Ensure product exists
         
         // Filter by user's warehouses if not super admin
         if ($user && !$user->isSuperAdmin()) {
@@ -207,7 +208,7 @@ class InventoryController extends Controller
         $outOfStock = (clone $query)->where('quantity', '=', 0)->count();
         
         $lowStock = (clone $query)->whereHas('product', function ($q) {
-            $q->whereColumn('warehouse_inventory.quantity', '<', 'products.minimum_stock_level')
+            $q->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
               ->where('warehouse_inventory.quantity', '>', 0);
         })->count();
 

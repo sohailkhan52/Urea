@@ -199,12 +199,7 @@ class WarehouseController extends Controller
         }
 
         // Sync conversation participants with new admin assignment
-        try {
-            $initService = app(\App\Services\ConversationInitializationService::class);
-            $initService->initializeWarehouseConversation($warehouse);
-        } catch (\Exception $e) {
-            \Log::warning('Failed to sync conversation for warehouse: ' . $e->getMessage());
-        }
+        // Removed: ConversationInitializationService is no longer used
 
         Log::info('Warehouse updated', [
             'updated_by' => Auth::id(),

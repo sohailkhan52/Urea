@@ -1,4 +1,7 @@
+{{-- @noinspection PhpUndefinedClassInspection --}}
+{{-- @noinspection PhpUndefinedClassInspection --}}
 <!DOCTYPE html>
+@php use Illuminate\Support\Facades\Auth; @endphp
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
@@ -44,7 +47,7 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
-            overflow-x: hidden;
+            overflow-x: auto;
         }
 
         /* Sidebar Styles */
@@ -239,7 +242,7 @@
             margin-left: var(--sidebar-width);
             min-height: 100vh;
             transition: all 0.3s;
-            overflow-x: hidden;
+            overflow-x: auto;
             width: calc(100% - var(--sidebar-width));
             box-sizing: border-box;
             position: relative;
@@ -613,7 +616,24 @@
 
         /* Fix dropdown menu clipping in responsive tables */
         .table-responsive {
-            overflow: visible !important;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            display: block;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .table-responsive {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                white-space: nowrap;
+            }
+
+            .table-responsive table {
+                min-width: 100%;
+                margin-bottom: 0;
+            }
         }
 
         .table td .dropdown {
@@ -623,6 +643,71 @@
         .table td .dropdown-menu {
             position: absolute;
             z-index: 1050;
+        }
+
+        /* Modal Styles - Keep Bootstrap defaults */
+        .modal-content {
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header, .modal-footer {
+            border-color: #e3e6f0;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        /* Modal Z-Index Fixes */
+        .modal-backdrop {
+            z-index: 1060 !important;
+            backdrop-filter: none !important;
+            background-color: rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .modal {
+            z-index: 1070 !important;
+        }
+
+        .modal-dialog {
+            z-index: 1070 !important;
+        }
+
+        .modal-content {
+            z-index: 1070 !important;
+        }
+
+        .modal-header,
+        .modal-body,
+        .modal-footer {
+            z-index: 1070 !important;
+            pointer-events: auto !important;
+        }
+
+        .modal-footer button,
+        .modal-footer .btn,
+        .modal-footer form,
+        .modal-footer form button {
+            z-index: 1070 !important;
+            pointer-events: auto !important;
+        }
+
+        .modal-header .btn-close {
+            z-index: 1071 !important;
+            pointer-events: auto !important;
+        }
+
+        /* Ensure body can scroll when modal is closed */
+        body.modal-open {
+            overflow: hidden;
+            padding-right: var(--bs-scrollbar-width);
+        }
+
+        body:not(.modal-open) {
+            overflow: auto;
+            padding-right: 0;
         }
     </style>
 </head>
@@ -1117,6 +1202,7 @@
 
                 <div class="dropdown">
                     <button class="btn btn-link text-dark text-decoration-none dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                        {{-- @noinspection PhpUndefinedClassInspection --}}
                         <img src="{{ Auth::user()->profile_image_url }}" 
                              alt="{{ Auth::user()->name }}" 
                              class="rounded-circle me-2" 
@@ -1213,6 +1299,7 @@
             <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.0.0/dist/web/pusher.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.0/dist/echo.iife.js"></script>
 
+            {{-- @noinspection PhpUndefinedClassInspection --}}
             <script>
                 window.Echo = new Echo({
                     broadcaster: 'pusher',
@@ -1230,6 +1317,7 @@
             <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.0.0/dist/web/pusher.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.0/dist/echo.iife.js"></script>
 
+            {{-- @noinspection PhpUndefinedClassInspection --}}
             <script>
                 window.Echo = new Echo({
                     broadcaster: 'pusher',
@@ -1280,6 +1368,12 @@
         // Close sidebar when clicking on main-wrapper (mobile)
         document.addEventListener('click', function(event) {
             if (window.innerWidth <= 768) {
+                // Don't close sidebar if clicking inside a modal
+                const isClickInsideModal = event.target.closest('.modal');
+                if (isClickInsideModal) {
+                    return;
+                }
+
                 const isClickInsideSidebar = sidebar.contains(event.target);
                 const isToggleButton = event.target.closest('.toggle-sidebar');
                 
@@ -1334,6 +1428,24 @@
                 navDropdown?.classList.toggle('open', nextState);
             });
         });
+
+        // Ensure all modal buttons and forms work properly
+        document.addEventListener('click', function(e) {
+            // Don't interfere with modal buttons and close buttons
+            if (e.target.closest('.modal-footer button') || 
+                e.target.closest('.modal-footer .btn') ||
+                e.target.closest('.btn-close')) {
+                e.stopPropagation();
+            }
+        }, true);
+
+        // Ensure forms inside modals submit properly
+        document.addEventListener('submit', function(e) {
+            if (e.target.closest('.modal-footer form')) {
+                // Allow form to submit normally
+                return true;
+            }
+        }, false);
     </script>
 
     @stack('scripts')
