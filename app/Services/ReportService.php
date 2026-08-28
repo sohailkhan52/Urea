@@ -1902,9 +1902,18 @@ class ReportService
         $grossMargin = $netSales > 0 ? round(($grossProfit / $netSales) * 100, 2) : 0;
 
         // ── OPERATING EXPENSES ───────────────────────────────────────────────
-        // Expense module does not exist in this project.
-        $operatingExpenses = 0.0;
-        $expenseNote = 'No expense module is currently installed. Operating expenses are not tracked.';
+        // Calculate total expenses from Expense model for the period
+        $operatingExpenses = \App\Models\Expense::query()
+            ->whereBetween('created_at', [$dateFromDateTime, $dateToDateTime])
+            ->when($warehouseId, function ($q) use ($warehouseId) {
+                return $q->where('warehouse_id', $warehouseId);
+            })
+            ->sum('cost');
+        
+        $operatingExpenses = (float) $operatingExpenses;
+        $expenseNote = $operatingExpenses > 0 
+            ? 'Operating expenses are tracked from the Expense Management module.' 
+            : 'No expenses recorded for this period.';
 
         // ── NET PROFIT ───────────────────────────────────────────────────────
         $netProfit = $grossProfit - $operatingExpenses;

@@ -630,4 +630,56 @@ class ReportsController extends Controller
             'warehouses' => Warehouse::all(),
         ]);
     }
+
+    /**
+     * Expense Report
+     * Route: admin.reports.expenses
+     */
+    public function expenses(Request $request): View
+    {
+        $this->authorize('reports.view');
+
+        $user = auth()->user();
+        $query = \App\Models\Expense::with(['creator', 'warehouse']);
+
+        // Apply warehouse-level filtering
+        if (!$user->isSuperAdmin()) {
+            $warehouseIds = $user->warehouses()->pluck('warehouses.id');
+            $query->whereIn('warehouse_id', $warehouseIds);
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->where('created_at', '>=', $request->date_from . ' 00:00:00');
+        }
+        if ($request->filled('date_to')) {
+            $query->where('created_at', '<=', $request->date_to . ' 23:59:59');
+        }
+
+        // Search by expense item
+        if ($request->filled('search')) {
+            $query->search($request->search);
+        }
+
+        // Filter by warehouse (only if user has access)
+        if ($request->filled('warehouse_id')) {
+            if ($user->canAccessWarehouse($request->warehouse_id)) {
+                $query->byWarehouse($request->warehouse_id);
+            } else {
+                abort(403, 'You do not have access to this warehouse.');
+            }
+        }
+
+        $expenses = $query->latest()->paginate(20)->withQueryString();
+
+        // Get warehouses the user can see
+        $warehouses = $user->isSuperAdmin()
+            ? Warehouse::active()->orderBy('name')->get()
+            : $user->warehouses()->where('status', 'active')->orderBy('name')->get();
+
+        // Calculate total expenses for current filtered view
+        $totalExpenses = $query->sum('cost');
+
+        return view('admin.reports.expenses', compact('expenses', 'warehouses', 'totalExpenses'));
+    }
 }

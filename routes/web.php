@@ -542,7 +542,14 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
 
         // Profit & Loss Report
         Route::get('/profit-loss', [\App\Http\Controllers\Admin\ReportsController::class, 'profitLoss'])->name('profit-loss');
+
+        // Expense Report
+        Route::get('/expenses', [\App\Http\Controllers\Admin\ReportsController::class, 'expenses'])->name('expenses');
     });
+
+    // Expense Management
+    Route::resource('expenses', \App\Http\Controllers\Admin\ExpenseController::class)
+        ->middleware('permission:expenses.view');
 
     // Welcome Page Management
     Route::prefix('welcome-page')
