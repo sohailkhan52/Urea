@@ -33,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->registerBladeDirectives();
         $this->registerViewComposers();
+<<<<<<< HEAD
         $this->configureNativePhpDatabase();
     }
 
@@ -86,6 +87,29 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         DB::purge('mysql');
+=======
+        $this->registerHorizon();
+    }
+
+    /**
+     * Register Horizon routes and dashboard.
+     */
+    protected function registerHorizon(): void
+    {
+        if (class_exists(\Laravel\Horizon\Horizon::class)) {
+            // Use database for Horizon metrics (no Redis required)
+            \Laravel\Horizon\Horizon::use('database');
+            
+            // Authorize Horizon dashboard access
+            \Laravel\Horizon\Horizon::auth(function ($request) {
+                // Only allow authenticated admin users to access Horizon
+                return auth()->check() && auth()->user()->hasRole('admin');
+            });
+
+            // Set Horizon prefix for storage keys
+            \Laravel\Horizon\Horizon::prefix(env('HORIZON_PREFIX', 'horizon:'));
+        }
+>>>>>>> b95f2b934ce52ad733e1c31560aec3cd9f57882c
     }
 
     /**
