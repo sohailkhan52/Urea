@@ -201,7 +201,7 @@ class Message extends Model
     /**
      * Get the channels that model events should broadcast on
      */
-    public function broadcastOn($events): array
+    public function broadcastOn(?string $events = null): array
     {
         return match($events) {
             'created' => [

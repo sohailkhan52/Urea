@@ -188,8 +188,6 @@ class SalesReturn extends Model
     {
         return $this->customer_credit_amount;
     }
-        return $this->status === self::STATUS_CONFIRMED;
-    }
 
     /**
      * Check if return is cancelled

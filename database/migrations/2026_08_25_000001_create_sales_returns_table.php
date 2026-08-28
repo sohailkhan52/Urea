@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sales_returns', function (Blueprint $table) {
+        if (!Schema::hasTable('sales_returns')) {
+            Schema::create('sales_returns', function (Blueprint $table) {
             $table->id();
             $table->string('return_number', 50)->unique();
             
@@ -62,7 +63,17 @@ return new class extends Migration
             $table->index('payment_status');
             $table->index('return_number');
             $table->index('created_at');
-        });
+            });
+        } else {
+            Schema::table('sales_returns', function (Blueprint $table) {
+                $table->foreign('sale_id')->references('id')->on('sales')->onDelete('restrict');
+                $table->foreign('customer_id')->references('id')->on('customers')->onDelete('restrict');
+                $table->foreign('warehouse_id')->references('id')->on('warehouses')->onDelete('restrict');
+                $table->foreign('created_by')->references('id')->on('users')->onDelete('restrict');
+                $table->foreign('confirmed_by')->references('id')->on('users')->onDelete('restrict');
+                $table->foreign('cancelled_by')->references('id')->on('users')->onDelete('restrict');
+            });
+        }
     }
 
     /**

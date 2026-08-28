@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use PDO;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,10 +28,64 @@ class AppServiceProvider extends ServiceProvider
     {
         // Fix for MySQL key length issue (1000 byte limit with utf8mb4)
         Schema::defaultStringLength(191);
-        
+
+        $this->ensureMySqlDatabaseExists();
         $this->configureDefaults();
         $this->registerBladeDirectives();
         $this->registerViewComposers();
+        $this->configureNativePhpDatabase();
+    }
+
+    protected function ensureMySqlDatabaseExists(): void
+    {
+        if (config('database.default') !== 'mysql' || ! config('nativephp-internal.running')) {
+            return;
+        }
+
+        $connection = config('database.connections.mysql');
+        $database = (string) ($connection['database'] ?? '');
+
+        if ($database === '' || ! preg_match('/^[A-Za-z0-9_$-]+$/', $database)) {
+            return;
+        }
+
+        try {
+            $dsn = sprintf(
+                'mysql:host=%s;port=%s;charset=%s',
+                $connection['host'] ?? '127.0.0.1',
+                $connection['port'] ?? 3306,
+                $connection['charset'] ?? 'utf8mb4',
+            );
+
+            $pdo = new PDO($dsn, $connection['username'] ?? '', $connection['password'] ?? '', [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
+            $pdo->exec(sprintf(
+                'CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
+                $database,
+            ));
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+    }
+
+    /**
+     * Keep NativePHP and web mode on the same application database.
+     */
+    protected function configureNativePhpDatabase(): void
+    {
+        if (!config('nativephp-internal.running')) {
+            return;
+        }
+
+        config([
+            'database.default' => 'mysql',
+            'queue.failed.database' => 'mysql',
+            'queue.batching.database' => 'mysql',
+            'queue.connections.database.connection' => 'mysql',
+        ]);
+
+        DB::purge('mysql');
     }
 
     /**
