@@ -243,7 +243,6 @@
             width: calc(100% - var(--sidebar-width));
             box-sizing: border-box;
             position: relative;
-            z-index: 1;
         }
 
         /* Top Navbar */
