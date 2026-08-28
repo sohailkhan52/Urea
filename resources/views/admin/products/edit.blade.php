@@ -181,6 +181,7 @@
                                        value="{{ old('purchase_price', $product->purchase_price) }}"
                                        step="0.01"
                                        min="0"
+                                       placeholder="0.00"
                                        required>
                                 @error('purchase_price')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -197,6 +198,7 @@
                                        value="{{ old('sale_price', $product->sale_price) }}"
                                        step="0.01"
                                        min="0"
+                                       placeholder="0.00"
                                        required>
                                 @error('sale_price')
                                     <div class="invalid-feedback">{{ $message }}</div>

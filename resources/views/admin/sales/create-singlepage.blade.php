@@ -227,7 +227,7 @@
                                        class="form-control" 
                                        id="sale_discount" 
                                        name="discount" 
-                                       value="{{ old('discount', 0) }}"
+                                       value="{{ old('discount') }}"
                                        min="0" 
                                        step="0.01"
                                        placeholder="0.00">
@@ -252,7 +252,7 @@
                                        class="form-control" 
                                        id="paid_amount" 
                                        name="paid_amount" 
-                                       value="{{ old('paid_amount', 0) }}"
+                                       value="{{ old('paid_amount') }}"
                                        min="0" 
                                        step="0.01"
                                        placeholder="0.00">
@@ -495,12 +495,12 @@ document.addEventListener('DOMContentLoaded', function() {
             </td>
             <td>
                 <input type="number" class="form-control form-control-sm unit-price-input" 
-                       data-row="${rowIndex}" value="0" min="0" step="0.01" required>
+                      data-row="${rowIndex}" min="0" step="0.01" placeholder="0.00" required>
                 <small class="text-danger error-message" style="display:none;"></small>
             </td>
             <td>
                 <input type="number" class="form-control form-control-sm discount-input" 
-                       data-row="${rowIndex}" value="0" min="0" step="0.01">
+                      data-row="${rowIndex}" min="0" step="0.01" placeholder="0.00">
             </td>
             <td class="text-end">
                 <strong class="subtotal-display">Rs. 0.00</strong>

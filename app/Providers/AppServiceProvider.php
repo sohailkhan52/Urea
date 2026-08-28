@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
-use PDO;
-use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,45 +27,10 @@ class AppServiceProvider extends ServiceProvider
         // Fix for MySQL key length issue (1000 byte limit with utf8mb4)
         Schema::defaultStringLength(191);
 
-        $this->ensureMySqlDatabaseExists();
         $this->configureDefaults();
         $this->registerBladeDirectives();
         $this->registerViewComposers();
         $this->configureNativePhpDatabase();
-        $this->registerHorizon();
-    }
-
-    protected function ensureMySqlDatabaseExists(): void
-    {
-        if (config('database.default') !== 'mysql' || ! config('nativephp-internal.running')) {
-            return;
-        }
-
-        $connection = config('database.connections.mysql');
-        $database = (string) ($connection['database'] ?? '');
-
-        if ($database === '' || ! preg_match('/^[A-Za-z0-9_$-]+$/', $database)) {
-            return;
-        }
-
-        try {
-            $dsn = sprintf(
-                'mysql:host=%s;port=%s;charset=%s',
-                $connection['host'] ?? '127.0.0.1',
-                $connection['port'] ?? 3306,
-                $connection['charset'] ?? 'utf8mb4',
-            );
-
-            $pdo = new PDO($dsn, $connection['username'] ?? '', $connection['password'] ?? '', [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            ]);
-            $pdo->exec(sprintf(
-                'CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
-                $database,
-            ));
-        } catch (Throwable $exception) {
-            report($exception);
-        }
     }
 
     /**
@@ -90,26 +53,6 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register Horizon routes and dashboard.
-     */
-    protected function registerHorizon(): void
-    {
-        if (class_exists(\Laravel\Horizon\Horizon::class)) {
-            // Use database for Horizon metrics (no Redis required)
-            \Laravel\Horizon\Horizon::use('database');
-            
-            // Authorize Horizon dashboard access
-            \Laravel\Horizon\Horizon::auth(function ($request) {
-                // Only allow authenticated admin users to access Horizon
-                return auth()->check() && auth()->user()->hasRole('admin');
-            });
-
-            // Set Horizon prefix for storage keys
-            \Laravel\Horizon\Horizon::prefix(env('HORIZON_PREFIX', 'horizon:'));
-        }
-    }
-
-    /**
      * Register view composers.
      */
     protected function registerViewComposers(): void
@@ -121,8 +64,8 @@ class AppServiceProvider extends ServiceProvider
         );
     }
 
-        /**
-         * Register custom Blade directives for roles and permissions.
+    /**
+     * Register custom Blade directives for roles and permissions.
      */
     protected function registerBladeDirectives(): void
     {
