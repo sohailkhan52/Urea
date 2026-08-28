@@ -16,9 +16,7 @@ class CompanyHelper
     public static function getSettings()
     {
         try {
-            return Cache::remember(self::CACHE_KEY, self::CACHE_DURATION, function () {
-                return WelcomePageSetting::first() ?? self::getDefaults();
-            });
+            return WelcomePageSetting::first() ?? self::getDefaults();
         } catch (\Throwable $e) {
             return self::getDefaults();
         }
@@ -33,6 +31,7 @@ class CompanyHelper
             'company_name' => config('app.name', 'Fertilizer Management System'),
             'company_short_name' => 'DeraNexa',
             'company_logo' => null,
+            'favicon' => null,
             'company_description' => null,
         ];
     }
@@ -77,6 +76,21 @@ class CompanyHelper
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    public static function getFaviconUrl()
+    {
+        try {
+            $settings = self::getSettings();
+            if ($settings->favicon) {
+                $version = $settings->updated_at?->timestamp ?? time();
+                return asset('storage/' . $settings->favicon) . '?v=' . $version;
+            }
+        } catch (\Throwable $e) {
+            // Fall back to the bundled icon when settings are unavailable.
+        }
+
+        return asset('favicon.svg');
     }
 
     /**

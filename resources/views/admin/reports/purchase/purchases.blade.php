@@ -6,8 +6,8 @@
     {{-- Page Header --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h3 mb-1">Daily Purchase Report</h1>
-            <p class="text-muted mb-0">Purchase order transactions for the selected period</p>
+            <h1 class="h3 mb-1" id="reportTitle">Purchase Report</h1>
+            <p class="text-muted mb-0" id="reportSubtitle">View and analyze purchase transactions by date range</p>
         </div>
         <div class="d-flex gap-2 no-print">
             <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
@@ -34,7 +34,8 @@
         </div>
         <div class="collapse show" id="filterPanel">
             <div class="card-body">
-                <form method="GET" action="{{ route('admin.reports.purchase.daily') }}">
+                <form method="GET" action="{{ route('admin.reports.purchase.daily') }}" id="purchaseFiltersForm">
+                    <input type="hidden" name="period" value="{{ $filters['period'] ?? '' }}" id="periodField">
                     <div class="row g-3">
 
                         {{-- Date From --}}
@@ -330,8 +331,14 @@
 <style>
 .btn-xs { padding:.2rem .45rem; font-size:.75rem; }
 @media print {
+    * { color: #000000 !important; }
     .no-print { display:none !important; }
     .card { border:none !important; box-shadow:none !important; }
+    .table { font-size:10px; }
+    body { font-size:11px; background: white; }
+    .text-danger, .text-success, .text-warning, .text-info, .text-primary, .text-secondary { color: #000000 !important; }
+    thead { background-color: white !important; }
+}
     .table { font-size:11px; }
     body { font-size:12px; }
 }
@@ -343,8 +350,13 @@
 function setRange(preset) {
     const df = document.querySelector('[name=date_from]');
     const dt = document.querySelector('[name=date_to]');
+    const periodField = document.querySelector('#periodField');
     const today = new Date();
     const fmt = d => d.toISOString().slice(0,10);
+    
+    // Set the period field
+    periodField.value = preset;
+    
     switch(preset) {
         case 'today':
             df.value = dt.value = fmt(today); break;
@@ -366,6 +378,53 @@ function setRange(preset) {
             df.value = fmt(f); dt.value = fmt(l); break;
         }
     }
+    
+    // Submit the form
+    document.getElementById('purchaseFiltersForm').submit();
 }
+
+// Update title based on selected period
+function updateReportTitle() {
+    const period = '{{ $filters["period"] ?? "" }}';
+    const title = document.getElementById('reportTitle');
+    const subtitle = document.getElementById('reportSubtitle');
+    const dateFrom = '{{ $filters["date_from"] ?? now()->toDateString() }}';
+    const dateTo = '{{ $filters["date_to"] ?? now()->toDateString() }}';
+    
+    if (!title || !subtitle) return;
+    
+    switch(period) {
+        case 'today':
+            title.textContent = 'Today Purchase Report';
+            subtitle.textContent = 'Purchase transactions for today';
+            break;
+        case 'yesterday':
+            title.textContent = 'Yesterday Purchase Report';
+            subtitle.textContent = 'Purchase transactions for yesterday';
+            break;
+        case 'this_week':
+            title.textContent = 'Weekly Purchase Report';
+            subtitle.textContent = 'Purchase transactions for this week';
+            break;
+        case 'this_month':
+            title.textContent = 'Monthly Purchase Report';
+            subtitle.textContent = 'Purchase transactions for this month';
+            break;
+        case 'last_month':
+            title.textContent = 'Last Month Purchase Report';
+            subtitle.textContent = 'Purchase transactions for last month';
+            break;
+        default:
+            title.textContent = 'Purchase Report';
+            if (period === '' && dateFrom !== '' && dateTo !== '') {
+                subtitle.textContent = `Purchase transactions from ${dateFrom} to ${dateTo}`;
+            } else {
+                subtitle.textContent = 'View and analyze purchase transactions by date range';
+            }
+    }
+}
+
+// Call on page load
+document.addEventListener('DOMContentLoaded', updateReportTitle);
 </script>
 @endpush

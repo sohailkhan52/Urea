@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payable Statement - {{ $supplier->name }}</title>
+    <link rel="icon" href="{{ \App\Helpers\CompanyHelper::getFaviconUrl() }}" sizes="any">
     <style>
         * {
             margin: 0;
@@ -155,19 +156,6 @@
             text-align: right;
             margin-top: 20px;
         }
-        @media print {
-            body {
-                background: white;
-            }
-            .container {
-                max-width: 100%;
-                margin: 0;
-                padding: 0;
-            }
-            .print-date {
-                display: none;
-            }
-        }
         .print-button {
             margin-bottom: 20px;
             text-align: right;
@@ -195,8 +183,17 @@
             color: white;
         }
         @media print {
+            html, body, body * {
+                color: #000000 !important;
+                background: #ffffff !important;
+                border-color: #000000 !important;
+                text-shadow: none !important;
+                filter: none !important;
+                box-shadow: none !important;
+            }
             body {
                 background: white;
+                color: #000000;
             }
             .container {
                 max-width: 100%;
@@ -209,6 +206,67 @@
             }
             .print-date {
                 display: none;
+            }
+            /* Dark text print stylesheet */
+            * {
+                color: #000000 !important;
+            }
+            .header {
+                border-bottom: 2px solid #000000 !important;
+            }
+            .header h1 {
+                color: #000000 !important;
+            }
+            .header p {
+                color: #000000 !important;
+            }
+            .supplier-info {
+                background: #ffffff !important;
+            }
+            .info-label {
+                color: #000000 !important;
+            }
+            .info-value {
+                color: #000000 !important;
+            }
+            .balance-summary {
+                background: #ffffff !important;
+                border: 1px solid #000000 !important;
+                color: #000000 !important;
+            }
+            .balance-summary h3 {
+                color: #000000 !important;
+            }
+            .balance-amount {
+                color: #000000 !important;
+            }
+            .ledger-table thead {
+                background: #ffffff !important;
+                border-bottom: 2px solid #000000 !important;
+            }
+            .ledger-table th {
+                color: #000000 !important;
+            }
+            .ledger-table td {
+                color: #000000 !important;
+                border-bottom: 1px solid #000000 !important;
+            }
+            .ledger-table tbody tr:last-child td {
+                border-bottom: 2px solid #000000 !important;
+            }
+            .payable-added,
+            .payment-made,
+            .balance {
+                color: #000000 !important;
+            }
+            .type-badge {
+                background: #ffffff !important;
+                color: #000000 !important;
+                border: 1px solid #000000;
+            }
+            .footer {
+                color: #000000 !important;
+                border-top: 1px solid #000000 !important;
             }
         }
     </style>
@@ -223,8 +281,16 @@
 
     <div class="container">
         <div class="header">
-            <h1>Payable Statement</h1>
-            <p>Supplier Account Statement</p>
+            @php
+                try {
+                    $sidebarSettings = \App\Models\WelcomePageSetting::first();
+                    $companyName = $sidebarSettings?->company_name ?? 'Company Name';
+                } catch (\Exception $e) {
+                    $companyName = 'Company Name';
+                }
+            @endphp
+            <h1>{{ $companyName }}</h1>
+            <p>Payable Statement - Supplier Account Statement</p>
         </div>
 
         <div class="supplier-info">

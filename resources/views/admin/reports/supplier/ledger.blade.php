@@ -333,8 +333,10 @@
 .border-3 { border-width:3px !important; }
 code.small { font-size:.8rem; background:#f8f9fa; padding:.1rem .3rem; border-radius:.25rem; }
 @media print {
+    * { color: #000000 !important; }
     .no-print { display:none !important; }
     .card { border:none !important; box-shadow:none !important; }
+}
     .table { font-size:10px; }
     body  { font-size:11px; }
     .alert { display:none !important; }

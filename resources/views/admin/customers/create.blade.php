@@ -183,27 +183,8 @@
                                 @enderror
                             </div>
 
-                            {{-- Credit Limit --}}
-                            <div class="col-md-6">
-                                <label for="credit_limit" class="form-label">Credit Limit</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">PKR</span>
-                                    <input type="number" 
-                                           class="form-control @error('credit_limit') is-invalid @enderror" 
-                                           id="credit_limit" 
-                                           name="credit_limit" 
-                                           value="{{ old('credit_limit', 0) }}"
-                                           step="0.01"
-                                           min="0">
-                                </div>
-                                @error('credit_limit')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">Default: 0 (No credit allowed)</small>
-                            </div>
-
                             {{-- Status --}}
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
                                 <select class="form-select @error('status') is-invalid @enderror" 
                                         id="status" 
@@ -242,7 +223,6 @@
                         <li><strong>Name:</strong> Required. Full name of the customer.</li>
                         <li><strong>Phone:</strong> Recommended for communications.</li>
                         <li><strong>CNIC:</strong> Optional. National ID for tax purposes.</li>
-                        <li><strong>Credit Limit:</strong> Maximum credit allowed for this customer.</li>
                         <li><strong>Status:</strong> Active customers can make purchases.</li>
                     </ul>
                 </div>
@@ -256,7 +236,6 @@
                     <ul class="mb-0 small text-muted">
                         <li>Fill in required fields (type, name, status) to create.</li>
                         <li>Optional fields can be added later.</li>
-                        <li>Set credit limit to 0 for cash-only customers.</li>
                         <li>Keep phone numbers accurate for contact.</li>
                         <li>You can update customer info anytime from the edit page.</li>
                     </ul>

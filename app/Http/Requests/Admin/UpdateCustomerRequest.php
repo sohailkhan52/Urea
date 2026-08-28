@@ -72,11 +72,6 @@ class UpdateCustomerRequest extends FormRequest
                 'string',
                 'max:1000',
             ],
-            'credit_limit' => [
-                'nullable',
-                'numeric',
-                'min:0',
-            ],
             'status' => [
                 'required',
                 Rule::in(['active', 'inactive']),
@@ -99,8 +94,6 @@ class UpdateCustomerRequest extends FormRequest
             'email.email' => 'Please enter a valid email address.',
             'email.unique' => 'This email is already registered to another customer.',
             'address.max' => 'Address cannot exceed 1000 characters.',
-            'credit_limit.numeric' => 'Credit limit must be a valid number.',
-            'credit_limit.min' => 'Credit limit cannot be negative.',
         ];
     }
 
@@ -116,11 +109,5 @@ class UpdateCustomerRequest extends FormRequest
             ]);
         }
 
-        // Set default credit limit to 0 if empty
-        if (blank($this->credit_limit)) {
-            $this->merge([
-                'credit_limit' => 0,
-            ]);
-        }
     }
 }

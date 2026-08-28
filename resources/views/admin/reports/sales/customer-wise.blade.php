@@ -24,17 +24,28 @@
             <span class="fw-semibold"><i class="bi bi-funnel me-2"></i>Filters</span>
         </div>
         <div class="card-body">
-            <form method="GET" action="{{ route('admin.reports.sales.customer-wise') }}">
+            <form method="GET" action="{{ route('admin.reports.sales.customer-wise') }}" id="customerSalesFiltersForm">
                 <div class="row g-3">
                     <div class="col-md-2">
                         <label class="form-label small fw-semibold">Date From</label>
                         <input type="date" name="date_from" class="form-control form-control-sm"
-                               value="{{ $filters['date_from'] ?? now()->startOfMonth()->toDateString() }}">
+                               value="{{ $filters['date_from'] ?? '' }}">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small fw-semibold">Date To</label>
                         <input type="date" name="date_to" class="form-control form-control-sm"
-                               value="{{ $filters['date_to'] ?? now()->toDateString() }}">
+                               value="{{ $filters['date_to'] ?? '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Quick Range</label>
+                        <div class="d-flex flex-wrap gap-1">
+                            <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setCustomerRange('today')">Today</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setCustomerRange('yesterday')">Yesterday</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setCustomerRange('this_week')">This Week</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setCustomerRange('last_week')">Last Week</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setCustomerRange('this_month')">This Month</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setCustomerRange('last_month')">Last Month</button>
+                        </div>
                     </div>
                     @if(auth()->user()->isSuperAdmin())
                     <div class="col-md-2">
@@ -160,8 +171,65 @@
 
 @push('styles')
 <style>
+.btn-xs { padding: .2rem .45rem; font-size: .75rem; }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+function setCustomerRange(preset) {
+    const dateFrom = document.querySelector('[name=date_from]');
+    const dateTo = document.querySelector('[name=date_to]');
+    const today = new Date();
+    const formatDate = date => date.toISOString().slice(0, 10);
+
+    switch (preset) {
+        case 'today':
+            dateFrom.value = dateTo.value = formatDate(today);
+            break;
+        case 'yesterday': {
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            dateFrom.value = dateTo.value = formatDate(yesterday);
+            break;
+        }
+        case 'this_week': {
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1));
+            dateFrom.value = formatDate(monday);
+            dateTo.value = formatDate(today);
+            break;
+        }
+        case 'last_week': {
+            const thisMonday = new Date(today);
+            thisMonday.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1));
+            const lastMonday = new Date(thisMonday);
+            lastMonday.setDate(thisMonday.getDate() - 7);
+            const lastSunday = new Date(thisMonday);
+            lastSunday.setDate(thisMonday.getDate() - 1);
+            dateFrom.value = formatDate(lastMonday);
+            dateTo.value = formatDate(lastSunday);
+            break;
+        }
+        case 'this_month':
+            dateFrom.value = formatDate(new Date(today.getFullYear(), today.getMonth(), 1));
+            dateTo.value = formatDate(today);
+            break;
+        case 'last_month':
+            dateFrom.value = formatDate(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+            dateTo.value = formatDate(new Date(today.getFullYear(), today.getMonth(), 0));
+            break;
+    }
+
+    document.getElementById('customerSalesFiltersForm').submit();
+}
+</script>
+@endpush
+
+@push('styles')
+<style>
 .btn-xs{padding:.2rem .45rem;font-size:.75rem}
 .border-3{border-width:3px!important}
-@media print{.no-print{display:none!important}.card{border:none!important;box-shadow:none!important}.table{font-size:10px}}
+@media print{* { color: #000000 !important; }.no-print{display:none!important}.card{border:none!important;box-shadow:none!important}.table{font-size:10px} body { background: white; } .text-danger, .text-success, .text-warning, .text-info, .text-primary, .text-secondary { color: #000000 !important; } thead { background-color: white !important; }}
 </style>
 @endpush

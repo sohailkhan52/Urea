@@ -125,33 +125,6 @@
                 </div>
             </div>
 
-            {{-- Financial Summary --}}
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="bi bi-wallet me-2"></i>
-                        Financial Summary
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <small class="text-muted d-block">Credit Limit</small>
-                            <h5 class="mb-0">{{ number_format($customer->credit_limit, 2) }} PKR</h5>
-                        </div>
-                        <div class="col-md-6">
-                            <small class="text-muted d-block">Status</small>
-                            <p class="mb-0">
-                                @if($customer->credit_limit > 0)
-                                    <span class="badge bg-info">Credit Allowed</span>
-                                @else
-                                    <span class="badge bg-warning">Cash Only</span>
-                                @endif
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         {{-- Sidebar --}}

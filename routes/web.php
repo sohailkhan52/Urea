@@ -308,7 +308,8 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
 
     // Sales Management
     Route::resource('sales', \App\Http\Controllers\Admin\SalesController::class)
-        ->middleware('permission:sales.view');
+        ->middleware('permission:sales.view')
+        ->whereNumber('sale');
 
     // Sale actions
     Route::post('/sales/{sale}/confirm', [\App\Http\Controllers\Admin\SalesController::class, 'confirm'])

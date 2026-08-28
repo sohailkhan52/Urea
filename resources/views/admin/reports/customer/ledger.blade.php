@@ -277,7 +277,7 @@
                 <strong>Balance Reconciliation:</strong>
                 Ledger closing balance = <strong>Rs.&nbsp;{{ number_format($summary['closing_balance'], 2) }}</strong>
                 &nbsp;|&nbsp;
-                Outstanding (from sales) = <strong>Rs.&nbsp;{{ number_format($actualOutstanding, 2) }}</strong>
+                Udhar (from sales) = <strong>Rs.&nbsp;{{ number_format($actualOutstanding, 2) }}</strong>
                 @if(abs($summary['closing_balance'] - $actualOutstanding) >= 0.01)
                     &nbsp;—&nbsp; <span class="text-danger">Difference: Rs.&nbsp;{{ number_format(abs($summary['closing_balance'] - $actualOutstanding), 2) }}</span>
                     (the date filter may exclude some entries; use "All Time" for full reconciliation)
@@ -305,8 +305,10 @@
 .border-3 { border-width:3px !important; }
 code.small { font-size:.8rem; background:#f8f9fa; padding:.1rem .3rem; border-radius:.25rem; }
 @media print {
+    * { color: #000000 !important; }
     .no-print { display:none !important; }
     .card { border:none !important; box-shadow:none !important; }
+}
     .table { font-size:10px; }
     body { font-size:11px; }
     .alert { display:none !important; }

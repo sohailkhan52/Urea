@@ -76,6 +76,17 @@ class WelcomePageController extends Controller
                 );
             }
 
+            if ($request->hasFile('favicon')) {
+                $data['favicon'] = $this->welcomePageService->replaceImage(
+                    $request->file('favicon'),
+                    $settings->favicon,
+                    'favicon'
+                );
+            } elseif ($request->input('delete_favicon') === '1') {
+                $this->welcomePageService->deleteImage($settings->favicon);
+                $data['favicon'] = null;
+            }
+
             // Update settings
             $this->welcomePageService->updateSettings($data);
 

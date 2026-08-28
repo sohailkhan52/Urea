@@ -4,15 +4,109 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Return - {{ $return->return_number }}</title>
+    <link rel="icon" href="{{ \App\Helpers\CompanyHelper::getFaviconUrl() }}" sizes="any">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         @media print {
+            html, body, body * {
+                color: #000000 !important;
+                background: #ffffff !important;
+                border-color: #000000 !important;
+                text-shadow: none !important;
+                filter: none !important;
+                box-shadow: none !important;
+            }
             body {
                 margin: 0;
                 padding: 0;
+                background-color: white;
             }
             .no-print {
                 display: none;
+            }
+            /* Print stylesheet - dark text only */
+            * {
+                color: #000000 !important;
+            }
+            .invoice-container {
+                box-shadow: none !important;
+                background: white !important;
+            }
+            .invoice-header {
+                border-bottom: 3px solid #000000 !important;
+            }
+            .company-name {
+                color: #000000 !important;
+            }
+            .invoice-title {
+                color: #000000 !important;
+            }
+            .meta-section h6 {
+                color: #000000 !important;
+            }
+            .meta-section p {
+                color: #000000 !important;
+            }
+            .items-table thead {
+                background-color: #ffffff !important;
+                border-top: 2px solid #000000 !important;
+                border-bottom: 2px solid #000000 !important;
+            }
+            .items-table th {
+                color: #000000 !important;
+            }
+            .items-table td {
+                color: #000000 !important;
+                border-bottom: 1px solid #000000 !important;
+            }
+            .summary-table td {
+                color: #000000 !important;
+            }
+            .summary-label {
+                color: #000000 !important;
+            }
+            .summary-value {
+                color: #000000 !important;
+            }
+            .total-row {
+                background-color: #ffffff !important;
+                border-top: 2px solid #000000 !important;
+                border-bottom: 2px solid #000000 !important;
+            }
+            .total-row .summary-label {
+                color: #000000 !important;
+            }
+            .total-row .summary-value {
+                color: #000000 !important;
+            }
+            .status-badge {
+                background-color: white !important;
+                color: #000000 !important;
+                border: 1px solid #000000;
+            }
+            .settlement-box {
+                background: #ffffff !important;
+                border: 2px solid #000000 !important;
+                color: #000000 !important;
+            }
+            .settlement-box h5 {
+                color: #000000 !important;
+            }
+            .settlement-table td {
+                color: #000000 !important;
+            }
+            .invoice-footer {
+                color: #000000 !important;
+                border-top: 1px solid #000000 !important;
+            }
+            /* Remove all colored text classes */
+            .text-danger,
+            .text-success,
+            .text-warning,
+            .text-info,
+            .text-primary,
+            .text-secondary {
+                color: #000000 !important;
             }
         }
         body {
@@ -196,20 +290,32 @@
         <div class="invoice-header">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <div class="company-name">{{ $company->name ?? 'Company Name' }}</div>
-                    @if($company)
+                    @php
+                        try {
+                            $sidebarSettings = \App\Models\WelcomePageSetting::first();
+                            $companyName = $sidebarSettings?->company_name ?? 'Company Name';
+                            $companyPhone = $company?->phone ?? $sidebarSettings?->company_phone;
+                            $companyEmail = $company?->email ?? $sidebarSettings?->company_email;
+                            $companyAddress = $company?->address ?? $sidebarSettings?->company_address;
+                        } catch (\Exception $e) {
+                            $companyName = 'Company Name';
+                            $companyPhone = $company?->phone;
+                            $companyEmail = $company?->email;
+                            $companyAddress = $company?->address;
+                        }
+                    @endphp
+                    <div class="company-name">{{ $companyName }}</div>
                     <p class="mb-0" style="font-size: 13px; color: #666;">
-                        @if($company->address)
-                            <strong>Address:</strong> {{ $company->address }}<br>
+                        @if($companyAddress)
+                            <strong>Address:</strong> {{ $companyAddress }}<br>
                         @endif
-                        @if($company->phone)
-                            <strong>Phone:</strong> {{ $company->phone }}
+                        @if($companyPhone)
+                            <strong>Phone:</strong> {{ $companyPhone }}
                         @endif
-                        @if($company->email)
-                            | <strong>Email:</strong> {{ $company->email }}
+                        @if($companyEmail)
+                            | <strong>Email:</strong> {{ $companyEmail }}
                         @endif
                     </p>
-                    @endif
                 </div>
                 <div class="col-md-4 text-end">
                     <span class="status-badge status-{{ strtolower($return->status) }}">

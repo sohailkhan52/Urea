@@ -147,6 +147,6 @@
 
 @push('styles')
 <style>
-@media print{.no-print{display:none!important}.card{border:none!important;box-shadow:none!important}.table{font-size:10px}}
+@media print{* { color: #000000 !important; }.no-print{display:none!important}.card{border:none!important;box-shadow:none!important}.table{font-size:10px} body { background: white; } .text-danger, .text-success, .text-warning, .text-info, .text-primary, .text-secondary { color: #000000 !important; } thead { background-color: white !important; }}
 </style>
 @endpush

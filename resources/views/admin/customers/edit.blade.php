@@ -192,27 +192,8 @@
                                 @enderror
                             </div>
 
-                            {{-- Credit Limit --}}
-                            <div class="col-md-6">
-                                <label for="credit_limit" class="form-label">Credit Limit</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">PKR</span>
-                                    <input type="number" 
-                                           class="form-control @error('credit_limit') is-invalid @enderror" 
-                                           id="credit_limit" 
-                                           name="credit_limit" 
-                                           value="{{ old('credit_limit', $customer->credit_limit) }}"
-                                           step="0.01"
-                                           min="0">
-                                </div>
-                                @error('credit_limit')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="text-muted">Maximum credit allowed for this customer</small>
-                            </div>
-
                             {{-- Status --}}
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
                                 <select class="form-select @error('status') is-invalid @enderror" 
                                         id="status" 
@@ -290,7 +271,6 @@
                         <li>Update customer information as needed.</li>
                         <li>CNIC will be auto-converted to uppercase.</li>
                         <li>Active status allows customer to make purchases.</li>
-                        <li>Adjust credit limit to manage customer credit.</li>
                     </ul>
                 </div>
             </div>

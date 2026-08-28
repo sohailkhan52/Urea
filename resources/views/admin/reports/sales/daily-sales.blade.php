@@ -6,8 +6,8 @@
     {{-- Page Header --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h3 mb-1">Daily Sales Report</h1>
-            <p class="text-muted mb-0">Sales transactions for the selected date range</p>
+            <h1 class="h3 mb-1" id="reportTitle">Sales Report</h1>
+            <p class="text-muted mb-0" id="reportSubtitle">View and analyze sales transactions by date range</p>
         </div>
         <div class="d-flex gap-2 no-print">
             <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
@@ -27,19 +27,20 @@
         </div>
         <div class="collapse show" id="filterPanel">
             <div class="card-body">
-                <form method="GET" action="{{ route('admin.reports.sales.daily') }}">
+                <form method="GET" action="{{ route('admin.reports.sales.daily') }}" id="salesFiltersForm">
+                    <input type="hidden" name="period" value="{{ $filters['period'] ?? '' }}" id="periodField">
                     <div class="row g-3">
 
                         <div class="col-md-2">
                             <label class="form-label small fw-semibold">Date From</label>
                             <input type="date" name="date_from" class="form-control form-control-sm"
-                                   value="{{ $filters['date_from'] ?? now()->toDateString() }}">
+                                   value="{{ $filters['date_from'] ?? '' }}">
                         </div>
 
                         <div class="col-md-2">
                             <label class="form-label small fw-semibold">Date To</label>
                             <input type="date" name="date_to" class="form-control form-control-sm"
-                                   value="{{ $filters['date_to'] ?? now()->toDateString() }}">
+                                   value="{{ $filters['date_to'] ?? '' }}">
                         </div>
 
                         <div class="col-md-3">
@@ -48,6 +49,7 @@
                                 <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setRange('today')">Today</button>
                                 <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setRange('yesterday')">Yesterday</button>
                                 <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setRange('this_week')">This Week</button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setRange('last_week')">Last Week</button>
                                 <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setRange('this_month')">This Month</button>
                                 <button type="button" class="btn btn-xs btn-outline-secondary" onclick="setRange('last_month')">Last Month</button>
                             </div>
@@ -304,8 +306,14 @@
 .btn-xs   { padding:.2rem .45rem; font-size:.75rem; }
 .border-3 { border-width:3px !important; }
 @media print {
+    * { color: #000000 !important; }
     .no-print { display:none !important; }
     .card { border:none !important; box-shadow:none !important; }
+    .table { font-size:10px; }
+    body { font-size:11px; background: white; }
+    .text-danger, .text-success, .text-warning, .text-info, .text-primary, .text-secondary { color: #000000 !important; }
+    thead { background-color: white !important; }
+}
     .table { font-size:10px; }
     body  { font-size:11px; }
 }
@@ -317,8 +325,13 @@
 function setRange(preset) {
     const df = document.querySelector('[name=date_from]');
     const dt = document.querySelector('[name=date_to]');
+    const periodField = document.querySelector('#periodField');
     const today = new Date();
     const fmt = d => d.toISOString().slice(0,10);
+    
+    // Set the period field
+    periodField.value = preset;
+    
     switch(preset) {
         case 'today':     df.value = dt.value = fmt(today); break;
         case 'yesterday': { const y=new Date(today); y.setDate(y.getDate()-1); df.value=dt.value=fmt(y); break; }
@@ -326,12 +339,69 @@ function setRange(preset) {
             const mon=new Date(today); mon.setDate(today.getDate()-(today.getDay()===0?6:today.getDay()-1));
             df.value=fmt(mon); dt.value=fmt(today); break;
         }
+        case 'last_week': {
+            const thisMonday=new Date(today); thisMonday.setDate(today.getDate()-(today.getDay()===0?6:today.getDay()-1));
+            const lastMonday=new Date(thisMonday); lastMonday.setDate(thisMonday.getDate()-7);
+            const lastSunday=new Date(thisMonday); lastSunday.setDate(thisMonday.getDate()-1);
+            df.value=fmt(lastMonday); dt.value=fmt(lastSunday); break;
+        }
         case 'this_month':
             df.value=fmt(new Date(today.getFullYear(),today.getMonth(),1)); dt.value=fmt(today); break;
         case 'last_month':
             df.value=fmt(new Date(today.getFullYear(),today.getMonth()-1,1));
             dt.value=fmt(new Date(today.getFullYear(),today.getMonth(),0)); break;
     }
+    
+    // Submit the form
+    document.getElementById('salesFiltersForm').submit();
 }
+
+// Update title based on selected period
+function updateReportTitle() {
+    const period = '{{ $filters["period"] ?? "" }}';
+    const title = document.getElementById('reportTitle');
+    const subtitle = document.getElementById('reportSubtitle');
+    const dateFrom = '{{ $filters["date_from"] ?? "" }}';
+    const dateTo = '{{ $filters["date_to"] ?? "" }}';
+    
+    if (!title || !subtitle) return;
+    
+    switch(period) {
+        case 'today':
+            title.textContent = 'Today Sales Report';
+            subtitle.textContent = 'Sales transactions for today';
+            break;
+        case 'yesterday':
+            title.textContent = 'Yesterday Sales Report';
+            subtitle.textContent = 'Sales transactions for yesterday';
+            break;
+        case 'this_week':
+            title.textContent = 'Weekly Sales Report';
+            subtitle.textContent = 'Sales transactions for this week';
+            break;
+        case 'last_week':
+            title.textContent = 'Last Week Sales Report';
+            subtitle.textContent = 'Sales transactions for last week';
+            break;
+        case 'this_month':
+            title.textContent = 'Monthly Sales Report';
+            subtitle.textContent = 'Sales transactions for this month';
+            break;
+        case 'last_month':
+            title.textContent = 'Last Month Sales Report';
+            subtitle.textContent = 'Sales transactions for last month';
+            break;
+        default:
+            title.textContent = 'Sales Report';
+            if (period === '' && dateFrom !== '' && dateTo !== '') {
+                subtitle.textContent = `Sales transactions from ${dateFrom} to ${dateTo}`;
+            } else {
+                subtitle.textContent = 'View and analyze sales transactions by date range';
+            }
+    }
+}
+
+// Call on page load
+document.addEventListener('DOMContentLoaded', updateReportTitle);
 </script>
 @endpush

@@ -73,12 +73,12 @@ class ReportService
      */
     public function getDailySalesReport($filters = [])
     {
-        $dateFrom = $filters['date_from'] ?? Carbon::today()->toDateString();
-        $dateTo   = $filters['date_to']   ?? Carbon::today()->toDateString();
-
         $query = Sale::with(['customer', 'warehouse'])
-            ->withCount('items')
-            ->whereBetween('sale_date', [$dateFrom, $dateTo]);
+            ->withCount('items');
+
+        if (!empty($filters['date_from']) && !empty($filters['date_to'])) {
+            $query->whereBetween('sale_date', [$filters['date_from'], $filters['date_to']]);
+        }
 
         $this->applyWarehouseFilter($query, $filters['warehouse_id'] ?? null);
 
@@ -114,11 +114,12 @@ class ReportService
      */
     public function getSalesSummary($filters = [])
     {
-        $dateFrom = $filters['date_from'] ?? Carbon::today()->toDateString();
-        $dateTo   = $filters['date_to']   ?? Carbon::today()->toDateString();
-
-        $query = Sale::whereBetween('sale_date', [$dateFrom, $dateTo])
+        $query = Sale::query()
             ->where('status', '!=', Sale::STATUS_CANCELLED);
+
+        if (!empty($filters['date_from']) && !empty($filters['date_to'])) {
+            $query->whereBetween('sale_date', [$filters['date_from'], $filters['date_to']]);
+        }
         
         $this->applyWarehouseFilter($query, $filters['warehouse_id'] ?? null);
         
@@ -238,11 +239,11 @@ class ReportService
                 DB::raw('SUM(CASE WHEN sales.status != \'cancelled\' THEN sales.paid_amount ELSE 0 END) as total_paid'),
                 DB::raw('SUM(CASE WHEN sales.status != \'cancelled\' THEN sales.due_amount ELSE 0 END) as total_due'),
                 DB::raw('MAX(sales.sale_date) as last_sale_date')
-            )
-            ->whereBetween('sales.sale_date', [
-                $filters['date_from'] ?? Carbon::today()->startOfMonth(),
-                $filters['date_to'] ?? Carbon::today()
-            ]);
+            );
+
+        if (!empty($filters['date_from']) && !empty($filters['date_to'])) {
+            $query->whereBetween('sales.sale_date', [$filters['date_from'], $filters['date_to']]);
+        }
         
         // Apply warehouse filter
         $authorizedIds = $this->getAuthorizedWarehouseIds();
@@ -1098,7 +1099,7 @@ class ReportService
     // CUSTOMER REPORTS
     //
     // Schema facts:
-    //  customers: warehouse_id (nullable), credit_limit, status — NO balance column
+    //  customers: warehouse_id (nullable), status — NO balance column
     //  customer_ledgers: customer_id, type, sale_id, payment_id, return_id,
     //                    debit, credit, balance (running), description,
     //                    reference_number, date (date field — NOT transaction_date)
@@ -1160,7 +1161,6 @@ class ReportService
                 'customers.customer_type',
                 'customers.city',
                 'customers.status',
-                'customers.credit_limit',
                 'customers.warehouse_id',
                 'warehouses.name as warehouse_name',
                 DB::raw('COALESCE(sal.total_sales_count, 0) as total_sales'),
@@ -1168,8 +1168,7 @@ class ReportService
                 DB::raw('COALESCE(sal.total_paid_amount, 0) as total_paid'),
                 DB::raw('COALESCE(sal.outstanding_balance, 0) as outstanding_balance'),
                 DB::raw('COALESCE(sal.last_sale_date, NULL) as last_sale_date'),
-                DB::raw('COALESCE(sal.overdue_30d, 0) as overdue_30d'),
-                DB::raw('(customers.credit_limit - COALESCE(sal.outstanding_balance, 0)) as available_credit')
+                DB::raw('COALESCE(sal.overdue_30d, 0) as overdue_30d')
             )
             ->whereNull('customers.deleted_at')
             ->where('sal.outstanding_balance', '>', 0);  // Only customers with balance
@@ -1781,6 +1780,8 @@ class ReportService
      */
     private function buildPLData(string $dateFrom, string $dateTo, ?int $warehouseId): array
     {
+        $dateFromDateTime = Carbon::parse($dateFrom)->startOfDay();
+        $dateToDateTime   = Carbon::parse($dateTo)->endOfDay();
         $authorizedIds = $this->getAuthorizedWarehouseIds();
 
         // ── Validate warehouse parameter ────────────────────────────────────

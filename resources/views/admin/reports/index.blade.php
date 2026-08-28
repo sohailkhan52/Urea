@@ -581,8 +581,10 @@
 }
 
 @media print {
+    * { color: #000000 !important; }
     .no-print { display:none !important; }
     .card { border:none !important; box-shadow:none !important; page-break-inside:avoid; }
+}
     canvas { display:none !important; }
     body { font-size:11px; }
     .table { font-size:10px; }

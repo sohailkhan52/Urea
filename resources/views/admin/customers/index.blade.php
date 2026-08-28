@@ -76,7 +76,6 @@
                             <th>Phone</th>
                             <th>City</th>
                             <th>CNIC</th>
-                            <th class="text-end">Credit Limit</th>
                             <th style="width: 100px;">Status</th>
                             <th style="width: 200px;" class="text-end">Actions</th>
                         </tr>
@@ -124,9 +123,6 @@
                                 @else
                                 <span class="text-muted">—</span>
                                 @endif
-                            </td>
-                            <td class="text-end">
-                                <strong>{{ number_format($customer->credit_limit, 2) }}</strong>
                             </td>
                             <td>
                                 @if($customer->status === 'active')

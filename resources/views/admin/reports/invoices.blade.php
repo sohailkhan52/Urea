@@ -415,8 +415,10 @@
 .btn-xs { padding:.2rem .45rem; font-size:.75rem; }
 .border-3 { border-width: 3px !important; }
 @media print {
+    * { color: #000000 !important; }
     .no-print { display:none !important; }
     .card { border:none !important; box-shadow:none !important; }
+}
     .table { font-size:11px; }
     body { font-size:12px; }
     /* Print header info */

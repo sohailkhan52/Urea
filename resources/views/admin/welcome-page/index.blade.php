@@ -154,6 +154,77 @@
                 }
                 </script>
 
+                {{-- Favicon --}}
+                <div class="mb-4">
+                    <label for="favicon" class="form-label fw-600">Favicon</label>
+
+                    <div class="mb-3">
+                        @if ($settings->favicon)
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="position-relative" id="favicon-preview">
+                                <img src="{{ asset('storage/' . $settings->favicon) }}"
+                                     alt="Favicon"
+                                     class="img-thumbnail"
+                                     style="width: 64px; height: 64px; object-fit: contain;"
+                                     id="current-favicon">
+                                <button type="button"
+                                        class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1"
+                                        onclick="markFaviconForDeletion()"
+                                        id="delete-favicon-btn"
+                                        style="padding: 0.25rem 0.5rem; line-height: 1;">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                                <div class="position-absolute top-0 start-0 w-100 h-100 bg-danger bg-opacity-75 d-none align-items-center justify-content-center"
+                                     id="favicon-deletion-overlay">
+                                    <span class="text-white fw-bold">Will be deleted</span>
+                                </div>
+                            </div>
+                            <span class="text-muted"><i class="bi bi-check-circle me-2 text-success"></i>Favicon uploaded</span>
+                        </div>
+                        @else
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle me-2"></i>No custom favicon uploaded. The bundled favicon will be used.
+                        </div>
+                        @endif
+                    </div>
+
+                    <input type="file"
+                           class="form-control @error('favicon') is-invalid @enderror"
+                           id="favicon"
+                           name="favicon"
+                           accept=".ico,.cur,.jpeg,.jpg,.png,.gif,.svg,.webp,image/*">
+                    <input type="hidden" name="delete_favicon" id="delete_favicon" value="0">
+
+                    @error('favicon')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                    <small class="form-text text-muted d-block mt-2">Max file size: 2MB. Supported formats: ICO, PNG, JPEG, GIF, SVG, WEBP</small>
+                </div>
+
+                <script>
+                function markFaviconForDeletion() {
+                    const overlay = document.getElementById('favicon-deletion-overlay');
+                    const deleteInput = document.getElementById('delete_favicon');
+                    const deleteBtn = document.getElementById('delete-favicon-btn');
+
+                    if (deleteInput.value === '0') {
+                        deleteInput.value = '1';
+                        overlay.classList.remove('d-none');
+                        overlay.classList.add('d-flex');
+                        deleteBtn.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+                        deleteBtn.classList.remove('btn-danger');
+                        deleteBtn.classList.add('btn-warning');
+                    } else {
+                        deleteInput.value = '0';
+                        overlay.classList.add('d-none');
+                        overlay.classList.remove('d-flex');
+                        deleteBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
+                        deleteBtn.classList.remove('btn-warning');
+                        deleteBtn.classList.add('btn-danger');
+                    }
+                }
+                </script>
+
                 {{-- Company Description --}}
                 <div class="mb-4">
                     <label for="company_description" class="form-label fw-600">Company Description</label>

@@ -6,8 +6,8 @@
     {{-- Page Header --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h3 mb-1">Customer Outstanding Balances</h1>
-            <p class="text-muted mb-0">Customers with confirmed unpaid sales balances</p>
+            <h1 class="h3 mb-1">Customer Udhar</h1>
+            <p class="text-muted mb-0">Customers with confirmed unpaid sales</p>
         </div>
         <div class="d-flex gap-2 no-print">
             <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
@@ -55,7 +55,7 @@
                         </div>
 
                         <div class="col-md-2">
-                            <label class="form-label small fw-semibold">Min. Balance</label>
+                            <label class="form-label small fw-semibold">Min. Udhar</label>
                             <input type="number" name="min_balance" class="form-control form-control-sm"
                                    placeholder="e.g. 1000" min="0" step="0.01"
                                    value="{{ $filters['min_balance'] ?? '' }}">
@@ -64,7 +64,7 @@
                         <div class="col-md-2">
                             <label class="form-label small fw-semibold">Sort By</label>
                             <select name="sort_by" class="form-select form-select-sm">
-                                <option value="balance"       {{ ($filters['sort_by'] ?? 'balance') === 'balance'       ? 'selected' : '' }}>Balance (High→Low)</option>
+                                <option value="balance"       {{ ($filters['sort_by'] ?? 'balance') === 'balance'       ? 'selected' : '' }}>Udhar (High→Low)</option>
                                 <option value="name"          {{ ($filters['sort_by'] ?? '') === 'name'          ? 'selected' : '' }}>Name (A→Z)</option>
                                 <option value="last_purchase" {{ ($filters['sort_by'] ?? '') === 'last_purchase' ? 'selected' : '' }}>Last Purchase</option>
                             </select>
@@ -97,7 +97,7 @@
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm h-100 border-start border-primary border-3">
                 <div class="card-body py-3">
-                    <p class="text-muted small mb-1">Customers with Balance</p>
+                    <p class="text-muted small mb-1">Customers with Udhar</p>
                     <h4 class="mb-0 fw-bold text-primary">{{ number_format($summary['total_customers']) }}</h4>
                 </div>
             </div>
@@ -105,7 +105,7 @@
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm h-100 border-start border-danger border-3">
                 <div class="card-body py-3">
-                    <p class="text-muted small mb-1">Total Outstanding</p>
+                    <p class="text-muted small mb-1">Total Udhar</p>
                     <h4 class="mb-0 fw-bold text-danger">Rs.&nbsp;{{ number_format($summary['total_outstanding'], 2) }}</h4>
                 </div>
             </div>
@@ -113,7 +113,7 @@
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm h-100 border-start border-warning border-3">
                 <div class="card-body py-3">
-                    <p class="text-muted small mb-1">Average Outstanding</p>
+                    <p class="text-muted small mb-1">Average Udhar</p>
                     <h5 class="mb-0 fw-bold text-warning">Rs.&nbsp;{{ number_format($summary['avg_outstanding'], 2) }}</h5>
                     <small class="text-muted">per customer</small>
                 </div>
@@ -174,7 +174,7 @@
         <div class="{{ $summary['top10']->count() > 0 ? 'col-lg-8' : 'col-12' }}">
             <div class="card">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Outstanding Balances</h5>
+                    <h5 class="mb-0">Udhar Balances</h5>
                     <span class="text-muted small">{{ $report->total() }} customer(s)</span>
                 </div>
                 <div class="card-body p-0">
@@ -189,9 +189,7 @@
                                     <th class="text-center">Sales</th>
                                     <th class="text-end">Total Sales</th>
                                     <th class="text-end">Total Paid</th>
-                                    <th class="text-end">Outstanding</th>
-                                    <th class="text-end">Credit Limit</th>
-                                    <th class="text-end">Available Credit</th>
+                                    <th class="text-end">Udhar</th>
                                     <th>Last Sale</th>
                                     <th class="text-center no-print">Actions</th>
                                 </tr>
@@ -199,7 +197,6 @@
                             <tbody>
                                 @foreach($report as $row)
                                 @php
-                                    $availCredit = (float)$row->available_credit;
                                     $balance     = (float)$row->outstanding_balance;
                                     $lastSale    = $row->last_sale_date
                                                     ? \Carbon\Carbon::parse($row->last_sale_date)
@@ -240,12 +237,6 @@
                                             </small>
                                         @endif
                                     </td>
-                                    <td class="text-end text-muted">
-                                        {{ $row->credit_limit > 0 ? 'Rs. '.number_format($row->credit_limit, 2) : '—' }}
-                                    </td>
-                                    <td class="text-end {{ $availCredit < 0 ? 'text-danger' : 'text-success' }}">
-                                        {{ $row->credit_limit > 0 ? 'Rs. '.number_format($availCredit, 2) : '—' }}
-                                    </td>
                                     <td>
                                         @if($lastSale)
                                             {{ $lastSale->format('d M Y') }}
@@ -277,7 +268,7 @@
                                     <td class="text-end">Rs.&nbsp;{{ number_format(collect($report->items())->sum('total_sales_amount'), 2) }}</td>
                                     <td class="text-end text-success">Rs.&nbsp;{{ number_format(collect($report->items())->sum('total_paid'), 2) }}</td>
                                     <td class="text-end text-danger">Rs.&nbsp;{{ number_format(collect($report->items())->sum('outstanding_balance'), 2) }}</td>
-                                    <td colspan="4"></td>
+                                    <td colspan="2"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -288,8 +279,8 @@
                     @else
                     <div class="text-center py-5">
                         <i class="bi bi-cash-stack text-muted" style="font-size:3rem"></i>
-                        <h5 class="mt-3 text-muted">No Outstanding Balances</h5>
-                        <p class="text-muted">No customers with outstanding balances match the current filters.</p>
+                        <h5 class="mt-3 text-muted">No Udhar Found</h5>
+                        <p class="text-muted">No customers with Udhar match the current filters.</p>
                     </div>
                     @endif
                 </div>
@@ -300,9 +291,8 @@
 
     <p class="text-muted small mt-3 no-print">
         <i class="bi bi-info-circle me-1"></i>
-        Outstanding = sum of <code>due_amount</code> on confirmed, non-cancelled sales.
-        Available Credit = Credit Limit − Outstanding Balance.
-        Overdue = outstanding on sales older than 30 days.
+        Udhar = sum of <code>due_amount</code> on confirmed, non-cancelled sales.
+        Overdue = Udhar on sales older than 30 days.
     </p>
 
 </div>
@@ -314,10 +304,13 @@
 .border-3 { border-width:3px !important; }
 .badge-sm { font-size:.65rem; }
 @media print {
+    * { color: #000000 !important; }
     .no-print { display:none !important; }
     .card { border:none !important; box-shadow:none !important; }
     .table { font-size:10px; }
-    body { font-size:11px; }
+    body { font-size:11px; background: white; }
+    .text-danger, .text-success, .text-warning, .text-info, .text-primary, .text-secondary { color: #000000 !important; }
+    thead { background-color: white !important; }
 }
 </style>
 @endpush

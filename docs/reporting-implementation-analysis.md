@@ -233,7 +233,6 @@ Automatically filters queries by user's accessible warehouses.
 - `phone`
 - `email` (nullable)
 - `address` (nullable)
-- `credit_limit` (decimal 15,2, default 0)
 - `current_balance` (decimal 15,2, default 0) - Outstanding amount
 - `status` (active, inactive)
 - `created_at`, `updated_at`, `deleted_at`
@@ -248,7 +247,6 @@ Automatically filters queries by user's accessible warehouses.
 
 **Important Fields for Reports:**
 - `current_balance` - Real-time outstanding amount
-- `credit_limit` - Maximum credit allowed
 
 ### 5.2 Customer Ledger
 

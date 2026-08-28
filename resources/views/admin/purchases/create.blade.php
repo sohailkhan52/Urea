@@ -336,6 +336,8 @@
         margin-top: 2px;
         max-height: 200px !important; /* Show ~4 items (50px each) */
         overflow-y: auto;
+        position: fixed !important;
+        z-index: 2000 !important;
     }
     
     .product-dropdown-list .dropdown-item {
@@ -529,6 +531,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const dropdownToggle = row.querySelector('.dropdown-toggle');
         const unitPriceInput = row.querySelector('.unit-price-input');
 
+        document.body.appendChild(dropdownList);
+
+        function positionDropdown() {
+            const groupBounds = searchInput.closest('.input-group').getBoundingClientRect();
+            dropdownList.style.top = `${groupBounds.bottom + 2}px`;
+            dropdownList.style.left = `${groupBounds.left}px`;
+            dropdownList.style.width = `${groupBounds.width}px`;
+        }
+
         // Render dropdown items
         function renderDropdown(searchTerm = '') {
             const availableProducts = filterAvailableProducts(products);
@@ -592,6 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show dropdown
         function showDropdown() {
             renderDropdown(searchInput.value);
+            positionDropdown();
             dropdownList.style.display = 'block';
         }
 
@@ -607,8 +619,12 @@ document.addEventListener('DOMContentLoaded', function() {
         searchInput.addEventListener('blur', hideDropdown);
         searchInput.addEventListener('input', function() {
             renderDropdown(this.value);
+            positionDropdown();
             dropdownList.style.display = 'block';
         });
+
+        window.addEventListener('resize', positionDropdown);
+        window.addEventListener('scroll', positionDropdown, true);
 
         // Dropdown toggle button
         dropdownToggle.addEventListener('mousedown', function(e) {

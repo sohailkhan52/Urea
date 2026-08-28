@@ -17,7 +17,7 @@
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body text-center">
                     <div class="mb-3"><i class="bi bi-calendar-day text-primary" style="font-size:3rem"></i></div>
-                    <h5 class="card-title">Daily Sales Report</h5>
+                    <h5 class="card-title">Sales Report</h5>
                     <p class="card-text text-muted">View sales transactions by date range</p>
                     <a href="{{ route('admin.reports.sales.daily') }}" class="btn btn-primary">
                         <i class="bi bi-arrow-right me-1"></i>View Report
@@ -25,18 +25,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="mb-3"><i class="bi bi-box-seam text-success" style="font-size:3rem"></i></div>
-                    <h5 class="card-title">Product-Wise Sales</h5>
-                    <p class="card-text text-muted">Sales analysis grouped by product</p>
-                    <a href="{{ route('admin.reports.sales.product-wise') }}" class="btn btn-success">
-                        <i class="bi bi-arrow-right me-1"></i>View Report
-                    </a>
-                </div>
-            </div>
-        </div>
+
         <div class="col-md-4 mb-4">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body text-center">

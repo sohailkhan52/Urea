@@ -17,7 +17,7 @@
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body text-center">
                     <div class="mb-3"><i class="bi bi-cash-stack text-danger" style="font-size:3rem"></i></div>
-                    <h5 class="card-title">Outstanding Balances</h5>
+                    <h5 class="card-title">Customer Udhar</h5>
                     <p class="card-text text-muted">View customers with unpaid balances</p>
                     <a href="{{ route('admin.reports.customer.outstanding') }}" class="btn btn-danger">
                         <i class="bi bi-arrow-right me-1"></i>View Report
@@ -30,9 +30,9 @@
                 <div class="card-body text-center">
                     <div class="mb-3"><i class="bi bi-clock-history text-success" style="font-size:3rem"></i></div>
                     <h5 class="card-title">Payment History</h5>
-                    <p class="card-text text-muted">Select a customer from Outstanding to view payment history</p>
+                    <p class="card-text text-muted">Select a customer from Udhar to view payment history</p>
                     <a href="{{ route('admin.reports.customer.outstanding') }}" class="btn btn-success">
-                        <i class="bi bi-arrow-right me-1"></i>Go to Outstanding
+                        <i class="bi bi-arrow-right me-1"></i>Go to Udhar
                     </a>
                 </div>
             </div>

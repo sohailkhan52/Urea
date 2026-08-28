@@ -162,7 +162,7 @@ class ReportsController extends Controller
     {
         $this->authorize('reports.view');
 
-        $filters = $request->only(['warehouse_id', 'customer_id', 'date_from', 'date_to', 'status', 'payment_status', 'search']);
+        $filters = $request->only(['warehouse_id', 'customer_id', 'date_from', 'date_to', 'status', 'payment_status', 'search', 'period']);
         $report = $this->reportService->getDailySalesReport($filters);
         $summary = $this->reportService->getSalesSummary($filters);
 
@@ -259,7 +259,7 @@ class ReportsController extends Controller
         $filters = $request->only([
             'supplier_id', 'warehouse_id',
             'date_from', 'date_to',
-            'status', 'payment_status', 'search',
+            'status', 'payment_status', 'search', 'period',
         ]);
 
         // Default date range to today when no filters provided

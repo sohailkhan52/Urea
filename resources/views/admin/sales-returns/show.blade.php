@@ -249,7 +249,7 @@
 <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content border-0">
-            <form action="{{ route('admin.sales.returns.confirm', $return) }}" method="POST">
+            <form id="confirmReturnForm" action="{{ route('admin.sales.returns.confirm', $return) }}" method="POST" novalidate>
                 @csrf
                 <div class="modal-header bg-light border-bottom">
                     <h5 class="modal-title">
@@ -399,7 +399,7 @@
 
                 <div class="modal-footer bg-light border-top">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success" id="confirmBtn">
+                    <button type="submit" form="confirmReturnForm" class="btn btn-success" id="confirmBtn">
                         <i class="bi bi-check-circle me-1"></i> Confirm Return
                     </button>
                 </div>

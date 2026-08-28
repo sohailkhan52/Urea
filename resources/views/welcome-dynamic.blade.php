@@ -16,8 +16,7 @@
 
     <title>{{ $settings->company_name }} - Professional Inventory Control</title>
 
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="{{ \App\Helpers\CompanyHelper::getFaviconUrl() }}" sizes="any">
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -572,7 +571,7 @@
                             <i class="bi bi-credit-card"></i>
                         </div>
                         <h4>Customer Credit Tracking</h4>
-                        <p>Monitor customer credit and Udhar. Track outstanding payments, set credit limits, and manage customer debt efficiently.</p>
+                        <p>Monitor Udhar and outstanding customer payments while managing customer debt efficiently.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-4">

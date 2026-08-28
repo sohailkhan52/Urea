@@ -18,7 +18,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $village
  * @property string|null $city
  * @property string|null $address
- * @property float $credit_limit
  * @property string $status
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
@@ -66,7 +65,6 @@ class Customer extends Model
         'village',
         'city',
         'address',
-        'credit_limit',
         'status',
     ];
 
@@ -78,7 +76,6 @@ class Customer extends Model
     protected function casts(): array
     {
         return [
-            'credit_limit' => 'decimal:2',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',

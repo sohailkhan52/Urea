@@ -568,11 +568,16 @@
 .btn-xs   { padding:.2rem .45rem; font-size:.75rem; }
 .border-3 { border-width:3px !important; }
 @media print {
+    * { color: #000000 !important; }
     .no-print { display:none !important; }
     .card { border:none !important; box-shadow:none !important; page-break-inside: avoid; }
     .table { font-size:10px; }
-    body { font-size:11px; }
+    body { font-size:11px; background: white; }
     canvas { display:none !important; }
+    .text-danger, .text-success, .text-warning, .text-info, .text-primary, .text-secondary { color: #000000 !important; }
+    thead { background-color: white !important; }
+    .table-danger td { background-color: white !important; }
+    .table-warning td { background-color: white !important; }
 }
 </style>
 @endpush

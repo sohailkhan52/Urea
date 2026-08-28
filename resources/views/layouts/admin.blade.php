@@ -8,10 +8,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'Dashboard') - {{ config('app.name', 'Fertilizer Management System') }}</title>
+    <title>@yield('title', 'Dashboard') - 
+    @php
+        try {
+            $sidebarSettings = \App\Models\WelcomePageSetting::first();
+            $companyName = $sidebarSettings?->company_name ?? 'System';
+            echo $companyName;
+        } catch (\Exception $e) {
+            echo 'System';
+        }
+    @endphp
+    </title>
 
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="{{ \App\Helpers\CompanyHelper::getFaviconUrl() }}" sizes="any">
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -246,7 +255,6 @@
             width: calc(100% - var(--sidebar-width));
             box-sizing: border-box;
             position: relative;
-            z-index: 1;
         }
 
         /* Top Navbar */
@@ -660,43 +668,10 @@
             padding: 20px;
         }
 
-        /* Modal Z-Index Fixes */
+        /* Keep Bootstrap's default modal stacking behavior. */
         .modal-backdrop {
-            z-index: 1060 !important;
             backdrop-filter: none !important;
             background-color: rgba(0, 0, 0, 0.3) !important;
-        }
-
-        .modal {
-            z-index: 1070 !important;
-        }
-
-        .modal-dialog {
-            z-index: 1070 !important;
-        }
-
-        .modal-content {
-            z-index: 1070 !important;
-        }
-
-        .modal-header,
-        .modal-body,
-        .modal-footer {
-            z-index: 1070 !important;
-            pointer-events: auto !important;
-        }
-
-        .modal-footer button,
-        .modal-footer .btn,
-        .modal-footer form,
-        .modal-footer form button {
-            z-index: 1070 !important;
-            pointer-events: auto !important;
-        }
-
-        .modal-header .btn-close {
-            z-index: 1071 !important;
-            pointer-events: auto !important;
         }
 
         /* Ensure body can scroll when modal is closed */
@@ -708,6 +683,34 @@
         body:not(.modal-open) {
             overflow: auto;
             padding-right: 0;
+        }
+
+        @media print {
+            html,
+            body,
+            body * {
+                color: #000000 !important;
+                text-shadow: none !important;
+                filter: none !important;
+            }
+
+            html,
+            body,
+            body * {
+                background: #ffffff !important;
+                border-color: #000000 !important;
+                box-shadow: none !important;
+            }
+
+            .no-print,
+            .no-print * {
+                display: none !important;
+            }
+
+            a,
+            a:visited {
+                color: #000000 !important;
+            }
         }
     </style>
 </head>
@@ -1429,23 +1432,16 @@
             });
         });
 
-        // Ensure all modal buttons and forms work properly
-        document.addEventListener('click', function(e) {
-            // Don't interfere with modal buttons and close buttons
-            if (e.target.closest('.modal-footer button') || 
-                e.target.closest('.modal-footer .btn') ||
-                e.target.closest('.btn-close')) {
-                e.stopPropagation();
-            }
-        }, true);
+        document.querySelectorAll('.nav-dropdown').forEach(function(navDropdown) {
+            const activeItem = navDropdown.querySelector('.nav-link.active, .dropdown-item.active');
+            const toggle = navDropdown.querySelector('.dropdown-toggle');
 
-        // Ensure forms inside modals submit properly
-        document.addEventListener('submit', function(e) {
-            if (e.target.closest('.modal-footer form')) {
-                // Allow form to submit normally
-                return true;
+            if (activeItem && toggle) {
+                toggle.setAttribute('aria-expanded', 'true');
+                navDropdown.classList.add('open');
             }
-        }, false);
+        });
+
     </script>
 
     @stack('scripts')

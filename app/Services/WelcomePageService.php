@@ -20,6 +20,8 @@ class WelcomePageService
      */
     protected const LOGO_PATH = 'welcome/logos';
 
+    protected const FAVICON_PATH = 'welcome/favicons';
+
     /**
      * Background image storage path
      */
@@ -76,6 +78,12 @@ class WelcomePageService
         return $file->storeAs(self::LOGO_PATH, $filename, self::STORAGE_DISK);
     }
 
+    public function handleFaviconUpload(UploadedFile $file): string
+    {
+        $filename = 'favicon-' . time() . '.' . $file->getClientOriginalExtension();
+        return $file->storeAs(self::FAVICON_PATH, $filename, self::STORAGE_DISK);
+    }
+
     /**
      * Handle background image upload
      */
@@ -115,6 +123,10 @@ class WelcomePageService
         // Upload the new image
         if ($imageType === 'background') {
             return $this->handleBackgroundImageUpload($newFile);
+        }
+
+        if ($imageType === 'favicon') {
+            return $this->handleFaviconUpload($newFile);
         }
 
         return $this->handleLogoUpload($newFile);

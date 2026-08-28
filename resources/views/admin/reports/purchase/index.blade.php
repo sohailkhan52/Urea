@@ -17,7 +17,7 @@
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body text-center">
                     <div class="mb-3"><i class="bi bi-cart-plus text-primary" style="font-size:3rem"></i></div>
-                    <h5 class="card-title">Daily Purchase Report</h5>
+                    <h5 class="card-title">Purchase Report</h5>
                     <p class="card-text text-muted">View purchase transactions by date range</p>
                     <a href="{{ route('admin.reports.purchase.daily') }}" class="btn btn-primary">
                         <i class="bi bi-arrow-right me-1"></i>View Report

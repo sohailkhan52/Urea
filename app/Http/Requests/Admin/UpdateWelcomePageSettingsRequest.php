@@ -26,6 +26,7 @@ class UpdateWelcomePageSettingsRequest extends FormRequest
             'company_short_name' => ['nullable', 'string', 'max:10'],
             'hero_title' => ['required', 'string', 'max:255'],
             'company_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
+            'favicon' => ['nullable', 'file', 'mimes:ico,cur,jpeg,jpg,png,gif,svg,webp', 'max:2048'],
             'company_description' => ['nullable', 'string', 'max:5000'],
         ];
     }
@@ -42,6 +43,7 @@ class UpdateWelcomePageSettingsRequest extends FormRequest
             'company_short_name' => 'company short name',
             'hero_title' => 'welcome page title',
             'company_logo' => 'company logo',
+            'favicon' => 'favicon',
             'company_description' => 'company description',
         ];
     }

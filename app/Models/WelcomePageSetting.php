@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
  * @property string $company_name
  * @property string|null $company_short_name
  * @property string|null $company_logo
+ * @property string|null $favicon
  * @property string|null $company_description
  * @property string $hero_title
  * @property string|null $hero_description
@@ -43,6 +44,7 @@ use Illuminate\Support\Carbon;
     'company_name',
     'company_short_name',
     'company_logo',
+    'favicon',
     'company_description',
     'hero_title',
     'hero_description',

@@ -120,7 +120,7 @@
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm h-100 border-start border-warning border-3">
                 <div class="card-body py-3">
-                    <p class="text-muted small mb-1">Current Outstanding</p>
+                    <p class="text-muted small mb-1">Current Udhar</p>
                     <h5 class="mb-0 fw-bold text-danger">
                         Rs.&nbsp;{{ number_format($customer->sales()->where('status','!=','cancelled')->sum('due_amount'), 2) }}
                     </h5>
@@ -278,8 +278,10 @@
 .border-3 { border-width:3px !important; }
 code.small { font-size:.8rem; background:#f8f9fa; padding:.1rem .3rem; border-radius:.25rem; }
 @media print {
+    * { color: #000000 !important; }
     .no-print { display:none !important; }
     .card { border:none !important; box-shadow:none !important; }
+}
     .table { font-size:10px; }
     body { font-size:11px; }
 }

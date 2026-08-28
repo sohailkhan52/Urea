@@ -4,15 +4,103 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purchase Order - {{ $purchase->purchase_number }}</title>
+    <link rel="icon" href="{{ \App\Helpers\CompanyHelper::getFaviconUrl() }}" sizes="any">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         @media print {
+            html, body, body * {
+                color: #000000 !important;
+                background: #ffffff !important;
+                border-color: #000000 !important;
+                text-shadow: none !important;
+                filter: none !important;
+                box-shadow: none !important;
+            }
             body {
                 margin: 0;
                 padding: 0;
+                background-color: white;
             }
             .no-print {
                 display: none;
+            }
+            /* Print stylesheet - dark text only */
+            * {
+                color: #000000 !important;
+            }
+            .invoice-container {
+                box-shadow: none !important;
+                background: white !important;
+            }
+            .invoice-header {
+                border-bottom: 3px solid #000000 !important;
+            }
+            .company-name {
+                color: #000000 !important;
+            }
+            .invoice-title {
+                color: #000000 !important;
+            }
+            .meta-section h6 {
+                color: #000000 !important;
+            }
+            .meta-section p {
+                color: #000000 !important;
+            }
+            .items-table thead {
+                background-color: #ffffff !important;
+                border-top: 2px solid #000000 !important;
+                border-bottom: 2px solid #000000 !important;
+            }
+            .items-table th {
+                color: #000000 !important;
+            }
+            .items-table td {
+                color: #000000 !important;
+                border-bottom: 1px solid #000000 !important;
+            }
+            .summary-table td {
+                color: #000000 !important;
+            }
+            .summary-label {
+                color: #000000 !important;
+            }
+            .summary-value {
+                color: #000000 !important;
+            }
+            .total-row {
+                background-color: #ffffff !important;
+                border-top: 2px solid #000000 !important;
+                border-bottom: 2px solid #000000 !important;
+            }
+            .total-row .summary-label {
+                color: #000000 !important;
+            }
+            .total-row .summary-value {
+                color: #000000 !important;
+            }
+            .status-badge {
+                background-color: white !important;
+                color: #000000 !important;
+                border: 1px solid #000000;
+            }
+            .notes-section {
+                background-color: #ffffff !important;
+                border-left: 3px solid #000000 !important;
+                color: #000000 !important;
+            }
+            .invoice-footer {
+                color: #000000 !important;
+                border-top: 1px solid #000000 !important;
+            }
+            /* Remove all colored text classes */
+            .text-danger,
+            .text-success,
+            .text-warning,
+            .text-info,
+            .text-primary,
+            .text-secondary {
+                color: #000000 !important;
             }
         }
         body {
@@ -28,14 +116,14 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         .invoice-header {
-            border-bottom: 3px solid #198754;
+            border-bottom: 3px solid #000000;
             padding-bottom: 20px;
             margin-bottom: 30px;
         }
         .company-name {
             font-size: 24px;
             font-weight: bold;
-            color: #198754;
+            color: #000000;
         }
         .invoice-title {
             font-size: 28px;
@@ -53,7 +141,7 @@
         }
         .meta-section h6 {
             font-weight: bold;
-            color: #198754;
+            color: #000000;
             margin-bottom: 10px;
             text-transform: uppercase;
             font-size: 12px;
@@ -68,8 +156,8 @@
         }
         .items-table thead {
             background-color: #f8f9fa;
-            border-top: 2px solid #198754;
-            border-bottom: 2px solid #198754;
+            border-top: 2px solid #000000;
+            border-bottom: 2px solid #000000;
         }
         .items-table th {
             padding: 12px;
@@ -111,16 +199,16 @@
         }
         .total-row {
             background-color: #f8f9fa;
-            border-top: 2px solid #198754;
-            border-bottom: 2px solid #198754;
+            border-top: 2px solid #000000;
+            border-bottom: 2px solid #000000;
             font-size: 16px;
             font-weight: bold;
         }
         .total-row .summary-label {
-            color: #198754;
+            color: #000000;
         }
         .total-row .summary-value {
-            color: #198754;
+            color: #000000;
             font-size: 18px;
         }
         .invoice-footer {
@@ -158,8 +246,43 @@
             margin-top: 30px;
             padding: 15px;
             background-color: #f8f9fa;
-            border-left: 3px solid #198754;
+            border-left: 3px solid #000000;
             font-size: 13px;
+        }
+
+        .invoice-container .status-confirmed,
+        .invoice-container .status-draft,
+        .invoice-container .status-cancelled {
+            color: #000000 !important;
+        }
+
+        @media print {
+            html, body, body * {
+                color: #000000 !important;
+                background: #ffffff !important;
+                border-color: #000000 !important;
+                text-shadow: none !important;
+                filter: none !important;
+                box-shadow: none !important;
+            }
+
+            .invoice-container,
+            .invoice-container * {
+                color: #000000 !important;
+                background: #ffffff !important;
+                border-color: #000000 !important;
+            }
+
+            .status-confirmed,
+            .status-draft,
+            .status-cancelled,
+            .status-badge,
+            .total-row,
+            .notes-section {
+                color: #000000 !important;
+                background: #ffffff !important;
+                border-color: #000000 !important;
+            }
         }
     </style>
 </head>
@@ -176,8 +299,18 @@
         <div class="invoice-header">
             <div class="row align-items-center">
                 <div class="col">
-                    <div class="company-name">UREA MANAGEMENT SYSTEM</div>
-                    <p style="color: #999; margin: 5px 0;">Purchase Order</p>
+                    @php
+                        try {
+                            $sidebarSettings = \App\Models\WelcomePageSetting::first();
+                            $companyName = $sidebarSettings?->company_name ?? 'Company Name';
+                            $companyShortName = $sidebarSettings?->company_short_name ?? '';
+                        } catch (\Exception $e) {
+                            $companyName = 'Company Name';
+                            $companyShortName = '';
+                        }
+                    @endphp
+                    <div class="company-name">{{ $companyName }}</div>
+                    <p style="color: #999; margin: 5px 0;"></p>
                 </div>
                 <div class="col-auto text-end">
                     <div class="status-badge status-{{ $purchase->status }}">

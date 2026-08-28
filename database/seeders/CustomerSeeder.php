@@ -23,7 +23,6 @@ class CustomerSeeder extends Seeder
             'village' => 'Chakbeli',
             'city' => 'Faisalabad',
             'address' => 'Farm No. 5, Near Main Canal',
-            'credit_limit' => 50000,
             'status' => Customer::STATUS_ACTIVE,
         ]);
 
@@ -37,7 +36,6 @@ class CustomerSeeder extends Seeder
             'village' => 'Sargodha Road',
             'city' => 'Sargodha',
             'address' => 'Farm House, Opposite School',
-            'credit_limit' => 75000,
             'status' => Customer::STATUS_ACTIVE,
         ]);
 
@@ -51,7 +49,6 @@ class CustomerSeeder extends Seeder
             'village' => 'Toba Tek Singh',
             'city' => 'Toba Tek Singh',
             'address' => 'Near Graveyard, Main Road',
-            'credit_limit' => 40000,
             'status' => Customer::STATUS_ACTIVE,
         ]);
 
@@ -66,7 +63,6 @@ class CustomerSeeder extends Seeder
             'village' => null,
             'city' => 'Lahore',
             'address' => 'Shop No. 5, Canal Road Market',
-            'credit_limit' => 500000,
             'status' => Customer::STATUS_ACTIVE,
         ]);
 
@@ -80,7 +76,6 @@ class CustomerSeeder extends Seeder
             'village' => null,
             'city' => 'Multan',
             'address' => 'Wholesale Market, Adda Road',
-            'credit_limit' => 750000,
             'status' => Customer::STATUS_ACTIVE,
         ]);
 
@@ -95,7 +90,6 @@ class CustomerSeeder extends Seeder
             'village' => null,
             'city' => 'Faisalabad',
             'address' => 'Street 5, Industrial Area',
-            'credit_limit' => 100000,
             'status' => Customer::STATUS_ACTIVE,
         ]);
 
@@ -109,7 +103,6 @@ class CustomerSeeder extends Seeder
             'village' => null,
             'city' => 'Sargodha',
             'address' => 'Outside GT Road',
-            'credit_limit' => 75000,
             'status' => Customer::STATUS_ACTIVE,
         ]);
 
@@ -123,7 +116,6 @@ class CustomerSeeder extends Seeder
             'village' => 'Chiniot',
             'city' => 'Jhang',
             'address' => 'Main Bazaar, Near Mosque',
-            'credit_limit' => 50000,
             'status' => Customer::STATUS_ACTIVE,
         ]);
 
@@ -138,7 +130,6 @@ class CustomerSeeder extends Seeder
             'village' => 'Mandi Bahauddin',
             'city' => 'Mandi Bahauddin',
             'address' => 'Near Railway Station',
-            'credit_limit' => 60000,
             'status' => Customer::STATUS_INACTIVE,
         ]);
 
@@ -153,7 +144,6 @@ class CustomerSeeder extends Seeder
             'village' => 'Kamoke',
             'city' => 'Gujranwala',
             'address' => 'Farm Area, Opposite Gate',
-            'credit_limit' => 45000,
             'status' => Customer::STATUS_ACTIVE,
         ]);
     }

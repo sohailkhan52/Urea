@@ -345,12 +345,14 @@
 .border-3 { border-width:3px !important; }
 code.small { font-size:.8rem; background:#f8f9fa; padding:.1rem .3rem; border-radius:.25rem; }
 @media print {
+    * { color: #000000 !important; }
     .no-print { display:none !important; }
     .card { border:none !important; box-shadow:none !important; }
     .table { font-size:10px; }
-    body { font-size:11px; }
-    .table-danger td { background-color:#f8d7da !important; -webkit-print-color-adjust:exact; }
-    .table-warning td { background-color:#fff3cd !important; -webkit-print-color-adjust:exact; }
+    body { font-size:11px; background: white; }
+    .text-danger, .text-success, .text-warning, .text-info, .text-primary, .text-secondary { color: #000000 !important; }
+    .table-danger td { background-color: white !important; color: #000000 !important; }
+    .table-warning td { background-color: white !important; color: #000000 !important; }
 }
 </style>
 @endpush
