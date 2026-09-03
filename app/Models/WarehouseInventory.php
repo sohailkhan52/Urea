@@ -79,7 +79,8 @@ class WarehouseInventory extends Model
      */
     public function isLowStock(): bool
     {
-        return $this->quantity < $this->product->minimum_stock_level;
+        // Since minimum_stock_level was removed, consider low stock as quantity < 10
+        return $this->quantity < 10;
     }
 
     /**
@@ -95,8 +96,8 @@ class WarehouseInventory extends Model
      */
     public function scopeLowStock($query)
     {
-        return $query->whereHas('product', function ($q) {
-            $q->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level');
-        });
+        // Since minimum_stock_level was removed, use fixed threshold of 10
+        return $query->where('warehouse_inventory.quantity', '<', 10)
+                    ->where('warehouse_inventory.quantity', '>', 0);
     }
 }

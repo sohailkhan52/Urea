@@ -32,6 +32,7 @@ class SalesService
             $sale = Sale::create([
                 'invoice_number' => $this->generateInvoiceNumber(),
                 'customer_id' => $data['customer_id'] ?? null,
+                'family_id' => $data['family_id'] ?? null,
                 'walkin_customer_name' => $data['walkin_customer_name'] ?? null,
                 'walkin_customer_contact' => $data['walkin_customer_contact'] ?? null,
                 'warehouse_id' => $data['warehouse_id'],
@@ -43,6 +44,72 @@ class SalesService
             ]);
 
             return $sale;
+        });
+    }
+
+    /**
+     * Create sale with items in one transaction (for single-page sale form)
+     *
+     * @param array $data
+     * @return Sale
+     * @throws \Exception
+     */
+    public function createSaleWithItems(array $data): Sale
+    {
+        return DB::transaction(function () use ($data) {
+            // Validate customer is provided
+            if (empty($data['customer_id'])) {
+                throw new \Exception('Customer is required for sale.');
+            }
+
+            // Create the sale
+            $sale = Sale::create([
+                'invoice_number' => $this->generateInvoiceNumber(),
+                'customer_id' => $data['customer_id'],
+                'family_id' => $data['family_id'] ?? null,
+                'warehouse_id' => $data['warehouse_id'],
+                'sale_date' => $data['sale_date'] ?? now()->toDateString(),
+                'discount' => $data['discount'] ?? 0,
+                'paid_amount' => $data['paid_amount'] ?? 0,
+                'status' => Sale::STATUS_DRAFT,
+                'notes' => $data['notes'] ?? null,
+                'created_by' => auth()->id(),
+            ]);
+
+            // Add items if provided
+            if (!empty($data['items']) && is_array($data['items'])) {
+                foreach ($data['items'] as $itemData) {
+                    if (empty($itemData['product_id']) || empty($itemData['quantity']) || empty($itemData['unit_price'])) {
+                        continue; // Skip invalid items
+                    }
+
+                    // Check stock availability
+                    $availableStock = $this->stockService->getCurrentStock($sale->warehouse_id, $itemData['product_id']);
+                    if ($availableStock < $itemData['quantity']) {
+                        $product = Product::find($itemData['product_id']);
+                        throw new \Exception("Insufficient stock for {$product->name}. Available: {$availableStock}, Requested: {$itemData['quantity']}");
+                    }
+
+                    $sale->items()->create([
+                        'product_id' => $itemData['product_id'],
+                        'quantity' => $itemData['quantity'],
+                        'unit_price' => $itemData['unit_price'],
+                        'discount' => $itemData['discount'] ?? 0,
+                    ]);
+                }
+            }
+
+            // Recalculate totals
+            $this->recalculateSaleTotals($sale);
+
+            // Calculate payment status
+            $sale->update([
+                'payment_status' => $sale->calculatePaymentStatus(),
+                'due_amount' => $sale->total_amount - $sale->paid_amount,
+                'udhar_amount' => max(0, $sale->total_amount - $sale->paid_amount),
+            ]);
+
+            return $sale->fresh();
         });
     }
 
@@ -436,6 +503,27 @@ class SalesService
             'items_count' => $sale->items()->count(),
             'total_qty' => $sale->items()->sum('quantity'),
             'payment_status' => $sale->payment_status,
+        ];
+    }
+
+    /**
+     * Check stock availability for product in warehouse
+     *
+     * @param int $warehouseId
+     * @param int $productId
+     * @param float $requestedQuantity
+     * @return array
+     */
+    public function checkStockAvailability(int $warehouseId, int $productId, float $requestedQuantity): array
+    {
+        $availableStock = $this->stockService->getCurrentStock($warehouseId, $productId);
+        $isAvailable = $availableStock >= $requestedQuantity;
+
+        return [
+            'available' => $isAvailable,
+            'available_stock' => $availableStock,
+            'requested_quantity' => $requestedQuantity,
+            'remaining_after_sale' => $isAvailable ? ($availableStock - $requestedQuantity) : null,
         ];
     }
 

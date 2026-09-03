@@ -16,7 +16,6 @@ class AuthorizationServiceProvider extends ServiceProvider
     protected $policies = [
         // Register policies here
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
-        \App\Models\Expense::class => \App\Policies\ExpensePolicy::class,
     ];
 
     /**

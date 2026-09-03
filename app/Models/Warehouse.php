@@ -197,23 +197,7 @@ class Warehouse extends Model
     }
 
     /**
-     * Get stock transfers from this warehouse (as source)
-     */
-    public function sourceTransfers(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(StockTransfer::class, 'source_warehouse_id');
-    }
-
-    /**
-     * Get stock transfers to this warehouse (as destination)
-     */
-    public function destinationTransfers(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(StockTransfer::class, 'destination_warehouse_id');
-    }
-
-    /**
-     * Get all stock movements for this warehouse
+     * Get stock movements for this warehouse
      */
     public function stockMovements(): \Illuminate\Database\Eloquent\Relations\HasMany
     {

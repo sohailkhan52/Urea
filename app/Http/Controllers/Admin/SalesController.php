@@ -11,7 +11,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Warehouse;
 use App\Services\SalesService;
-use App\Services\SalesReturnService;
+use App\Services\SaleReturnService;
 use App\Services\StockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,9 +21,9 @@ class SalesController extends Controller
 {
     protected SalesService $salesService;
     protected StockService $stockService;
-    protected SalesReturnService $salesReturnService;
+    protected SaleReturnService $salesReturnService;
 
-    public function __construct(SalesService $salesService, StockService $stockService, SalesReturnService $salesReturnService)
+    public function __construct(SalesService $salesService, StockService $stockService, SaleReturnService $salesReturnService)
     {
         $this->salesService = $salesService;
         $this->stockService = $stockService;
@@ -38,7 +38,7 @@ class SalesController extends Controller
         $this->authorize('sales.view');
 
         $user = auth()->user();
-        $query = Sale::with(['customer', 'warehouse', 'creator']);
+        $query = Sale::with(['customer', 'family', 'warehouse', 'creator']);
 
         // Apply warehouse-level filtering automatically
         $query = $query->forUserWarehouses($user);
@@ -146,8 +146,21 @@ class SalesController extends Controller
         }
         
         $products = Product::active()->orderBy('name')->get();
+        
+        // Get families for the family selection
+        $families = \App\Models\Family::orderBy('name')->get();
+        
+        // Load warehouse inventory for each product
+        $productsWithStock = $products->map(function($product) use ($defaultWarehouse) {
+            $inventory = \App\Models\WarehouseInventory::where('warehouse_id', $defaultWarehouse->id)
+                ->where('product_id', $product->id)
+                ->first();
+            
+            $product->stock = $inventory ? $inventory->quantity : 0;
+            return $product;
+        });
 
-        return view('admin.sales.create-singlepage', compact('customers', 'warehouses', 'products', 'defaultWarehouse'));
+        return view('admin.sales.create-simple', compact('customers', 'warehouses', 'productsWithStock', 'defaultWarehouse', 'families'));
     }
 
     /**
@@ -173,30 +186,20 @@ class SalesController extends Controller
                 return back()->withErrors(['items' => 'At least one product item is required.']);
             }
 
-            // Create the sale as draft
-            $sale = $this->salesService->createSale([
+            // Create the sale with items in one transaction
+            $sale = $this->salesService->createSaleWithItems([
                 'customer_id' => $request->customer_id,
-                'walkin_customer_name' => $request->walkin_customer_name,
-                'walkin_customer_contact' => $request->walkin_customer_contact,
+                'family_id' => $request->family_id,
                 'warehouse_id' => $request->warehouse_id,
-                'sale_date' => $request->sale_date,
+                'sale_date' => $request->sale_date ?? now()->toDateString(),
                 'notes' => $request->notes,
                 'discount' => $request->discount ?? 0,
+                'paid_amount' => $request->paid_amount ?? 0,
+                'items' => $items,
             ]);
 
-            // Add all items to the sale
-            foreach ($items as $item) {
-                $this->salesService->addItem(
-                    $sale,
-                    (int) $item['product_id'],
-                    (float) $item['quantity'],
-                    (float) $item['unit_price'],
-                    (float) ($item['discount'] ?? 0)
-                );
-            }
-
             // Confirm the sale and reduce stock
-            $this->salesService->confirmSale($sale, 0);
+            $this->salesService->confirmSale($sale, $request->paid_amount ?? 0);
 
             return redirect()->route('admin.sales.show', $sale)
                 ->with('success', 'Sale created and confirmed successfully. Stock has been reduced.');
@@ -220,7 +223,7 @@ class SalesController extends Controller
             abort(403, 'You do not have permission to view this sale.');
         }
 
-        $sale->load(['customer', 'warehouse', 'items.product', 'creator', 'confirmer']);
+        $sale->load(['customer', 'family', 'warehouse', 'items.product', 'creator', 'confirmer', 'customerPayments.receiver']);
 
         $summary = $this->salesService->getSaleSummary($sale);
 
@@ -680,5 +683,165 @@ class SalesController extends Controller
         })->filter()->values();
 
         return response()->json($productsWithStock);
+    }
+
+    /**
+     * Search customers (AJAX endpoint for single-page sale)
+     */
+    public function searchCustomers(Request $request)
+    {
+        $this->authorize('sales.create');
+
+        $search = $request->input('search', '');
+        $warehouseId = $request->input('warehouse_id');
+        $user = auth()->user();
+
+        $query = Customer::active();
+
+        // Apply warehouse filtering
+        if (!$user->isSuperAdmin() && $warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+
+        // Search by name or phone
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $query->orderBy('name')
+            ->limit(20)
+            ->get()
+            ->map(function ($customer) {
+                return [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'phone' => $customer->phone,
+                    'family_id' => $customer->family_id,
+                    'display_name' => $customer->name . ($customer->phone ? ' — ' . $customer->phone : ''),
+                ];
+            });
+
+        return response()->json($customers);
+    }
+
+    /**
+     * Search products with stock (AJAX endpoint for single-page sale)
+     */
+    public function searchProducts(Request $request)
+    {
+        $this->authorize('sales.create');
+
+        $search = $request->input('search', '');
+        $warehouseId = $request->input('warehouse_id');
+
+        if (!$warehouseId) {
+            return response()->json([]);
+        }
+
+        $query = Product::active();
+
+        // Search by name or SKU
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
+            });
+        }
+
+        $products = $query->orderBy('name')
+            ->limit(20)
+            ->get()
+            ->map(function ($product) use ($warehouseId) {
+                $availableStock = $this->stockService->getCurrentStock($warehouseId, $product->id);
+                
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'sale_price' => (float) $product->sale_price,
+                    'available_stock' => $availableStock,
+                    'unit' => $product->unit ?? 'unit',
+                    'display_name' => $product->name . ' — Available: ' . $availableStock . ' ' . ($product->unit ?? 'unit'),
+                ];
+            });
+
+        return response()->json($products);
+    }
+
+    /**
+     * Get all customers (AJAX endpoint for create form)
+     */
+    public function getAllCustomers()
+    {
+        $this->authorize('sales.create');
+
+        $user = auth()->user();
+        
+        $query = Customer::active()->orderBy('name');
+
+        // Apply warehouse filtering for non-super-admins
+        if (!$user->isSuperAdmin()) {
+            $userWarehouses = $user->warehouses()
+                ->select('warehouses.id')
+                ->pluck('warehouses.id');
+            $query->whereIn('warehouse_id', $userWarehouses);
+        }
+
+        $customers = $query->get()->map(function ($customer) {
+            return [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+                'email' => $customer->email,
+                'address' => $customer->address,
+                'city' => $customer->city,
+            ];
+        });
+
+        return response()->json($customers);
+    }
+
+    /**
+     * Store walk-in customer via AJAX
+     */
+    public function storeWalkinCustomer(Request $request)
+    {
+        $this->authorize('sales.create');
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'warehouse_id' => 'required|exists:warehouses,id',
+        ]);
+
+        $user = auth()->user();
+
+        // Verify warehouse access
+        if (!$user->isSuperAdmin() && !$user->canAccessWarehouse($validated['warehouse_id'])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized warehouse'], 403);
+        }
+
+        try {
+            $customer = Customer::create([
+                'name' => $validated['name'],
+                'phone' => $validated['phone'],
+                'warehouse_id' => $validated['warehouse_id'],
+                'is_active' => true,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'customer' => [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'phone' => $customer->phone,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 }

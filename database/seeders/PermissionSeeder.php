@@ -9,155 +9,12 @@ class PermissionSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     * PHASE 1: Removed permissions for User, Company, Category, Product, Warehouse, Inventory, Customers, Expenses, Stock Transfers, Stock Requests, Welcome Page management
      */
     public function run(): void
     {
         $permissions = [
-            // User Management
-            [
-                'name' => 'View Users',
-                'slug' => 'users.view',
-                'group' => 'users',
-                'description' => 'View list of users',
-            ],
-            [
-                'name' => 'Create Users',
-                'slug' => 'users.create',
-                'group' => 'users',
-                'description' => 'Create new users',
-            ],
-            [
-                'name' => 'Update Users',
-                'slug' => 'users.update',
-                'group' => 'users',
-                'description' => 'Edit existing users',
-            ],
-            [
-                'name' => 'Delete Users',
-                'slug' => 'users.delete',
-                'group' => 'users',
-                'description' => 'Delete users',
-            ],
-
-            // Company Management
-            [
-                'name' => 'View Companies',
-                'slug' => 'companies.view',
-                'group' => 'companies',
-                'description' => 'View list of companies',
-            ],
-            [
-                'name' => 'Create Companies',
-                'slug' => 'companies.create',
-                'group' => 'companies',
-                'description' => 'Create new companies',
-            ],
-            [
-                'name' => 'Update Companies',
-                'slug' => 'companies.update',
-                'group' => 'companies',
-                'description' => 'Edit existing companies',
-            ],
-            [
-                'name' => 'Delete Companies',
-                'slug' => 'companies.delete',
-                'group' => 'companies',
-                'description' => 'Delete companies',
-            ],
-
-            // Product Management
-            [
-                'name' => 'View Products',
-                'slug' => 'products.view',
-                'group' => 'products',
-                'description' => 'View list of products',
-            ],
-            [
-                'name' => 'Create Products',
-                'slug' => 'products.create',
-                'group' => 'products',
-                'description' => 'Create new products',
-            ],
-            [
-                'name' => 'Update Products',
-                'slug' => 'products.update',
-                'group' => 'products',
-                'description' => 'Edit existing products',
-            ],
-            [
-                'name' => 'Delete Products',
-                'slug' => 'products.delete',
-                'group' => 'products',
-                'description' => 'Delete products',
-            ],
-
-            // Warehouse Management
-            [
-                'name' => 'View Warehouses',
-                'slug' => 'warehouses.view',
-                'group' => 'warehouses',
-                'description' => 'View list of warehouses',
-            ],
-            [
-                'name' => 'Create Warehouses',
-                'slug' => 'warehouses.create',
-                'group' => 'warehouses',
-                'description' => 'Create new warehouses',
-            ],
-            [
-                'name' => 'Update Warehouses',
-                'slug' => 'warehouses.update',
-                'group' => 'warehouses',
-                'description' => 'Edit existing warehouses',
-            ],
-            [
-                'name' => 'Delete Warehouses',
-                'slug' => 'warehouses.delete',
-                'group' => 'warehouses',
-                'description' => 'Delete warehouses',
-            ],
-
-            // Inventory Management
-            [
-                'name' => 'View Inventory',
-                'slug' => 'inventory.view',
-                'group' => 'inventory',
-                'description' => 'View inventory dashboard and stock levels',
-            ],
-            [
-                'name' => 'Manage Stock',
-                'slug' => 'inventory.manage',
-                'group' => 'inventory',
-                'description' => 'Add, remove, adjust, and transfer stock',
-            ],
-
-            // Supplier Management
-            [
-                'name' => 'View Suppliers',
-                'slug' => 'suppliers.view',
-                'group' => 'suppliers',
-                'description' => 'View list of suppliers',
-            ],
-            [
-                'name' => 'Create Suppliers',
-                'slug' => 'suppliers.create',
-                'group' => 'suppliers',
-                'description' => 'Create new suppliers',
-            ],
-            [
-                'name' => 'Update Suppliers',
-                'slug' => 'suppliers.update',
-                'group' => 'suppliers',
-                'description' => 'Edit existing suppliers',
-            ],
-            [
-                'name' => 'Delete Suppliers',
-                'slug' => 'suppliers.delete',
-                'group' => 'suppliers',
-                'description' => 'Delete suppliers',
-            ],
-
-            // Purchase Management
+            // Purchase Management - KEPT
             [
                 'name' => 'View Purchases',
                 'slug' => 'purchases.view',
@@ -189,33 +46,7 @@ class PermissionSeeder extends Seeder
                 'description' => 'Cancel purchase orders',
             ],
 
-            // Customer Management
-            [
-                'name' => 'View Customers',
-                'slug' => 'customers.view',
-                'group' => 'customers',
-                'description' => 'View list of customers',
-            ],
-            [
-                'name' => 'Create Customers',
-                'slug' => 'customers.create',
-                'group' => 'customers',
-                'description' => 'Create new customers',
-            ],
-            [
-                'name' => 'Update Customers',
-                'slug' => 'customers.update',
-                'group' => 'customers',
-                'description' => 'Edit existing customers',
-            ],
-            [
-                'name' => 'Delete Customers',
-                'slug' => 'customers.delete',
-                'group' => 'customers',
-                'description' => 'Delete customers',
-            ],
-
-            // Sales Management
+            // Sales Management - KEPT
             [
                 'name' => 'View Sales',
                 'slug' => 'sales.view',
@@ -247,85 +78,7 @@ class PermissionSeeder extends Seeder
                 'description' => 'Confirm and approve sales orders',
             ],
 
-            // Inventory Management
-            [
-                'name' => 'View Inventory',
-                'slug' => 'inventory.view',
-                'group' => 'inventory',
-                'description' => 'View inventory levels',
-            ],
-            [
-                'name' => 'Adjust Inventory',
-                'slug' => 'inventory.adjust',
-                'group' => 'inventory',
-                'description' => 'Adjust inventory quantities',
-            ],
-
-            // Stock Transfers
-            [
-                'name' => 'View Transfers',
-                'slug' => 'transfers.view',
-                'group' => 'transfers',
-                'description' => 'View stock transfers',
-            ],
-            [
-                'name' => 'Create Transfers',
-                'slug' => 'transfers.create',
-                'group' => 'transfers',
-                'description' => 'Create stock transfers',
-            ],
-            [
-                'name' => 'Approve Transfers',
-                'slug' => 'transfers.approve',
-                'group' => 'transfers',
-                'description' => 'Approve stock transfers',
-            ],
-            [
-                'name' => 'Receive Transfers',
-                'slug' => 'transfers.receive',
-                'group' => 'transfers',
-                'description' => 'Receive stock transfers',
-            ],
-
-            // Stock Requests (Multi-warehouse feature)
-            [
-                'name' => 'View Stock Requests',
-                'slug' => 'stock_requests.view',
-                'group' => 'stock_requests',
-                'description' => 'View stock requests',
-            ],
-            [
-                'name' => 'Create Stock Requests',
-                'slug' => 'stock_requests.create',
-                'group' => 'stock_requests',
-                'description' => 'Create new stock requests',
-            ],
-            [
-                'name' => 'Update Stock Requests',
-                'slug' => 'stock_requests.update',
-                'group' => 'stock_requests',
-                'description' => 'Edit stock requests',
-            ],
-            [
-                'name' => 'Approve Stock Requests',
-                'slug' => 'stock_requests.approve',
-                'group' => 'stock_requests',
-                'description' => 'Approve or reject stock requests',
-            ],
-            [
-                'name' => 'Cancel Stock Requests',
-                'slug' => 'stock_requests.cancel',
-                'group' => 'stock_requests',
-                'description' => 'Cancel stock requests',
-            ],
-            [
-                'name' => 'Delete Stock Requests',
-                'slug' => 'stock_requests.delete',
-                'group' => 'stock_requests',
-                'description' => 'Delete stock requests',
-            ],
-
-            // Reports
+            // Reports - KEPT
             [
                 'name' => 'View Reports',
                 'slug' => 'reports.view',
@@ -339,33 +92,7 @@ class PermissionSeeder extends Seeder
                 'description' => 'Export reports to Excel/PDF',
             ],
 
-            // Dealers
-            [
-                'name' => 'View Dealers',
-                'slug' => 'dealers.view',
-                'group' => 'dealers',
-                'description' => 'View list of dealers',
-            ],
-            [
-                'name' => 'Create Dealers',
-                'slug' => 'dealers.create',
-                'group' => 'dealers',
-                'description' => 'Create new dealers',
-            ],
-            [
-                'name' => 'Update Dealers',
-                'slug' => 'dealers.update',
-                'group' => 'dealers',
-                'description' => 'Edit existing dealers',
-            ],
-            [
-                'name' => 'Delete Dealers',
-                'slug' => 'dealers.delete',
-                'group' => 'dealers',
-                'description' => 'Delete dealers',
-            ],
-
-            // Udhar Management (Credit/Outstanding)
+            // Udhar Management (Credit/Outstanding) - KEPT
             [
                 'name' => 'View Udhar',
                 'slug' => 'udhar.view',
@@ -383,66 +110,6 @@ class PermissionSeeder extends Seeder
                 'slug' => 'udhar.export',
                 'group' => 'udhar',
                 'description' => 'Export Udhar reports',
-            ],
-
-            // Payables Management (Supplier Outstanding)
-            [
-                'name' => 'View Payables',
-                'slug' => 'payables.view',
-                'group' => 'payables',
-                'description' => 'View Payables (supplier outstanding balance) management',
-            ],
-            [
-                'name' => 'Record Payables Payments',
-                'slug' => 'payables.create',
-                'group' => 'payables',
-                'description' => 'Record payments for supplier payables',
-            ],
-            [
-                'name' => 'Manage Payables',
-                'slug' => 'payables.manage',
-                'group' => 'payables',
-                'description' => 'Full management of payables',
-            ],
-            [
-                'name' => 'Export Payables Reports',
-                'slug' => 'payables.export',
-                'group' => 'payables',
-                'description' => 'Export payables reports',
-            ],
-
-            // Welcome Page Management
-            [
-                'name' => 'Manage Welcome Page',
-                'slug' => 'welcome-page.manage',
-                'group' => 'welcome-page',
-                'description' => 'Manage welcome page content, settings, features, and workflow',
-            ],
-
-            // Expense Management
-            [
-                'name' => 'View Expenses',
-                'slug' => 'expenses.view',
-                'group' => 'expenses',
-                'description' => 'View list of expenses',
-            ],
-            [
-                'name' => 'Create Expenses',
-                'slug' => 'expenses.create',
-                'group' => 'expenses',
-                'description' => 'Create new expenses',
-            ],
-            [
-                'name' => 'Edit Expenses',
-                'slug' => 'expenses.edit',
-                'group' => 'expenses',
-                'description' => 'Edit existing expenses',
-            ],
-            [
-                'name' => 'Delete Expenses',
-                'slug' => 'expenses.delete',
-                'group' => 'expenses',
-                'description' => 'Delete expenses',
             ],
         ];
 

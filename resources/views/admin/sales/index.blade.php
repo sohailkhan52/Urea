@@ -6,6 +6,11 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Sales Management</h1>
+        @can('sales.create')
+        <a href="{{ route('admin.sales.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Create Sale
+        </a>
+        @endcan
     </div>
 
     {{-- Search and Filter --}}
@@ -88,14 +93,14 @@
                             <th>Invoice #</th>
                             <th>Date</th>
                             <th>Customer</th>
+                            <th>Family</th>
                             <th>Warehouse</th>
-                            <th>Items</th>
                             <th class="text-end">Total Amount</th>
                             <th class="text-end">Paid</th>
-                            <th class="text-end">Due</th>
+                            <th class="text-end">Udhar</th>
                             <th style="width: 100px;">Payment</th>
                             <th style="width: 100px;">Status</th>
-                            <th style="width: 200px;" class="text-end">Actions</th>
+                            <th style="width: 150px;" class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -106,6 +111,7 @@
                                     <i class="bi bi-file-earmark-text me-1"></i>
                                     {{ $sale->invoice_number }}
                                 </div>
+                                <small class="text-muted">{{ $sale->items()->count() }} item(s)</small>
                             </td>
                             <td>
                                 <small>{{ $sale->sale_date->format('M d, Y') }}</small>
@@ -115,9 +121,21 @@
                                     <div>
                                         <strong>{{ $sale->customer->name }}</strong>
                                     </div>
-                                    <small class="text-muted">{{ $sale->customer->customer_type }}</small>
+                                    @if($sale->customer->phone)
+                                    <small class="text-muted"><i class="bi bi-telephone me-1"></i>{{ $sale->customer->phone }}</small>
+                                    @endif
                                 @else
                                     <span class="badge bg-secondary">Walk-in</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($sale->family)
+                                    <div>
+                                        <strong>{{ $sale->family->name }}</strong>
+                                    </div>
+                                    <small class="text-muted">{{ $sale->family->family_code }}</small>
+                                @else
+                                    <span class="text-muted">—</span>
                                 @endif
                             </td>
                             <td>
@@ -125,9 +143,6 @@
                                     <i class="bi bi-building me-1"></i>
                                     {{ $sale->warehouse->name }}
                                 </small>
-                            </td>
-                            <td>
-                                <span class="badge bg-info">{{ $sale->items()->count() }} item(s)</span>
                             </td>
                             <td class="text-end">
                                 <strong>{{ number_format($sale->total_amount, 2) }}</strong>
@@ -137,16 +152,19 @@
                                     @if($sale->paid_amount > 0)
                                         <span class="text-success">{{ number_format($sale->paid_amount, 2) }}</span>
                                     @else
-                                        <span class="text-muted">—</span>
+                                        <span class="text-muted">0.00</span>
                                     @endif
                                 </small>
                             </td>
                             <td class="text-end">
                                 <small>
-                                    @if($sale->due_amount > 0)
-                                        <span class="text-danger">{{ number_format($sale->due_amount, 2) }}</span>
+                                    @php
+                                        $udhar = $sale->udhar_amount ?? max(0, $sale->total_amount - $sale->paid_amount);
+                                    @endphp
+                                    @if($udhar > 0)
+                                        <span class="text-danger fw-bold">{{ number_format($udhar, 2) }}</span>
                                     @else
-                                        <span class="text-success">—</span>
+                                        <span class="text-success">0.00</span>
                                     @endif
                                 </small>
                             </td>

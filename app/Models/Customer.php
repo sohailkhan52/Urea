@@ -56,6 +56,7 @@ class Customer extends Model
      */
     protected $fillable = [
         'warehouse_id',
+        'family_id',
         'customer_type',
         'name',
         'father_name',
@@ -232,11 +233,112 @@ class Customer extends Model
     }
 
     /**
+     * Relationship: Get the family this customer belongs to
+     */
+    public function family()
+    {
+        return $this->belongsTo(Family::class);
+    }
+
+    /**
      * Relationship: Get all sales for this customer
      */
     public function sales()
     {
         return $this->hasMany(Sale::class);
+    }
+
+    /**
+     * Relationship: Get all payments made by this customer
+     */
+    public function payments()
+    {
+        return $this->hasMany(CustomerPayment::class);
+    }
+
+    /**
+     * Get total sales amount for this customer
+     */
+    public function getTotalSalesAttribute(): float
+    {
+        return $this->sales()
+            ->where('status', Sale::STATUS_CONFIRMED)
+            ->sum('total_amount');
+    }
+
+    /**
+     * Get total paid amount (initial + additional payments)
+     */
+    public function getTotalPaidAttribute(): float
+    {
+        // Initial payments at sale time
+        $initialPaid = $this->sales()
+            ->where('status', Sale::STATUS_CONFIRMED)
+            ->sum('paid_amount');
+        
+        // Additional payments after sale
+        $additionalPayments = $this->payments()->sum('amount');
+        
+        return $initialPaid + $additionalPayments;
+    }
+
+    /**
+     * Get current udhar (outstanding balance)
+     */
+    public function getCurrentUdharAttribute(): float
+    {
+        return max(0, $this->total_sales - $this->total_paid);
+    }
+
+    /**
+     * Get payment status for customer
+     */
+    public function getPaymentStatusAttribute(): string
+    {
+        $totalSales = $this->total_sales;
+        $totalPaid = $this->total_paid;
+
+        if ($totalSales == 0) {
+            return 'no_sales';
+        }
+
+        if ($totalPaid == 0) {
+            return 'unpaid';
+        }
+
+        if ($totalPaid >= $totalSales) {
+            return 'paid';
+        }
+
+        return 'partial';
+    }
+
+    /**
+     * Get payment status badge
+     */
+    public function getPaymentStatusBadgeAttribute(): string
+    {
+        return match($this->payment_status) {
+            'paid' => 'success',
+            'partial' => 'warning',
+            'unpaid' => 'danger',
+            'no_sales' => 'secondary',
+            default => 'secondary',
+        };
+    }
+
+    /**
+     * Get payment status label
+     */
+    public function getPaymentStatusLabelAttribute(): string
+    {
+        return match($this->payment_status) {
+            'paid' => 'Fully Paid',
+            'partial' => 'Partially Paid',
+            'unpaid' => 'Unpaid',
+            'no_sales' => 'No Sales',
+            default => 'Unknown',
+        };
     }
 
     /**

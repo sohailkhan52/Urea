@@ -401,9 +401,9 @@ class StockService
                     'warehouse_name' => $inventory->warehouse->name,
                     'product_id' => $inventory->product_id,
                     'product_name' => $inventory->product->name,
-                    'product_sku' => $inventory->product->sku,
+                    'product_sku' => $inventory->product->sku ?? 'N/A',
                     'current_stock' => (float) $inventory->quantity,
-                    'minimum_level' => (float) $inventory->product->minimum_stock_level,
+                    'minimum_level' => 10.0, // Fixed threshold since minimum_stock_level was removed
                 ];
             });
     }
@@ -453,13 +453,10 @@ class StockService
             throw new \Exception("Warehouse '{$warehouse->name}' is inactive.");
         }
 
-        // Validate product exists and is active
+        // Validate product exists
         $product = Product::find($productId);
         if (!$product) {
             throw new \Exception("Product with ID {$productId} not found.");
-        }
-        if (!$product->isActive()) {
-            throw new \Exception("Product '{$product->name}' is inactive.");
         }
 
         // Validate quantity

@@ -92,7 +92,7 @@
 
         <!-- Payables Card -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <a href="{{ route('admin.payables.index') }}" class="text-decoration-none">
+            <a href="{{ route('admin.supplier-payables.index') }}" class="text-decoration-none">
                 <div class="card management-card h-100 border-0 shadow-sm" style="cursor: pointer; transition: all 0.3s ease; border-left: 4px solid #dc3545 !important;">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -431,7 +431,7 @@
                                     </td>
                                     <td>{{ $item->warehouse->name }}</td>
                                     <td><span class="badge bg-danger">{{ $item->quantity }}</span></td>
-                                    <td>{{ $item->product->minimum_stock_level }}</td>
+                                    <td>10</td> {{-- Fixed threshold since minimum_stock_level was removed --}}
                                 </tr>
                                 @endforeach
                             </tbody>

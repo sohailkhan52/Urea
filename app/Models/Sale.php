@@ -56,6 +56,7 @@ class Sale extends Model
     protected $fillable = [
         'invoice_number',
         'customer_id',
+        'family_id',
         'walkin_customer_name',
         'walkin_customer_contact',
         'warehouse_id',
@@ -124,11 +125,52 @@ class Sale extends Model
     }
 
     /**
-     * Get all payments for this sale
+     * Get all customer payments for this sale (after-sale payments)
+     */
+    public function customerPayments()
+    {
+        return $this->hasMany(CustomerPayment::class);
+    }
+
+    /**
+     * Get all payments for this sale (legacy, if exists)
      */
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get total additional payments made after sale creation
+     */
+    public function getTotalAdditionalPaymentsAttribute(): float
+    {
+        return $this->customerPayments()->sum('amount');
+    }
+
+    /**
+     * Get current remaining udhar considering additional payments
+     */
+    public function getCurrentRemainingUdharAttribute(): float
+    {
+        $totalPaid = $this->paid_amount + $this->total_additional_payments;
+        return max(0, $this->total_amount - $totalPaid);
+    }
+
+    /**
+     * Get current payment status considering additional payments
+     */
+    public function getCurrentPaymentStatusAttribute(): string
+    {
+        $totalPaid = $this->paid_amount + $this->total_additional_payments;
+        
+        if ($totalPaid == 0) {
+            return self::PAYMENT_STATUS_UNPAID;
+        } elseif ($totalPaid >= $this->total_amount) {
+            return self::PAYMENT_STATUS_PAID;
+        } else {
+            return self::PAYMENT_STATUS_PARTIAL;
+        }
     }
 
     /**
@@ -202,6 +244,14 @@ class Sale extends Model
     }
 
     /**
+     * Get family relationship
+     */
+    public function family()
+    {
+        return $this->belongsTo(Family::class);
+    }
+
+    /**
      * Get warehouse relationship
      */
     public function warehouse()
@@ -215,6 +265,30 @@ class Sale extends Model
     public function items()
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    /**
+     * Get sale returns
+     */
+    public function returns()
+    {
+        return $this->hasMany(SaleReturn::class);
+    }
+
+    /**
+     * Get total returned amount
+     */
+    public function getTotalReturnedAmountAttribute(): float
+    {
+        return $this->returns()->where('status', 'confirmed')->sum('total_return_amount');
+    }
+
+    /**
+     * Get net sale amount after returns
+     */
+    public function getNetSaleAmountAttribute(): float
+    {
+        return $this->total_amount - $this->total_returned_amount;
     }
 
     /**

@@ -3,302 +3,223 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreProductRequest;
-use App\Http\Requests\Admin\UpdateProductRequest;
-use App\Models\Category;
-use App\Models\Company;
 use App\Models\Product;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\View\View;
 
 class ProductController extends Controller
 {
     /**
-     * Display a listing of products.
+     * Display a listing of the resource.
      */
-    public function index(Request $request): View
+    public function index()
     {
-        $this->authorize('products.view');
-
-        $user = auth()->user();
-        $query = Product::with(['company', 'category']);
-
-        // Filter products by warehouse inventory for non-super-admins
-        if (!$user->isSuperAdmin()) {
-            $userWarehouses = $user->warehouses()
-                ->select('warehouses.id')
-                ->pluck('warehouses.id');
-
-            if ($userWarehouses->isEmpty()) {
-                // User has no warehouse assigned, show no products
-                $products = collect();
-                $companies = Company::active()->orderBy('name')->get();
-                $categories = Category::active()->orderBy('name')->get();
-                $userWarehouses = collect();
-                
-                return view('admin.products.index', compact('products', 'companies', 'categories', 'userWarehouses'));
-            }
-
-            // Only show products that exist in user's assigned warehouses
-            $query->whereHas('warehouseInventory', function ($q) use ($userWarehouses) {
-                $q->whereIn('warehouse_id', $userWarehouses)
-                  ->where('quantity', '>', 0);
-            });
-        }
-
-        // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%")
-                    ->orWhere('barcode', 'like', "%{$search}%")
-                    ->orWhereHas('company', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        // Filter by company (only for super admins)
-        if ($request->filled('company_id') && $user->isSuperAdmin()) {
-            $query->where('company_id', $request->company_id);
-        }
-
-        // Filter by category
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
-
-        // Filter by status (only for super admins)
-        if ($request->filled('status') && $user->isSuperAdmin()) {
-            $query->where('status', $request->status);
-        }
-
-        $products = $query->latest()->paginate(15)->withQueryString();
-        
-        // Get companies and categories for filters (only for super admins)
-        if ($user->isSuperAdmin()) {
-            $companies = Company::active()->orderBy('name')->get();
-            $userWarehouses = collect();
-        } else {
-            $companies = collect();
-            $userWarehouses = $user->warehouses()
-                ->select('warehouses.id', 'warehouses.name')
-                ->orderBy('name')
-                ->get();
-        }
-        $categories = Category::active()->orderBy('name')->get();
-
-        return view('admin.products.index', compact('products', 'companies', 'categories', 'userWarehouses'));
+        $products = Product::orderBy('name')->paginate(15);
+        return view('admin.products.index', compact('products'));
     }
 
     /**
-     * Show the form for creating a new product.
+     * Show the form for creating a new resource.
      */
-    public function create(): View
+    public function create()
     {
-        $this->authorize('products.create');
-        
-        // Only super admins can create products
-        if (!auth()->user()->isSuperAdmin()) {
-            abort(403, 'Only super admins can create products.');
-        }
-
-        $companies = Company::active()->orderBy('name')->get();
-        $categories = Category::active()->orderBy('name')->get();
-        $weightUnits = Product::getWeightUnits();
-
-        return view('admin.products.create', compact('companies', 'categories', 'weightUnits'));
+        return view('admin.products.create');
     }
 
     /**
-     * Store a newly created product in storage.
+     * Store a newly created resource in storage.
      */
-    public function store(StoreProductRequest $request): RedirectResponse
+    public function store(Request $request)
     {
-        $this->authorize('products.create');
-
-        $data = $request->validated();
-
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('product-images', 'public');
-        }
-
-        $product = Product::create($data);
-
-        // Log activity
-        Log::info('Product created', [
-            'created_by' => Auth::id(),
-            'product_id' => $product->id,
-            'product_name' => $product->name,
-            'sku' => $product->sku,
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'unit' => 'required|in:KG,MG,Piece',
+            'purchase_price' => 'required|numeric|min:0',
+            'sale_price' => 'required|numeric|min:0',
         ]);
 
-        return redirect()->route('admin.products.index')
+        $product = Product::create($validated);
+
+        // Return JSON for AJAX requests, redirect for form submissions
+        if ($request->expectsJson()) {
+            return response()->json([
+                'id' => $product->id,
+                'name' => $product->name,
+                'unit' => $product->unit,
+                'purchase_price' => (float) $product->purchase_price,
+                'sale_price' => (float) $product->sale_price,
+            ]);
+        }
+
+        return redirect()->route('admin.products.show', $product)
             ->with('success', 'Product created successfully.');
     }
 
     /**
-     * Display the specified product.
+     * Store a newly created product via AJAX (for inline creation in forms)
+     * Matches exactly what the modal view sends
      */
-    public function show(Product $product): View
+    public function storeAjax(Request $request)
     {
-        $this->authorize('products.view');
+        try {
+            // Log incoming request for debugging
+            \Log::info('Product storeAjax called', [
+                'data' => $request->all(),
+                'user' => auth()->id(),
+            ]);
+            
+            // Validate request - exactly matching modal form fields
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'unit' => 'required|in:KG,MG,Piece',
+                'purchase_price' => 'required|numeric|min:0',
+                'sale_price' => 'required|numeric|min:0',
+            ]);
 
-        $product->load(['company', 'category']);
+            \Log::info('Validation passed', ['validated' => $validated]);
 
+            // Add auto-generated SKU since it's required by reports
+            $productData = array_merge($validated, [
+                'sku' => 'SKU-' . time() . '-' . rand(1000, 9999), // Auto-generate SKU
+            ]);
+
+            // Create product
+            $product = Product::create($productData);
+
+            \Log::info('Product created', ['product_id' => $product->id]);
+
+            // Return JSON response exactly as modal expects
+            return response()->json([
+                'id' => $product->id,
+                'name' => $product->name,
+                'unit' => $product->unit,
+                'purchase_price' => (float) $product->purchase_price,
+                'sale_price' => (float) $product->sale_price,
+            ]);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation error in storeAjax', [
+                'errors' => $e->errors(),
+                'data' => $request->all()
+            ]);
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error creating product in storeAjax', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'message' => 'Server error: ' . $e->getMessage(),
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Product $product)
+    {
         return view('admin.products.show', compact('product'));
     }
 
     /**
-     * Show the form for editing the specified product.
+     * Show the form for editing the specified resource.
      */
-    public function edit(Product $product): View
+    public function edit(Product $product)
     {
-        $this->authorize('products.update');
-        
-        // Only super admins can edit products
-        if (!auth()->user()->isSuperAdmin()) {
-            abort(403, 'Only super admins can edit products.');
-        }
-
-        $product->load(['company', 'category']);
-        $companies = Company::active()->orderBy('name')->get();
-        $categories = Category::active()->orderBy('name')->get();
-        $weightUnits = Product::getWeightUnits();
-
-        return view('admin.products.edit', compact('product', 'companies', 'categories', 'weightUnits'));
+        return view('admin.products.edit', compact('product'));
     }
 
     /**
-     * Update the specified product in storage.
+     * Update the specified resource in storage.
      */
-    public function update(UpdateProductRequest $request, Product $product): RedirectResponse
+    public function update(Request $request, Product $product)
     {
-        $this->authorize('products.update');
-
-        $data = $request->validated();
-
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            // Delete old image
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
-            }
-            $data['image'] = $request->file('image')->store('product-images', 'public');
-        }
-
-        $product->update($data);
-
-        // Log activity
-        Log::info('Product updated', [
-            'updated_by' => Auth::id(),
-            'product_id' => $product->id,
-            'product_name' => $product->name,
-            'sku' => $product->sku,
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'unit' => 'required|in:KG,MG,Piece',
+            'purchase_price' => 'required|numeric|min:0',
+            'sale_price' => 'required|numeric|min:0',
         ]);
 
-        return redirect()->route('admin.products.index')
+        $product->update($validated);
+
+        return redirect()->route('admin.products.show', $product)
             ->with('success', 'Product updated successfully.');
     }
 
     /**
-     * Remove the specified product from storage (soft delete).
+     * Remove the specified resource from storage.
      */
-    public function destroy(Product $product): RedirectResponse
+    public function destroy(Product $product)
     {
-        $this->authorize('products.delete');
-        
-        // Only super admins can delete products
-        if (!auth()->user()->isSuperAdmin()) {
-            abort(403, 'Only super admins can delete products.');
-        }
-
-        // Check if product can be deleted
-        if (!$product->canBeDeleted()) {
-            return back()->with('error', 'Cannot delete this product. It has associated inventory, purchases, or sales.');
-        }
-
-        $productName = $product->name;
-        $productSku = $product->sku;
-
-        // Delete image
-        if ($product->image) {
-            Storage::disk('public')->delete($product->image);
-        }
-
-        // Soft delete
         $product->delete();
-
-        // Log activity
-        Log::warning('Product deleted', [
-            'deleted_by' => Auth::id(),
-            'product_name' => $productName,
-            'product_sku' => $productSku,
-        ]);
-
         return redirect()->route('admin.products.index')
             ->with('success', 'Product deleted successfully.');
     }
 
     /**
-     * Activate a product.
+     * Search products for sales form (AJAX endpoint) - includes warehouse stock and sale price
      */
-    public function activate(Product $product): RedirectResponse
+    public function search(Request $request)
     {
-        $this->authorize('products.update');
+        $term = $request->input('search', '');
+        $warehouseId = $request->input('warehouse_id', null);
         
-        // Only super admins can activate products
-        if (!auth()->user()->isSuperAdmin()) {
-            abort(403, 'Only super admins can activate products.');
-        }
+        $products = Product::when($term, function ($query) use ($term) {
+            $query->where('name', 'like', "%{$term}%");
+        })
+        ->orderBy('name')
+        ->limit(20)
+        ->get();
 
-        if ($product->status === Product::STATUS_ACTIVE) {
-            return back()->with('info', 'Product is already active.');
-        }
+        $productsData = $products->map(function ($product) use ($warehouseId) {
+            $stock = 0;
+            if ($warehouseId) {
+                $inventory = \App\Models\WarehouseInventory::where('warehouse_id', $warehouseId)
+                    ->where('product_id', $product->id)
+                    ->first();
+                $stock = $inventory ? $inventory->quantity : 0;
+            }
+            
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'unit' => $product->unit,
+                'purchase_price' => (float) $product->purchase_price,
+                'sale_price' => (float) $product->sale_price,
+                'stock' => $stock,
+            ];
+        });
 
-        $product->update(['status' => Product::STATUS_ACTIVE]);
-
-        // Log activity
-        Log::info('Product activated', [
-            'activated_by' => Auth::id(),
-            'product_id' => $product->id,
-            'product_name' => $product->name,
-        ]);
-
-        return back()->with('success', 'Product activated successfully.');
+        return response()->json($productsData);
     }
 
     /**
-     * Deactivate a product.
+     * Get all products (for purchase form initialization) - most recent first
      */
-    public function deactivate(Product $product): RedirectResponse
+    public function getAll()
     {
-        $this->authorize('products.update');
-        
-        // Only super admins can deactivate products
-        if (!auth()->user()->isSuperAdmin()) {
-            abort(403, 'Only super admins can deactivate products.');
-        }
+        $products = Product::orderByDesc('id')->limit(15)->get();
 
-        if ($product->status === Product::STATUS_INACTIVE) {
-            return back()->with('info', 'Product is already inactive.');
-        }
+        $productsData = $products->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'unit' => $product->unit,
+                'purchase_price' => (float) $product->purchase_price,
+                'sale_price' => (float) $product->sale_price,
+            ];
+        });
 
-        $product->update(['status' => Product::STATUS_INACTIVE]);
-
-        // Log activity
-        Log::warning('Product deactivated', [
-            'deactivated_by' => Auth::id(),
-            'product_id' => $product->id,
-            'product_name' => $product->name,
-        ]);
-
-        return back()->with('success', 'Product deactivated successfully.');
+        return response()->json($productsData);
     }
 }

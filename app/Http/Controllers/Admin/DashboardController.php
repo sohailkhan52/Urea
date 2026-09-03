@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\DashboardService;
-use App\Services\ReportService;
 use Illuminate\View\View;
 
 /**
@@ -16,12 +15,10 @@ use Illuminate\View\View;
 class DashboardController extends Controller
 {
     protected DashboardService $dashboardService;
-    protected ReportService $reportService;
 
-    public function __construct(DashboardService $dashboardService, ReportService $reportService)
+    public function __construct(DashboardService $dashboardService)
     {
         $this->dashboardService = $dashboardService;
-        $this->reportService = $reportService;
     }
 
     /**

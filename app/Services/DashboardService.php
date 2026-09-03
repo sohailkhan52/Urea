@@ -62,16 +62,15 @@ class DashboardService
     public function getInventoryStats(): array
     {
         $totalStock = WarehouseInventory::sum('quantity');
-        $lowStockItems = WarehouseInventory::with('product')
-            ->whereHas('product', function ($q) {
-                $q->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level');
-            })
+        // Count low stock items (quantity < 10 and > 0)
+        $lowStockItems = WarehouseInventory::where('quantity', '<', 10)
+            ->where('quantity', '>', 0)
             ->count();
         
         $outOfStockItems = WarehouseInventory::where('quantity', 0)->count();
 
         return [
-            'total_products' => Product::where('status', Product::STATUS_ACTIVE)->count(),
+            'total_products' => Product::count(), // Count all products since we don't have status field
             'total_stock_units' => $totalStock,
             'low_stock_count' => $lowStockItems,
             'out_of_stock_count' => $outOfStockItems,
@@ -230,9 +229,8 @@ class DashboardService
     public function getLowStockItems(int $limit = 20)
     {
         return WarehouseInventory::with(['product', 'warehouse'])
-            ->whereHas('product', function ($q) {
-                $q->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level');
-            })
+            ->where('quantity', '<', 10)
+            ->where('quantity', '>', 0)
             ->orderBy('quantity')
             ->take($limit)
             ->get();
@@ -428,7 +426,7 @@ class DashboardService
     {
         return (float) DB::table('sales')
             ->where('status', Sale::STATUS_CONFIRMED)
-            ->sum('udhar_amount');
+            ->sum('due_amount');
     }
 
     /**

@@ -147,10 +147,18 @@
                                 @endphp
                                 <tr>
                                     <td>
-                                        <div class="fw-semibold">{{ $item->product->name }}</div>
-                                        <small class="text-muted">
-                                            SKU: {{ $item->product->sku }} | Category: {{ $item->product->category->name }}
-                                        </small>
+                                        @if($item->product)
+                                            <div class="fw-semibold">{{ $item->product->name }}</div>
+                                            <small class="text-muted">
+                                                Unit: {{ $item->product->unit }}
+                                                @if($item->product->sku)
+                                                    | SKU: {{ $item->product->sku }}
+                                                @endif
+                                            </small>
+                                        @else
+                                            <div class="fw-semibold text-danger">Product Deleted</div>
+                                            <small class="text-muted">Product ID: {{ $item->product_id }}</small>
+                                        @endif
                                     </td>
                                     <td class="text-end">
                                         <span class="badge bg-light text-dark">{{ $item->quantity }}</span>

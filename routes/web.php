@@ -5,7 +5,6 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ProfileController;
 use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -19,14 +18,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Test route - remove after debugging
-Route::get('/test-welcome', [TestController::class, 'testWelcomePage']);
-
 // Public Routes - Home/Welcome
 Route::get('/', function () {
-    $service = new \App\Services\WelcomePageService();
-    $data = $service->getFrontendData();
-    return view('welcome-dynamic', $data);
+    return view('welcome');
 })->name('home');
 
 /*
@@ -88,179 +82,47 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // User Management
-    Route::resource('users', \App\Http\Controllers\Admin\UserController::class)
-        ->middleware('permission:users.view');
-    
-    // User status actions
-    Route::patch('/users/{user}/activate', [\App\Http\Controllers\Admin\UserController::class, 'activate'])
-        ->name('users.activate')
-        ->middleware('permission:users.update');
-    
-    Route::patch('/users/{user}/deactivate', [\App\Http\Controllers\Admin\UserController::class, 'deactivate'])
-        ->name('users.deactivate')
-        ->middleware('permission:users.update');
-    
-    Route::patch('/users/{user}/suspend', [\App\Http\Controllers\Admin\UserController::class, 'suspend'])
-        ->name('users.suspend')
-        ->middleware('permission:users.update');
-    
-    Route::patch('/users/{user}/reset-password', [\App\Http\Controllers\Admin\UserController::class, 'resetPassword'])
-        ->name('users.reset-password')
-        ->middleware('permission:users.update');
+    // Setup helper route (creates missing tables)
+    Route::get('/setup/create-tables', [\App\Http\Controllers\Admin\SetupController::class, 'createMissingTables'])->name('setup.createTables');
 
-    // Company Management
-    Route::resource('companies', \App\Http\Controllers\Admin\CompanyController::class)
-        ->middleware('permission:companies.view');
-    
-    // Company status actions
-    Route::patch('/companies/{company}/activate', [\App\Http\Controllers\Admin\CompanyController::class, 'activate'])
-        ->name('companies.activate')
-        ->middleware('permission:companies.update');
-    
-    Route::patch('/companies/{company}/deactivate', [\App\Http\Controllers\Admin\CompanyController::class, 'deactivate'])
-        ->name('companies.deactivate')
-        ->middleware('permission:companies.update');
+    // ========== MANAGEMENT FEATURES REMOVED IN PHASE 1 & 2 ==========
+    // Removed: User, Company, Category, Product, Warehouse, Inventory, Stock Test, Customer, Supplier management
+    // Models are preserved for Sales/Purchases/Reports (where applicable)
+    // =========================================================
 
-    // Category Management
-    Route::resource('categories', \App\Http\Controllers\Admin\CategoryController::class)
-        ->middleware('permission:categories.view');
-    
-    // Category status actions
-    Route::patch('/categories/{category}/activate', [\App\Http\Controllers\Admin\CategoryController::class, 'activate'])
-        ->name('categories.activate')
-        ->middleware('permission:categories.update');
-    
-    Route::patch('/categories/{category}/deactivate', [\App\Http\Controllers\Admin\CategoryController::class, 'deactivate'])
-        ->name('categories.deactivate')
-        ->middleware('permission:categories.update');
-
-    // Product Management
-    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)
-        ->middleware('permission:products.view');
-    
-    // Product status actions
-    Route::patch('/products/{product}/activate', [\App\Http\Controllers\Admin\ProductController::class, 'activate'])
-        ->name('products.activate')
-        ->middleware('permission:products.update');
-    
-    Route::patch('/products/{product}/deactivate', [\App\Http\Controllers\Admin\ProductController::class, 'deactivate'])
-        ->name('products.deactivate')
-        ->middleware('permission:products.update');
-
-    // Warehouse Management
-    Route::resource('warehouses', \App\Http\Controllers\Admin\WarehouseController::class)
-        ->middleware('permission:warehouses.view');
-    
-    // Warehouse status actions
-    Route::patch('/warehouses/{warehouse}/activate', [\App\Http\Controllers\Admin\WarehouseController::class, 'activate'])
-        ->name('warehouses.activate')
-        ->middleware('permission:warehouses.update');
-    
-    Route::patch('/warehouses/{warehouse}/deactivate', [\App\Http\Controllers\Admin\WarehouseController::class, 'deactivate'])
-        ->name('warehouses.deactivate')
-        ->middleware('permission:warehouses.update');
-    
-    // Set default warehouse
-    Route::patch('/warehouses/{warehouse}/set-default', [\App\Http\Controllers\Admin\WarehouseController::class, 'setDefault'])
-        ->name('warehouses.setDefault')
-        ->middleware('permission:warehouses.update');
-    
-    // Warehouse inventory
-    Route::get('/warehouses/{warehouse}/inventory', [\App\Http\Controllers\Admin\WarehouseController::class, 'inventory'])
-        ->name('warehouses.inventory')
-        ->middleware('permission:warehouses.view');
-
-    // Inventory Management
-    Route::get('/inventory', [\App\Http\Controllers\Admin\InventoryController::class, 'index'])
-        ->name('inventory.index')
-        ->middleware('permission:inventory.view');
-    
-    Route::get('/inventory/movements', [\App\Http\Controllers\Admin\InventoryController::class, 'movements'])
-        ->name('inventory.movements')
-        ->middleware('permission:inventory.view');
-    
-    Route::get('/inventory/low-stock', [\App\Http\Controllers\Admin\InventoryController::class, 'lowStock'])
-        ->name('inventory.low-stock')
-        ->middleware('permission:inventory.view');
-
-    // Stock Service Testing (Development Only - Disable in Production)
-    if (!app()->isProduction()) {
-        Route::prefix('stock-test')->name('stock-test.')->middleware('permission:inventory.manage')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\StockTestController::class, 'index'])
-                ->name('index');
-            Route::post('/add', [\App\Http\Controllers\Admin\StockTestController::class, 'addStock'])
-                ->name('add');
-            Route::post('/remove', [\App\Http\Controllers\Admin\StockTestController::class, 'removeStock'])
-                ->name('remove');
-            Route::post('/transfer', [\App\Http\Controllers\Admin\StockTestController::class, 'transferStock'])
-                ->name('transfer');
-            Route::post('/adjust', [\App\Http\Controllers\Admin\StockTestController::class, 'adjustStock'])
-                ->name('adjust');
-            Route::post('/check', [\App\Http\Controllers\Admin\StockTestController::class, 'checkStock'])
-                ->name('check');
-        });
-    }
-
-    // Supplier Management
-    Route::resource('suppliers', \App\Http\Controllers\Admin\SupplierController::class)
-        ->middleware('permission:suppliers.view');
-    
-    // Supplier status actions
-    Route::patch('/suppliers/{supplier}/activate', [\App\Http\Controllers\Admin\SupplierController::class, 'activate'])
-        ->name('suppliers.activate')
-        ->middleware('permission:suppliers.update');
-    
-    Route::patch('/suppliers/{supplier}/deactivate', [\App\Http\Controllers\Admin\SupplierController::class, 'deactivate'])
-        ->name('suppliers.deactivate')
-        ->middleware('permission:suppliers.update');
-
-    // Customer Management
-    Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class)
-        ->middleware('permission:customers.view');
-    
-    // Customer status actions
-    Route::patch('/customers/{customer}/activate', [\App\Http\Controllers\Admin\CustomerController::class, 'activate'])
-        ->name('customers.activate')
-        ->middleware('permission:customers.update');
-    
-    Route::patch('/customers/{customer}/deactivate', [\App\Http\Controllers\Admin\CustomerController::class, 'deactivate'])
-        ->name('customers.deactivate')
-        ->middleware('permission:customers.update');
-
-    // ============ PURCHASE RETURNS - MUST BE BEFORE RESOURCE ROUTE ============
-    Route::prefix('purchases')->name('purchases.')->group(function () {
-        Route::get('/returns', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'index'])
-            ->name('returns.index')
+    // ============ PURCHASE RETURNS ============
+    Route::prefix('purchase-returns')->name('purchase-returns.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'index'])
+            ->name('index')
             ->middleware('permission:purchases.view');
         
-        Route::get('/returns/create', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'create'])
-            ->name('returns.create')
+        Route::get('/create', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'create'])
+            ->name('create')
             ->middleware('permission:purchases.create');
         
-        Route::post('/returns', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'store'])
-            ->name('returns.store')
+        Route::post('/', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'store'])
+            ->name('store')
             ->middleware('permission:purchases.create');
         
-        Route::get('/returns/{return}', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'show'])
-            ->name('returns.show')
+        Route::get('/{purchaseReturn}', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'show'])
+            ->name('show')
             ->middleware('permission:purchases.view');
         
-        Route::get('/returns/{return}/print', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'print'])
-            ->name('returns.print')
-            ->middleware('permission:purchases.view');
+        Route::post('/{purchaseReturn}/confirm', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'confirm'])
+            ->name('confirm')
+            ->middleware('permission:purchases.create');
         
-        Route::post('/returns/{return}/confirm', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'confirm'])
-            ->name('returns.confirm')
-            ->middleware('permission:purchases.approve');
+        Route::post('/{purchaseReturn}/cancel', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'cancel'])
+            ->name('cancel')
+            ->middleware('permission:purchases.create');
         
-        Route::post('/returns/{return}/cancel', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'cancel'])
-            ->name('returns.cancel')
-            ->middleware('permission:purchases.cancel');
+        Route::delete('/{purchaseReturn}', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'destroy'])
+            ->name('destroy')
+            ->middleware('permission:purchases.delete');
         
-        // AJAX endpoint for loading purchase details with returnable items
-        Route::get('/{purchase}/details', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'getPurchaseDetails'])
-            ->name('details')
+        // AJAX endpoint for loading purchases
+        Route::get('/purchases/search', [\App\Http\Controllers\Admin\PurchaseReturnController::class, 'getPurchases'])
+            ->name('purchases')
             ->middleware('permission:purchases.view');
     });
     // ============ END PURCHASE RETURNS ============
@@ -268,6 +130,44 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     // Purchase Management
     Route::resource('purchases', \App\Http\Controllers\Admin\PurchaseController::class)
         ->middleware('permission:purchases.view');
+
+    // AJAX: Get all suppliers (for single-page create form)
+    Route::get('/suppliers/all', [\App\Http\Controllers\Admin\SupplierController::class, 'getAll'])
+        ->name('suppliers.getAll')
+        ->middleware('permission:purchases.create');
+
+    // AJAX: Get all products (for single-page create form)
+    Route::get('/products/all', [\App\Http\Controllers\Admin\ProductController::class, 'getAll'])
+        ->name('products.getAll')
+        ->middleware('permission:purchases.create');
+
+    // AJAX: Search suppliers
+    Route::get('/suppliers/search', [\App\Http\Controllers\Admin\SupplierController::class, 'search'])
+        ->name('suppliers.search')
+        ->middleware('permission:purchases.create');
+
+    // AJAX: Search products
+    Route::get('/products/search', [\App\Http\Controllers\Admin\ProductController::class, 'search'])
+        ->name('products.search')
+        ->middleware('permission:purchases.create');
+
+    // AJAX: Create supplier inline
+    Route::post('/suppliers/ajax', [\App\Http\Controllers\Admin\SupplierController::class, 'storeAjax'])
+        ->name('suppliers.storeAjax')
+        ->middleware('permission:suppliers.create');
+
+    // Supplier Management
+    Route::resource('suppliers', \App\Http\Controllers\Admin\SupplierController::class)
+        ->middleware('permission:suppliers.view');
+
+    // AJAX: Create product inline
+    Route::post('/products/ajax', [\App\Http\Controllers\Admin\ProductController::class, 'storeAjax'])
+        ->name('products.storeAjax')
+        ->middleware('permission:purchases.create');
+
+    // Product Management
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)
+        ->middleware('permission:products.view');
 
     // AJAX: Get all products (for single-page create form) - MUST come BEFORE resource routes
     Route::get('/purchases-products', [\App\Http\Controllers\Admin\PurchaseController::class, 'getProducts'])
@@ -307,6 +207,19 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->middleware('permission:purchases.view');
 
     // Sales Management
+    // AJAX endpoints for returns (must come before resource route)
+    Route::get('/sales/search-for-return', [\App\Http\Controllers\Admin\SaleReturnController::class, 'searchSales'])
+        ->name('sales.searchForReturn')
+        ->middleware('permission:sales.view');
+    
+    Route::get('/sales/{sale}/return-summary', [\App\Http\Controllers\Admin\SaleReturnController::class, 'getSaleReturnSummary'])
+        ->name('sales.returnSummary')
+        ->middleware('permission:sales.view');
+    
+    Route::get('/sales/{sale}/returns', [\App\Http\Controllers\Admin\SaleReturnController::class, 'getSaleReturns'])
+        ->name('sales.returns')
+        ->middleware('permission:sales.view');
+
     Route::resource('sales', \App\Http\Controllers\Admin\SalesController::class)
         ->middleware('permission:sales.view')
         ->whereNumber('sale');
@@ -357,48 +270,109 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->name('sales.checkStock')
         ->middleware('permission:sales.create');
 
+    // Customer and Product search (AJAX endpoints for single-page sale)
+    Route::get('/customers/search', [\App\Http\Controllers\Admin\SalesController::class, 'searchCustomers'])
+        ->name('customers.search')
+        ->middleware('permission:sales.create');
+    
+    Route::get('/customers/all', [\App\Http\Controllers\Admin\SalesController::class, 'getAllCustomers'])
+        ->name('customers.all')
+        ->middleware('permission:sales.create');
+    
+    Route::post('/customers/ajax', [\App\Http\Controllers\Admin\SalesController::class, 'storeWalkinCustomer'])
+        ->name('customers.storeAjax')
+        ->middleware('permission:sales.create');
+    
+    Route::get('/products/search', [\App\Http\Controllers\Admin\SalesController::class, 'searchProducts'])
+        ->name('products.search')
+        ->middleware('permission:sales.create');
+
+    // Family Management (AJAX endpoints for sales)
+    Route::post('/families', [\App\Http\Controllers\Admin\FamilyController::class, 'store'])
+        ->name('families.store')
+        ->middleware('permission:sales.create');
+    
+    Route::get('/families/search', [\App\Http\Controllers\Admin\FamilyController::class, 'search'])
+        ->name('families.search')
+        ->middleware('permission:sales.create');
+    
+    Route::get('/families/all', [\App\Http\Controllers\Admin\FamilyController::class, 'getAll'])
+        ->name('families.getAll')
+        ->middleware('permission:sales.create');
+
     // AJAX: Get warehouse products (for single-page create form)
     Route::get('/sales/warehouse/{warehouse}/products', [\App\Http\Controllers\Admin\SalesController::class, 'getWarehouseProducts'])
         ->name('sales.warehouseProducts')
         ->middleware('permission:sales.create');
-
     // Sales Returns Management
-    Route::prefix('sales')->name('sales.')->group(function () {
-        Route::get('/returns', [\App\Http\Controllers\Admin\SalesReturnController::class, 'index'])
-            ->name('returns.index')
+    Route::prefix('sale-returns')->name('sale-returns.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\SaleReturnController::class, 'index'])
+            ->name('index')
             ->middleware('permission:sales.view');
         
-        Route::get('/returns/create', [\App\Http\Controllers\Admin\SalesReturnController::class, 'create'])
-            ->name('returns.create')
+        Route::get('/create', [\App\Http\Controllers\Admin\SaleReturnController::class, 'create'])
+            ->name('create')
             ->middleware('permission:sales.create');
         
-        Route::post('/returns', [\App\Http\Controllers\Admin\SalesReturnController::class, 'store'])
-            ->name('returns.store')
+        Route::post('/', [\App\Http\Controllers\Admin\SaleReturnController::class, 'store'])
+            ->name('store')
             ->middleware('permission:sales.create');
         
-        Route::get('/returns/{return}', [\App\Http\Controllers\Admin\SalesReturnController::class, 'show'])
-            ->name('returns.show')
+        Route::get('/{return}', [\App\Http\Controllers\Admin\SaleReturnController::class, 'show'])
+            ->name('show')
             ->middleware('permission:sales.view');
         
-        Route::get('/returns/{return}/print', [\App\Http\Controllers\Admin\SalesReturnController::class, 'print'])
-            ->name('returns.print')
-            ->middleware('permission:sales.view');
-        
-        Route::post('/returns/{return}/confirm', [\App\Http\Controllers\Admin\SalesReturnController::class, 'confirm'])
-            ->name('returns.confirm')
+        Route::post('/{return}/confirm', [\App\Http\Controllers\Admin\SaleReturnController::class, 'confirm'])
+            ->name('confirm')
             ->middleware('permission:sales.approve');
         
-        Route::post('/returns/{return}/cancel', [\App\Http\Controllers\Admin\SalesReturnController::class, 'cancel'])
-            ->name('returns.cancel')
+        Route::post('/{return}/cancel', [\App\Http\Controllers\Admin\SaleReturnController::class, 'cancel'])
+            ->name('cancel')
             ->middleware('permission:sales.cancel');
     });
 
-    // Get sale details for returns (AJAX endpoint) - MUST be before resource route
-    Route::get('/sales/{sale}/details', [\App\Http\Controllers\Admin\SalesReturnController::class, 'getSaleDetails'])
-        ->name('sales.details')
-        ->middleware('permission:sales.view');
 
-    // Udhar Management (Credit/Outstanding)
+    
+
+    // AJAX endpoints for returns
+
+
+    // ========== PHASE 5: CUSTOMER UDHAR AND PAYMENT MANAGEMENT ==========
+    
+    // Udhar Management (Customer Outstanding/Credit)
+    Route::prefix('udhar')->name('udhar.')->middleware('permission:sales.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\UdharController::class, 'index'])
+            ->name('index');
+        
+        Route::get('/customer/{customer}', [\App\Http\Controllers\Admin\UdharController::class, 'show'])
+            ->name('show');
+        
+        // Payment management
+        Route::get('/test-endpoint', [\App\Http\Controllers\Admin\UdharController::class, 'testEndpoint'])
+            ->name('test-endpoint');
+        
+        Route::get('/test-payment-creation', [\App\Http\Controllers\Admin\UdharController::class, 'testPaymentCreation'])
+            ->name('test-payment-creation');
+        
+        Route::post('/sales/{sale}/receive-payment', [\App\Http\Controllers\Admin\UdharController::class, 'receivePayment'])
+            ->name('receive-payment');
+        
+        Route::get('/sales/{sale}/payments', [\App\Http\Controllers\Admin\UdharController::class, 'getSalePayments'])
+            ->name('sale-payments');
+    });
+
+    // Customer Account Statements
+    Route::prefix('customers')->name('customers.')->middleware('permission:sales.view')->group(function () {
+        Route::get('/{customer}/statement', [\App\Http\Controllers\Admin\CustomerAccountController::class, 'statement'])
+            ->name('statement');
+        
+        Route::get('/{customer}/statement/export', [\App\Http\Controllers\Admin\CustomerAccountController::class, 'exportStatement'])
+            ->name('statement.export');
+    });
+
+    // ========== END PHASE 5 ROUTES ==========
+
+    // Udhar Management (Legacy - can be removed if not used)
     Route::prefix('udhar')->name('udhar.')->middleware('permission:udhar.view')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\UdharController::class, 'index'])
             ->name('index');
@@ -420,181 +394,15 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
             ->middleware('permission:udhar.create');
     });
 
-    // Payables Management (Supplier Outstanding)
-    Route::prefix('payables')->name('payables.')->middleware('permission:payables.view')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\PayableController::class, 'index'])
-            ->name('index');
-        
-        Route::get('/aging', [\App\Http\Controllers\Admin\PayableController::class, 'aging'])
-            ->name('aging');
-        
-        Route::get('/{supplier}', [\App\Http\Controllers\Admin\PayableController::class, 'details'])
-            ->name('details');
-        
-        Route::get('/{supplier}/ledger', [\App\Http\Controllers\Admin\PayableController::class, 'ledger'])
-            ->name('ledger');
-        
-        Route::get('/{supplier}/print', [\App\Http\Controllers\Admin\PayableController::class, 'printStatement'])
-            ->name('print');
-        
-        Route::get('/{supplier}/history', [\App\Http\Controllers\Admin\PayableController::class, 'transactionHistory'])
-            ->name('transaction-history');
-        
-        Route::post('/{supplier}/payment', [\App\Http\Controllers\Admin\PayableController::class, 'recordPayment'])
-            ->name('recordPayment')
-            ->middleware('permission:payables.create');
+    // ========== SUPPLIER PAYABLES ==========
+    Route::prefix('supplier-payables')->name('supplier-payables.')->middleware('permission:purchases.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\SupplierPayableController::class, 'index'])->name('index');
+        Route::get('/{supplier}', [\App\Http\Controllers\Admin\SupplierPayableController::class, 'show'])->name('show');
+        Route::get('/{supplier}/history', [\App\Http\Controllers\Admin\SupplierPayableController::class, 'history'])->name('history');
+        Route::post('/{supplier}/payment', [\App\Http\Controllers\Admin\SupplierPayableController::class, 'payment'])
+            ->middleware('permission:purchases.create')
+            ->name('payment');
     });
-
-    // Stock Transfer Management
-    Route::resource('stock-transfers', \App\Http\Controllers\Admin\StockTransferController::class)
-        ->middleware('permission:transfers.view');
-
-    // Transfer actions
-    Route::post('/stock-transfers/{stock_transfer}/submit', [\App\Http\Controllers\Admin\StockTransferController::class, 'submitForApproval'])
-        ->name('stock-transfers.submit')
-        ->middleware('permission:transfers.create');
-    
-    Route::post('/stock-transfers/{stock_transfer}/approve', [\App\Http\Controllers\Admin\StockTransferController::class, 'approve'])
-        ->name('stock-transfers.approve')
-        ->middleware('permission:transfers.approve');
-    
-    Route::post('/stock-transfers/{stock_transfer}/dispatch', [\App\Http\Controllers\Admin\StockTransferController::class, 'dispatch'])
-        ->name('stock-transfers.dispatch')
-        ->middleware('permission:transfers.approve');
-    
-    Route::post('/stock-transfers/{stock_transfer}/in-transit', [\App\Http\Controllers\Admin\StockTransferController::class, 'markInTransit'])
-        ->name('stock-transfers.in-transit')
-        ->middleware('permission:transfers.receive');
-    
-    Route::post('/stock-transfers/{stock_transfer}/receive', [\App\Http\Controllers\Admin\StockTransferController::class, 'receive'])
-        ->name('stock-transfers.receive')
-        ->middleware('permission:transfers.receive');
-    
-    Route::post('/stock-transfers/{stock_transfer}/cancel', [\App\Http\Controllers\Admin\StockTransferController::class, 'cancel'])
-        ->name('stock-transfers.cancel')
-        ->middleware('permission:transfers.create');
-
-    // Transfer items
-    Route::post('/stock-transfers/{stock_transfer}/items', [\App\Http\Controllers\Admin\StockTransferController::class, 'addItem'])
-        ->name('stock-transfers.addItem')
-        ->middleware('permission:transfers.create');
-    
-    Route::put('/stock-transfers/items/{stock_transfer_item}', [\App\Http\Controllers\Admin\StockTransferController::class, 'updateItem'])
-        ->name('stock-transfers.updateItem')
-        ->middleware('permission:transfers.create');
-    
-    Route::delete('/stock-transfers/items/{stock_transfer_item}', [\App\Http\Controllers\Admin\StockTransferController::class, 'removeItem'])
-        ->name('stock-transfers.removeItem')
-        ->middleware('permission:transfers.create');
-
-    // Stock check for transfers
-    Route::get('/stock-transfers/check-stock', [\App\Http\Controllers\Admin\StockTransferController::class, 'checkStock'])
-        ->name('stock-transfers.checkStock')
-        ->middleware('permission:transfers.create');
-
-    // Reports Module
-    Route::prefix('reports')->name('reports.')->middleware('permission:reports.view')->group(function () {
-        // Dashboard (main reports landing page)
-        Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('index');
-
-        // Inventory Reports
-        Route::prefix('inventory')->name('inventory.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'inventoryIndex'])->name('index');
-            Route::get('/current-stock', [\App\Http\Controllers\Admin\ReportsController::class, 'currentStock'])->name('current-stock');
-            Route::get('/warehouse-stock', [\App\Http\Controllers\Admin\ReportsController::class, 'warehouseStock'])->name('warehouse-stock');
-            Route::get('/stock-movements', [\App\Http\Controllers\Admin\ReportsController::class, 'stockMovements'])->name('stock-movements');
-        });
-
-        // Sales Reports
-        Route::prefix('sales')->name('sales.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'salesIndex'])->name('index');
-            Route::get('/daily', [\App\Http\Controllers\Admin\ReportsController::class, 'dailySales'])->name('daily');
-            Route::get('/product-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'productWiseSales'])->name('product-wise');
-            Route::get('/customer-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'customerWiseSales'])->name('customer-wise');
-            Route::get('/warehouse-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'warehouseWiseSales'])->name('warehouse-wise');
-        });
-
-        // Purchase Reports
-        Route::prefix('purchase')->name('purchase.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'purchaseIndex'])->name('index');
-            Route::get('/daily', [\App\Http\Controllers\Admin\ReportsController::class, 'purchases'])->name('daily');
-            Route::get('/supplier-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierWisePurchases'])->name('supplier-wise');
-            Route::get('/product-wise', [\App\Http\Controllers\Admin\ReportsController::class, 'productWisePurchases'])->name('product-wise');
-        });
-
-        // Customer Reports
-        Route::prefix('customer')->name('customer.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'customerIndex'])->name('index');
-            Route::get('/outstanding', [\App\Http\Controllers\Admin\ReportsController::class, 'customerOutstanding'])->name('outstanding');
-            Route::get('/{customer}/payment-history', [\App\Http\Controllers\Admin\ReportsController::class, 'customerPaymentHistory'])->name('payment-history');
-            Route::get('/{customer}/ledger', [\App\Http\Controllers\Admin\ReportsController::class, 'customerLedger'])->name('ledger');
-        });
-
-        // Supplier Reports
-        Route::prefix('supplier')->name('supplier.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierIndex'])->name('index');
-            Route::get('/outstanding', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierOutstanding'])->name('outstanding');
-            Route::get('/{supplier}/payment-history', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierPaymentHistory'])->name('payment-history');
-            Route::get('/{supplier}/ledger', [\App\Http\Controllers\Admin\ReportsController::class, 'supplierLedger'])->name('ledger');
-        });
-
-        // Invoice Report
-        Route::get('/invoices', [\App\Http\Controllers\Admin\ReportsController::class, 'invoices'])->name('invoices');
-
-        // Profit & Loss Report
-        Route::get('/profit-loss', [\App\Http\Controllers\Admin\ReportsController::class, 'profitLoss'])->name('profit-loss');
-
-        // Expense Report
-        Route::get('/expenses', [\App\Http\Controllers\Admin\ReportsController::class, 'expenses'])->name('expenses');
-    });
-
-    // Expense Management
-    Route::resource('expenses', \App\Http\Controllers\Admin\ExpenseController::class)
-        ->middleware('permission:expenses.view');
-
-    // Welcome Page Management
-    Route::prefix('welcome-page')
-        ->name('welcome-page.')
-        ->middleware('permission:welcome-page.manage')
-        ->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\WelcomePageController::class, 'index'])
-                ->name('index');
-            
-            Route::post('/settings', [\App\Http\Controllers\Admin\WelcomePageController::class, 'updateSettings'])
-                ->name('settings.update');
-            
-            // Features
-            Route::post('/features', [\App\Http\Controllers\Admin\WelcomePageController::class, 'storeFeature'])
-                ->name('features.store');
-            
-            Route::put('/features/{feature}', [\App\Http\Controllers\Admin\WelcomePageController::class, 'updateFeature'])
-                ->name('features.update');
-            
-            Route::delete('/features/{feature}', [\App\Http\Controllers\Admin\WelcomePageController::class, 'destroyFeature'])
-                ->name('features.destroy');
-            
-            Route::post('/features/reorder', [\App\Http\Controllers\Admin\WelcomePageController::class, 'reorderFeatures'])
-                ->name('features.reorder');
-            
-            Route::patch('/features/{feature}/toggle', [\App\Http\Controllers\Admin\WelcomePageController::class, 'toggleFeature'])
-                ->name('features.toggle');
-            
-            // Workflow Steps
-            Route::post('/workflow-steps', [\App\Http\Controllers\Admin\WelcomePageController::class, 'storeWorkflowStep'])
-                ->name('workflow-steps.store');
-            
-            Route::put('/workflow-steps/{workflowStep}', [\App\Http\Controllers\Admin\WelcomePageController::class, 'updateWorkflowStep'])
-                ->name('workflow-steps.update');
-            
-            Route::delete('/workflow-steps/{workflowStep}', [\App\Http\Controllers\Admin\WelcomePageController::class, 'destroyWorkflowStep'])
-                ->name('workflow-steps.destroy');
-            
-            Route::post('/workflow-steps/reorder', [\App\Http\Controllers\Admin\WelcomePageController::class, 'reorderSteps'])
-                ->name('workflow-steps.reorder');
-            
-            Route::patch('/workflow-steps/{workflowStep}/toggle', [\App\Http\Controllers\Admin\WelcomePageController::class, 'toggleStep'])
-                ->name('workflow-steps.toggle');
-        });
 
     // Notifications Management
     Route::prefix('notifications')->name('notifications.')->group(function () {
@@ -630,3 +438,6 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     // Route::resource('dealers', DealerController::class);
     // Route::resource('returns', ReturnController::class);
 });
+
+// Setup routes - NO AUTHENTICATION REQUIRED for table creation
+Route::get('/setup/create-tables', [\App\Http\Controllers\Admin\SetupController::class, 'createMissingTables'])->name('setup.create.tables');

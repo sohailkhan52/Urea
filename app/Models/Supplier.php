@@ -6,36 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * @property int $id
- * @property string $name
- * @property string|null $company_name
- * @property string|null $contact_person
- * @property string $phone
- * @property string|null $email
- * @property string|null $address
- * @property string|null $city
- * @property string|null $ntn
- * @property string $status
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
- */
 class Supplier extends Model
 {
     use HasFactory, SoftDeletes;
 
-    /**
-     * Status constants
-     */
-    public const STATUS_ACTIVE = 'active';
-    public const STATUS_INACTIVE = 'inactive';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'company_name',
@@ -48,71 +22,51 @@ class Supplier extends Model
         'status',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
+    ];
+
+    const STATUS_ACTIVE = 'active';
+    const STATUS_INACTIVE = 'inactive';
+
+    public static function getStatusOptions(): array
     {
         return [
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
-            'deleted_at' => 'datetime',
+            self::STATUS_ACTIVE => 'Active',
+            self::STATUS_INACTIVE => 'Inactive',
         ];
     }
 
     /**
-     * Boot method to auto-format fields
+     * Get all purchases for this supplier
      */
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::saving(function ($supplier) {
-            // Auto-uppercase NTN
-            if ($supplier->ntn) {
-                $supplier->ntn = strtoupper($supplier->ntn);
-            }
-        });
-    }
-
-    /**
-     * Check if supplier is active
-     */
-    public function isActive(): bool
-    {
-        return $this->status === self::STATUS_ACTIVE;
-    }
-
-    /**
-     * Check if supplier is inactive
-     */
-    public function isInactive(): bool
-    {
-        return $this->status === self::STATUS_INACTIVE;
-    }
-
-    /**
-     * Get purchases from this supplier
-     */
-    public function purchases(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function purchases()
     {
         return $this->hasMany(Purchase::class);
     }
 
     /**
-     * Get payments made to this supplier
+     * Get all purchase payments for this supplier
      */
-    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function purchasePayments()
     {
         return $this->hasMany(PurchasePayment::class);
     }
 
     /**
-     * Get ledger entries for this supplier
+     * Get all purchase returns for this supplier
      */
-    public function ledger(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function purchaseReturns()
+    {
+        return $this->hasMany(PurchaseReturn::class);
+    }
+
+    /**
+     * Get supplier ledger entries
+     */
+    public function ledgerEntries()
     {
         return $this->hasMany(SupplierLedger::class);
     }
@@ -120,13 +74,13 @@ class Supplier extends Model
     /**
      * Get payable history for this supplier
      */
-    public function payableHistory(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function payableHistory()
     {
         return $this->hasMany(PayableHistory::class);
     }
 
     /**
-     * Scope to filter only active suppliers
+     * Scope to filter active suppliers
      */
     public function scopeActive($query)
     {
@@ -134,73 +88,50 @@ class Supplier extends Model
     }
 
     /**
-     * Scope to filter only inactive suppliers
+     * Scope to filter by name or company name
      */
-    public function scopeInactive($query)
+    public function scopeSearch($query, $term)
     {
-        return $query->where('status', self::STATUS_INACTIVE);
-    }
-
-    /**
-     * Scope to filter by city
-     */
-    public function scopeByCity($query, $city)
-    {
-        return $query->where('city', $city);
-    }
-
-    /**
-     * Check if supplier can be deleted
-     */
-    public function canBeDeleted(): bool
-    {
-        // TODO: Add check for purchases when Purchase module is implemented
-        // return !$this->purchases()->exists();
-        
-        return true; // For now, allow deletion
-    }
-
-    /**
-     * Get full display name
-     */
-    public function getFullNameAttribute(): string
-    {
-        if ($this->company_name) {
-            return "{$this->name} ({$this->company_name})";
+        if (empty($term)) {
+            return $query;
         }
-        return $this->name;
+
+        return $query->where(function ($q) use ($term) {
+            $q->where('name', 'like', "%{$term}%")
+              ->orWhere('company_name', 'like', "%{$term}%")
+              ->orWhere('phone', 'like', "%{$term}%");
+        });
     }
 
     /**
-     * Get display name for contact
+     * Get total outstanding payable for this supplier
      */
-    public function getContactDisplayAttribute(): string
+    public function getOutstandingPayableAttribute()
     {
-        $parts = [];
-        
-        if ($this->contact_person) {
-            $parts[] = $this->contact_person;
-        }
-        
-        if ($this->phone) {
-            $parts[] = $this->phone;
-        }
-        
-        if ($this->email) {
-            $parts[] = $this->email;
-        }
-        
-        return implode(' • ', $parts);
+        $latestEntry = $this->ledgerEntries()
+            ->latest('date')
+            ->latest('created_at')
+            ->first();
+
+        return $latestEntry ? (float) $latestEntry->balance : 0.0;
     }
 
     /**
-     * Get all unique cities from suppliers
+     * Get total purchase amount for this supplier
      */
-    public static function getCities(): \Illuminate\Support\Collection
+    public function getTotalPurchaseAmount()
     {
-        return self::whereNotNull('city')
-            ->distinct()
-            ->orderBy('city')
-            ->pluck('city');
+        return $this->purchases()
+            ->where('status', Purchase::STATUS_CONFIRMED)
+            ->sum('total_amount');
+    }
+
+    /**
+     * Get total paid amount for this supplier
+     */
+    public function getTotalPaidAmount()
+    {
+        return $this->purchasePayments()
+            ->sum('amount');
     }
 }

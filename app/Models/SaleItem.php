@@ -68,6 +68,49 @@ class SaleItem extends Model
     }
 
     /**
+     * Get return items for this sale item
+     */
+    public function returnItems()
+    {
+        return $this->hasMany(SaleReturnItem::class);
+    }
+
+    /**
+     * Get confirmed return items only
+     */
+    public function confirmedReturnItems()
+    {
+        return $this->returnItems()
+            ->whereHas('saleReturn', function ($query) {
+                $query->where('status', 'confirmed');
+            });
+    }
+
+    /**
+     * Get total returned quantity
+     */
+    public function getTotalReturnedQuantityAttribute(): float
+    {
+        return $this->confirmedReturnItems()->sum('quantity');
+    }
+
+    /**
+     * Get remaining returnable quantity
+     */
+    public function getReturnableQuantityAttribute(): float
+    {
+        return max(0, $this->quantity - $this->total_returned_quantity);
+    }
+
+    /**
+     * Check if item can be returned (has remaining quantity)
+     */
+    public function canBeReturned(): bool
+    {
+        return $this->returnable_quantity > 0;
+    }
+
+    /**
      * Calculate total on save
      */
     protected static function boot()

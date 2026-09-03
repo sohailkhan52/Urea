@@ -92,19 +92,23 @@ class PurchaseController extends Controller
 
         $suppliers = Supplier::active()->orderBy('name')->get();
         
-        $user = auth()->user();
-        if ($user->isSuperAdmin()) {
-            $warehouses = Warehouse::active()->orderBy('name')->get();
-            $defaultWarehouse = Warehouse::getDefault();
-        } else {
-            // Regular admin can only create purchases for their assigned warehouse
-            $warehouses = $user->warehouses()->where('status', 'active')->orderBy('name')->get();
-            $defaultWarehouse = $user->getAssignedWarehouse();
-            
-            if ($warehouses->isEmpty()) {
-                abort(403, 'You do not have any warehouse assigned.');
-            }
+        // Ensure at least one warehouse exists for the simplified purchase system
+        $defaultWarehouse = Warehouse::where('status', 'active')->first();
+        
+        if (!$defaultWarehouse) {
+            // Create a default warehouse if none exist
+            $defaultWarehouse = Warehouse::create([
+                'name' => 'Main Warehouse',
+                'code' => 'MAIN',
+                'type' => Warehouse::TYPE_MAIN,
+                'address' => 'Default Location',
+                'status' => Warehouse::STATUS_ACTIVE,
+                'is_default' => true,
+            ]);
         }
+        
+        // For simplified system, we only need one warehouse
+        $warehouses = collect([$defaultWarehouse]);
 
         return view('admin.purchases.create', compact('suppliers', 'warehouses', 'defaultWarehouse'));
     }
@@ -138,10 +142,22 @@ class PurchaseController extends Controller
                 if (is_string($items)) {
                     $items = json_decode($items, true);
                 }
+                
+                // Debug logging
+                \Log::info('Purchase items received from form', [
+                    'raw_items' => $request->items,
+                    'parsed_items' => $items,
+                ]);
 
                 // Add items
                 if (is_array($items)) {
                     foreach ($items as $itemData) {
+                        \Log::info('Adding purchase item', [
+                            'product_id' => $itemData['product_id'],
+                            'quantity' => $itemData['quantity'],
+                            'unit_price' => $itemData['unit_price'],
+                        ]);
+                        
                         $this->purchaseService->addItem(
                             $purchase,
                             $itemData['product_id'],
@@ -160,7 +176,7 @@ class PurchaseController extends Controller
 
                 // Confirm the purchase immediately
                 $paidAmount = $request->paid_amount ?? 0;
-                $this->purchaseService->confirmPurchase($purchase, $paidAmount);
+                $this->purchaseService->confirmPurchase($purchase, $paidAmount, $items);
 
                 return $purchase;
             });

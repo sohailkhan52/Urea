@@ -8,17 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'Dashboard') - 
-    @php
-        try {
-            $sidebarSettings = \App\Models\WelcomePageSetting::first();
-            $companyName = $sidebarSettings?->company_name ?? 'System';
-            echo $companyName;
-        } catch (\Exception $e) {
-            echo 'System';
-        }
-    @endphp
-    </title>
+    <title>@yield('title', 'Dashboard') - DeraNexa</title>
 
     <link rel="icon" href="{{ \App\Helpers\CompanyHelper::getFaviconUrl() }}" sizes="any">
 
@@ -719,16 +709,9 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             @php
-                try {
-                    $sidebarSettings = \App\Models\WelcomePageSetting::first();
-                    $companyShortName = $sidebarSettings?->company_short_name ?? $sidebarSettings?->company_name ?? 'DeraNexa';
-                    $companyFullName = $sidebarSettings?->company_name ?? 'DeraNexa';
-                    $companyLogo = $sidebarSettings?->company_logo ? asset('storage/' . $sidebarSettings->company_logo) : null;
-                } catch (\Exception $e) {
-                    $companyShortName = 'DeraNexa';
-                    $companyFullName = 'DeraNexa';
-                    $companyLogo = null;
-                }
+                $companyShortName = 'DeraNexa';
+                $companyFullName = 'DeraNexa';
+                $companyLogo = null;
             @endphp
             @if($companyLogo)
                 <img src="{{ $companyLogo }}" alt="Logo" style="max-height: 40px; width: auto; margin-bottom: 10px;">
@@ -749,202 +732,13 @@
                 </div>
             </a>
 
-            @if(auth()->user()->isSuperAdmin())
-            <div class="nav-section-title">User Management</div>
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-person-badge"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Users</span>
-                        <span class="nav-link-text-ur">صارفین</span>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li>
-                        <a href="{{ route('admin.users.index') }}" class="dropdown-item">
-                            <i class="bi bi-list me-2"></i> View All
-                        </a>
-                    </li>
-                    @can('users.create')
-                    <li>
-                        <a href="{{ route('admin.users.create') }}" class="dropdown-item">
-                            <i class="bi bi-plus-circle me-2"></i> Add User
-                        </a>
-                    </li>
-                    @endcan
-                </ul>
-            </div>
-            @endif
+            {{-- PHASE 1a REMOVED: User Management section --}}
 
-            @anypermission(['companies.view', 'products.view', 'warehouses.view', 'inventory.view', 'suppliers.view', 'customers.view'])
-            <div class="nav-section-title">Inventory Management</div>
+            {{-- PHASE 1a REMOVED: Inventory Management section (Companies, Categories, Products, Warehouses, Inventory) --}}
+            {{-- Models retained for Sales/Purchases/Reports; UI management removed --}}
 
-            @if(auth()->user()->isSuperAdmin())
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.companies.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-building"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Companies</span>
-                        <span class="nav-link-text-ur">کمپنیاں</span>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li>
-                        <a href="{{ route('admin.companies.index') }}" class="dropdown-item">
-                            <i class="bi bi-list me-2"></i> View All
-                        </a>
-                    </li>
-                    @can('companies.create')
-                    <li>
-                        <a href="{{ route('admin.companies.create') }}" class="dropdown-item">
-                            <i class="bi bi-plus-circle me-2"></i> Add Company
-                        </a>
-                    </li>
-                    @endcan
-                </ul>
-            </div>
-            @endif
-
-            @permission('categories.view')
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-tags"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Categories</span>
-                        <span class="nav-link-text-ur">زمرہ جات</span>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li>
-                        <a href="{{ route('admin.categories.index') }}" class="dropdown-item">
-                            <i class="bi bi-list me-2"></i> View All
-                        </a>
-                    </li>
-                    @can('categories.create')
-                    <li>
-                        <a href="{{ route('admin.categories.create') }}" class="dropdown-item">
-                            <i class="bi bi-plus-circle me-2"></i> Add Category
-                        </a>
-                    </li>
-                    @endcan
-                </ul>
-            </div>
-            @endpermission
-
-            @permission('products.view')
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-box-seam"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Products</span>
-                        <span class="nav-link-text-ur">مصنوعات</span>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li>
-                        <a href="{{ route('admin.products.index') }}" class="dropdown-item">
-                            <i class="bi bi-list me-2"></i> View All
-                        </a>
-                    </li>
-                    @can('products.create')
-                    <li>
-                        <a href="{{ route('admin.products.create') }}" class="dropdown-item">
-                            <i class="bi bi-plus-circle me-2"></i> Add Product
-                        </a>
-                    </li>
-                    @endcan
-                </ul>
-            </div>
-            @endpermission
-
-            @if(auth()->user()->isSuperAdmin())
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.warehouses.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-building-fill-gear"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Warehouses</span>
-                        <span class="nav-link-text-ur">گودام</span>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li>
-                        <a href="{{ route('admin.warehouses.index') }}" class="dropdown-item">
-                            <i class="bi bi-list me-2"></i> View All
-                        </a>
-                    </li>
-                    @can('warehouses.create')
-                    <li>
-                        <a href="{{ route('admin.warehouses.create') }}" class="dropdown-item">
-                            <i class="bi bi-plus-circle me-2"></i> Add Warehouse
-                        </a>
-                    </li>
-                    @endcan
-                </ul>
-            </div>
-            @endif
-
-            @permission('inventory.view')
-            <a href="{{ route('admin.inventory.index') }}" class="nav-link {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}">
-                <i class="bi bi-collection"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Inventory</span>
-                    <span class="nav-link-text-ur">انوینٹری</span>
-                </div>
-            </a>
-            @endpermission
-
-            @if(auth()->user()->isSuperAdmin())
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.suppliers.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-person-badge"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Suppliers</span>
-                        <span class="nav-link-text-ur">سَپْلائِر</span>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li>
-                        <a href="{{ route('admin.suppliers.index') }}" class="dropdown-item">
-                            <i class="bi bi-list me-2"></i> View All
-                        </a>
-                    </li>
-                    @can('suppliers.create')
-                    <li>
-                        <a href="{{ route('admin.suppliers.create') }}" class="dropdown-item">
-                            <i class="bi bi-plus-circle me-2"></i> Add Supplier
-                        </a>
-                    </li>
-                    @endcan
-                </ul>
-            </div>
-            @endif
-
-            @permission('customers.view')
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-people"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Customers</span>
-                        <span class="nav-link-text-ur">گاہک</span>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li>
-                        <a href="{{ route('admin.customers.index') }}" class="dropdown-item">
-                            <i class="bi bi-list me-2"></i> View All
-                        </a>
-                    </li>
-                    @can('customers.create')
-                    <li>
-                        <a href="{{ route('admin.customers.create') }}" class="dropdown-item">
-                            <i class="bi bi-plus-circle me-2"></i> Add Customer
-                        </a>
-                    </li>
-                    @endcan
-                </ul>
-            </div>
-            @endpermission
-            @endanypermission
+            {{-- KEEP: Supplier Management (required by Purchases/Payables) --}}
+            {{-- Suppliers removed in Phase 2 --}}
 
             @anypermission(['purchases.view', 'sales.view', 'udhar.view', 'payables.view'])
             <div class="nav-section-title">Transactions</div>
@@ -970,22 +764,46 @@
                             <i class="bi bi-plus-circle me-2"></i> Add Purchase
                         </a>
                     </li>
+                    @endcan
+                </ul>
+            </div>
+            @endif
+
+            @permission('purchases.view')
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.purchase-returns.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-arrow-return-left"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Purchase Returns</span>
+                        <span class="nav-link-text-ur">خریداری واپسی</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
                     <li>
-                        <a href="{{ route('admin.purchases.returns.create') }}" class="dropdown-item">
-                            <i class="bi bi-arrow-return-right me-2"></i> Add Return
+                        <a href="{{ route('admin.purchase-returns.index') }}" class="dropdown-item">
+                            <i class="bi bi-list me-2"></i> View All Returns
                         </a>
                     </li>
-                    @endcan
-                    @can('purchases.view')
+                    @can('purchases.create')
                     <li>
-                        <a href="{{ route('admin.purchases.returns.index') }}" class="dropdown-item">
-                            <i class="bi bi-arrow-return-left me-2"></i> View Returns
+                        <a href="{{ route('admin.purchase-returns.create') }}" class="dropdown-item">
+                            <i class="bi bi-plus-circle me-2"></i> Create Return
                         </a>
                     </li>
                     @endcan
                 </ul>
             </div>
-            @endif
+            @endpermission
+
+            @permission('purchases.view')
+            <a href="{{ route('admin.supplier-payables.index') }}" class="nav-link {{ request()->routeIs('admin.supplier-payables.*') ? 'active' : '' }}">
+                <i class="bi bi-wallet2"></i>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Supplier Payables</span>
+                    <span class="nav-link-text-ur">سپلائر ادائیگیاں</span>
+                </div>
+            </a>
+            @endpermission
 
             @permission('sales.view')
             <div class="nav-dropdown">
@@ -1009,14 +827,14 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('admin.sales.returns.create') }}" class="dropdown-item">
-                            <i class="bi bi-arrow-return-right me-2"></i> Add Return
+                        <a href="{{ route('admin.sale-returns.create') }}" class="dropdown-item">
+                            <i class="bi bi-arrow-return-right me-2"></i> Sales Return
                         </a>
                     </li>
                     @endcan
                     @can('sales.view')
                     <li>
-                        <a href="{{ route('admin.sales.returns.index') }}" class="dropdown-item">
+                        <a href="{{ route('admin.sale-returns.index') }}" class="dropdown-item">
                             <i class="bi bi-arrow-return-left me-2"></i> View Returns
                         </a>
                     </li>
@@ -1034,144 +852,10 @@
                 </div>
             </a>
             @endpermission
-
-            @if(auth()->user()->isSuperAdmin())
-            <a href="{{ route('admin.payables.index') }}" class="nav-link {{ request()->routeIs('admin.payables.*') ? 'active' : '' }}">
-                <i class="bi bi-file-earmark-check"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Supplier Payables</span>
-                    <span class="nav-link-text-ur">واجب الادا</span>
-                </div>
-            </a>
-            @endif
             @endanypermission
 
-            @if(auth()->user()->isSuperAdmin() && isMultiWarehouseEnabled())
-            <div class="nav-section-title">Management</div>
-            <a href="{{ route('admin.stock-transfers.index') }}" class="nav-link {{ request()->routeIs('admin.stock-transfers.*') ? 'active' : '' }}">
-                <i class="bi bi-arrow-left-right"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Stock Transfers</span>
-                    <span class="nav-link-text-ur">سٹاک منتقلی</span>
-                </div>
-            </a>
-            @endif
+            {{-- PHASE 1a REMOVED: Stock Transfers, Welcome Page Settings, and Expense Management --}}
 
-            @if(auth()->user()->isSuperAdmin())
-            <a href="{{ route('admin.welcome-page.index') }}" class="nav-link {{ request()->routeIs('admin.welcome-page.*') ? 'active' : '' }}">
-                <i class="bi bi-gear"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Welcome Page Settings</span>
-                    <span class="nav-link-text-ur">ترحیب کی ترتیبات</span>
-                </div>
-            </a>
-            @endif
-
-            {{-- Expense Management --}}
-            @permission('expenses.view')
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.expenses.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-receipt"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Expense Management</span>
-                        <span class="nav-link-text-ur">اخراجات</span>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    <li>
-                        <a href="{{ route('admin.expenses.index') }}" class="dropdown-item">
-                            <i class="bi bi-list me-2"></i> View Expense
-                        </a>
-                    </li>
-                    @can('expenses.create')
-                    <li>
-                        <a href="{{ route('admin.expenses.create') }}" class="dropdown-item">
-                            <i class="bi bi-plus-circle me-2"></i> Add Expense
-                        </a>
-                    </li>
-                    @endcan
-                </ul>
-            </div>
-            @endpermission
-
-            {{-- Reports Section --}}
-            @permission('reports.view')
-            <div class="nav-dropdown">
-                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" aria-expanded="false">
-                    <i class="bi bi-bar-chart"></i>
-                    <div class="nav-link-wrapper">
-                        <span class="nav-link-text-en">Reports</span>
-                        <span class="nav-link-text-ur">رپورٹس</span>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                    {{-- Reports Dashboard --}}
-                    <li>
-                        <a href="{{ route('admin.reports.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.index') ? 'active' : '' }}">
-                            <i class="bi bi-speedometer me-2"></i>
-                            <span class="nav-link-text-en">Reports Dashboard</span>
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-
-                    {{-- Sales Reports --}}
-                    <li>
-                        <a href="{{ route('admin.reports.sales.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.sales.index') ? 'active' : '' }}">
-                            <i class="bi bi-graph-up me-2"></i>
-                            <span class="nav-link-text-en">Sales Reports</span>
-                        </a>
-                    </li>
-
-                    {{-- Purchase Reports --}}
-                    <li>
-                        <a href="{{ route('admin.reports.purchase.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.purchase.index') ? 'active' : '' }}">
-                            <i class="bi bi-cart-plus me-2"></i>
-                            <span class="nav-link-text-en">Purchase Reports</span>
-                        </a>
-                    </li>
-
-                    {{-- Invoice Report --}}
-                    <li>
-                        <a href="{{ route('admin.reports.invoices') }}" class="dropdown-item {{ request()->routeIs('admin.reports.invoices') ? 'active' : '' }}">
-                            <i class="bi bi-receipt me-2"></i>
-                            <span class="nav-link-text-en">Invoice Report</span>
-                        </a>
-                    </li>
-
-                    {{-- Inventory Reports --}}
-                    <li>
-                        <a href="{{ route('admin.reports.inventory.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.inventory.index') ? 'active' : '' }}">
-                            <i class="bi bi-file-earmark-bar-graph me-2"></i>
-                            <span class="nav-link-text-en">Inventory Reports</span>
-                        </a>
-                    </li>
-
-                    {{-- Customer Reports --}}
-                    <li>
-                        <a href="{{ route('admin.reports.customer.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.customer.index') ? 'active' : '' }}">
-                            <i class="bi bi-person-lines-fill me-2"></i>
-                            <span class="nav-link-text-en">Customer Reports</span>
-                        </a>
-                    </li>
-
-                    {{-- Supplier Reports --}}
-                    <li>
-                        <a href="{{ route('admin.reports.supplier.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.supplier.index') ? 'active' : '' }}">
-                            <i class="bi bi-truck me-2"></i>
-                            <span class="nav-link-text-en">Supplier Reports</span>
-                        </a>
-                    </li>
-
-                    {{-- Profit & Loss --}}
-                    <li>
-                        <a href="{{ route('admin.reports.profit-loss') }}" class="dropdown-item {{ request()->routeIs('admin.reports.profit-loss') ? 'active' : '' }}">
-                            <i class="bi bi-currency-dollar me-2"></i>
-                            <span class="nav-link-text-en">Profit & Loss</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            @endpermission
                 <ul class="dropdown-menu dropdown-menu-dark">
                 </ul>
             </div>
@@ -1293,6 +977,7 @@
     </div>
 
     <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     {{-- WebSocket Broadcasting Libraries --}}

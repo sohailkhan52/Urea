@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
+ * Purchase Model - Matches create.blade.php view requirements
+ * 
  * @property int $id
  * @property string $purchase_number
  * @property int $supplier_id
@@ -15,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property \Illuminate\Support\Carbon $purchase_date
  * @property string $status
  * @property float $subtotal
+ * @property string $discount_type
  * @property float $discount
  * @property float $transport_cost
  * @property float $other_expenses
@@ -29,24 +32,37 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
+ * 
+ * @property-read Supplier $supplier
+ * @property-read Warehouse $warehouse
+ * @property-read \Illuminate\Database\Eloquent\Collection|PurchaseItem[] $items
+ * @property-read User $creator
+ * @property-read User|null $confirmer
+ * @property-read \Illuminate\Database\Eloquent\Collection|PurchasePayment[] $payments
  */
 class Purchase extends Model
 {
     use HasFactory, SoftDeletes, WarehouseScopeable;
 
     /**
-     * Status constants
+     * Status constants - matching migration enum
      */
     public const STATUS_DRAFT = 'draft';
     public const STATUS_CONFIRMED = 'confirmed';
     public const STATUS_CANCELLED = 'cancelled';
 
     /**
-     * Payment status constants
+     * Payment status constants - matching migration enum
      */
     public const PAYMENT_STATUS_UNPAID = 'unpaid';
     public const PAYMENT_STATUS_PARTIAL = 'partial';
     public const PAYMENT_STATUS_PAID = 'paid';
+
+    /**
+     * Discount type constants - matching view form
+     */
+    public const DISCOUNT_TYPE_AMOUNT = 'amount';
+    public const DISCOUNT_TYPE_PERCENTAGE = 'percentage';
 
     /**
      * The attributes that are mass assignable.
@@ -60,6 +76,7 @@ class Purchase extends Model
         'purchase_date',
         'status',
         'subtotal',
+        'discount_type',
         'discount',
         'transport_cost',
         'other_expenses',
@@ -96,8 +113,60 @@ class Purchase extends Model
         ];
     }
 
+    // ========== RELATIONSHIPS ==========
+
     /**
-     * Check if purchase is draft
+     * Get the supplier that owns the purchase
+     */
+    public function supplier(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    /**
+     * Get the warehouse that owns the purchase
+     */
+    public function warehouse(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
+    /**
+     * Get the purchase items (products with quantity, prices)
+     */
+    public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PurchaseItem::class);
+    }
+
+    /**
+     * Get the user who created this purchase
+     */
+    public function creator(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get the user who confirmed this purchase
+     */
+    public function confirmer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'confirmed_by');
+    }
+
+    /**
+     * Get purchase payments history
+     */
+    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PurchasePayment::class);
+    }
+
+    // ========== STATUS CHECK METHODS ==========
+
+    /**
+     * Check if purchase is in draft status
      */
     public function isDraft(): bool
     {
@@ -118,226 +187,6 @@ class Purchase extends Model
     public function isCancelled(): bool
     {
         return $this->status === self::STATUS_CANCELLED;
-    }
-
-    /**
-     * Get supplier relationship
-     */
-    public function supplier(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-    {
-        return $this->belongsTo(Supplier::class);
-    }
-
-    /**
-     * Get warehouse relationship
-     */
-    public function warehouse(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-    {
-        return $this->belongsTo(Warehouse::class);
-    }
-
-    /**
-     * Get purchase items
-     */
-    public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(PurchaseItem::class);
-    }
-
-    /**
-     * Get creator (user)
-     */
-    public function creator(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    /**
-     * Get confirmer (user)
-     */
-    public function confirmer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-    {
-        return $this->belongsTo(User::class, 'confirmed_by');
-    }
-
-    /**
-     * Get purchase payments
-     */
-    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(PurchasePayment::class);
-    }
-
-    /**
-     * Get ledger entries for this purchase
-     */
-    public function ledgerEntries(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(SupplierLedger::class);
-    }
-
-    /**
-     * Get payable history for this purchase
-     */
-    public function payableHistory(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(PayableHistory::class);
-    }
-
-    /**
-     * Scope to filter draft purchases
-     */
-    public function scopeDraft($query)
-    {
-        return $query->where('status', self::STATUS_DRAFT);
-    }
-
-    /**
-     * Scope to filter confirmed purchases
-     */
-    public function scopeConfirmed($query)
-    {
-        return $query->where('status', self::STATUS_CONFIRMED);
-    }
-
-    /**
-     * Scope to filter cancelled purchases
-     */
-    public function scopeCancelled($query)
-    {
-        return $query->where('status', self::STATUS_CANCELLED);
-    }
-
-    /**
-     * Scope to filter by supplier
-     */
-    public function scopeBySupplier($query, $supplierId)
-    {
-        return $query->where('supplier_id', $supplierId);
-    }
-
-    /**
-     * Scope to filter by payment status
-     */
-    public function scopeByPaymentStatus($query, $status)
-    {
-        return $query->where('payment_status', $status);
-    }
-
-    /**
-     * Scope to filter unpaid purchases
-     */
-    public function scopeUnpaid($query)
-    {
-        return $query->where('payment_status', self::PAYMENT_STATUS_UNPAID);
-    }
-
-    /**
-     * Scope to filter partial purchases
-     */
-    public function scopePartial($query)
-    {
-        return $query->where('payment_status', self::PAYMENT_STATUS_PARTIAL);
-    }
-
-    /**
-     * Scope to filter paid purchases
-     */
-    public function scopePaid($query)
-    {
-        return $query->where('payment_status', self::PAYMENT_STATUS_PAID);
-    }
-
-    /**
-     * Get total items count
-     */
-    public function getTotalItemsCountAttribute(): int
-    {
-        return $this->items()->count();
-    }
-
-    /**
-     * Get total quantity
-     */
-    public function getTotalQuantityAttribute(): float
-    {
-        return $this->items()->sum('quantity');
-    }
-
-    /**
-     * Check if purchase can be edited
-     */
-    public function canBeEdited(): bool
-    {
-        return $this->isDraft();
-    }
-
-    /**
-     * Check if purchase can be confirmed
-     */
-    public function canBeConfirmed(): bool
-    {
-        return $this->isDraft() && $this->items()->count() > 0;
-    }
-
-    /**
-     * Check if purchase can be cancelled
-     */
-    public function canBeCancelled(): bool
-    {
-        return !$this->isCancelled();
-    }
-
-    /**
-     * Get status label
-     */
-    public function getStatusLabelAttribute(): string
-    {
-        return match($this->status) {
-            self::STATUS_DRAFT => 'Draft',
-            self::STATUS_CONFIRMED => 'Confirmed',
-            self::STATUS_CANCELLED => 'Cancelled',
-            default => 'Unknown',
-        };
-    }
-
-    /**
-     * Get status badge class
-     */
-    public function getStatusBadgeAttribute(): string
-    {
-        return match($this->status) {
-            self::STATUS_DRAFT => 'warning',
-            self::STATUS_CONFIRMED => 'success',
-            self::STATUS_CANCELLED => 'danger',
-            default => 'secondary',
-        };
-    }
-
-    /**
-     * Get payment status label
-     */
-    public function getPaymentStatusLabelAttribute(): string
-    {
-        return match($this->payment_status) {
-            self::PAYMENT_STATUS_PAID => 'Paid',
-            self::PAYMENT_STATUS_PARTIAL => 'Partial',
-            self::PAYMENT_STATUS_UNPAID => 'Unpaid',
-            default => 'Unknown',
-        };
-    }
-
-    /**
-     * Get payment status badge class
-     */
-    public function getPaymentStatusBadgeAttribute(): string
-    {
-        return match($this->payment_status) {
-            self::PAYMENT_STATUS_PAID => 'success',
-            self::PAYMENT_STATUS_PARTIAL => 'warning',
-            self::PAYMENT_STATUS_UNPAID => 'danger',
-            default => 'secondary',
-        };
     }
 
     /**
@@ -364,11 +213,231 @@ class Purchase extends Model
         return $this->payment_status === self::PAYMENT_STATUS_UNPAID;
     }
 
+    // ========== PERMISSION METHODS ==========
+
     /**
-     * Get payable amount (remaining to be paid)
+     * Check if purchase can be edited
+     */
+    public function canBeEdited(): bool
+    {
+        return $this->isDraft();
+    }
+
+    /**
+     * Check if purchase can be confirmed
+     */
+    public function canBeConfirmed(): bool
+    {
+        return $this->isDraft() && $this->items()->count() > 0;
+    }
+
+    /**
+     * Check if purchase can be cancelled
+     */
+    public function canBeCancelled(): bool
+    {
+        return !$this->isCancelled();
+    }
+
+    // ========== QUERY SCOPES ==========
+
+    /**
+     * Scope to filter draft purchases
+     */
+    public function scopeDraft($query)
+    {
+        return $query->where('status', self::STATUS_DRAFT);
+    }
+
+    /**
+     * Scope to filter confirmed purchases
+     */
+    public function scopeConfirmed($query)
+    {
+        return $query->where('status', self::STATUS_CONFIRMED);
+    }
+
+    /**
+     * Scope to filter cancelled purchases
+     */
+    public function scopeCancelled($query)
+    {
+        return $query->where('status', self::STATUS_CANCELLED);
+    }
+
+    /**
+     * Scope to filter by payment status
+     */
+    public function scopeByPaymentStatus($query, $status)
+    {
+        return $query->where('payment_status', $status);
+    }
+
+    /**
+     * Scope to filter unpaid purchases
+     */
+    public function scopeUnpaid($query)
+    {
+        return $query->where('payment_status', self::PAYMENT_STATUS_UNPAID);
+    }
+
+    /**
+     * Scope to filter partially paid purchases
+     */
+    public function scopePartial($query)
+    {
+        return $query->where('payment_status', self::PAYMENT_STATUS_PARTIAL);
+    }
+
+    /**
+     * Scope to filter fully paid purchases
+     */
+    public function scopePaid($query)
+    {
+        return $query->where('payment_status', self::PAYMENT_STATUS_PAID);
+    }
+
+    // ========== COMPUTED ATTRIBUTES ==========
+
+    /**
+     * Get the calculated discount amount (handles both amount and percentage)
+     */
+    public function getDiscountAmountAttribute(): float
+    {
+        if ($this->discount_type === self::DISCOUNT_TYPE_PERCENTAGE) {
+            return ($this->subtotal * $this->discount) / 100;
+        }
+        
+        return (float) $this->discount;
+    }
+
+    /**
+     * Get remaining payable amount (total - paid)
      */
     public function getPayableAmountAttribute(): float
     {
         return max(0, $this->total_amount - $this->paid_amount);
+    }
+
+    /**
+     * Get total items count
+     */
+    public function getTotalItemsCountAttribute(): int
+    {
+        return $this->items()->count();
+    }
+
+    /**
+     * Get total quantity of all items
+     */
+    public function getTotalQuantityAttribute(): float
+    {
+        return $this->items()->sum('quantity');
+    }
+
+    // ========== DISPLAY ATTRIBUTES ==========
+
+    /**
+     * Get status label for display
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return match($this->status) {
+            self::STATUS_DRAFT => 'Draft',
+            self::STATUS_CONFIRMED => 'Confirmed',
+            self::STATUS_CANCELLED => 'Cancelled',
+            default => 'Unknown',
+        };
+    }
+
+    /**
+     * Get status badge class for Bootstrap
+     */
+    public function getStatusBadgeAttribute(): string
+    {
+        return match($this->status) {
+            self::STATUS_DRAFT => 'warning',
+            self::STATUS_CONFIRMED => 'success',
+            self::STATUS_CANCELLED => 'danger',
+            default => 'secondary',
+        };
+    }
+
+    /**
+     * Get payment status label for display
+     */
+    public function getPaymentStatusLabelAttribute(): string
+    {
+        return match($this->payment_status) {
+            self::PAYMENT_STATUS_PAID => 'Paid',
+            self::PAYMENT_STATUS_PARTIAL => 'Partial',
+            self::PAYMENT_STATUS_UNPAID => 'Unpaid',
+            default => 'Unknown',
+        };
+    }
+
+    /**
+     * Get payment status badge class for Bootstrap
+     */
+    public function getPaymentStatusBadgeAttribute(): string
+    {
+        return match($this->payment_status) {
+            self::PAYMENT_STATUS_PAID => 'success',
+            self::PAYMENT_STATUS_PARTIAL => 'warning',
+            self::PAYMENT_STATUS_UNPAID => 'danger',
+            default => 'secondary',
+        };
+    }
+
+    /**
+     * Get discount type options for dropdown
+     */
+    public static function getDiscountTypes(): array
+    {
+        return [
+            self::DISCOUNT_TYPE_AMOUNT => 'Amount (Rs.)',
+            self::DISCOUNT_TYPE_PERCENTAGE => 'Percentage (%)',
+        ];
+    }
+
+    // ========== HELPER METHODS ==========
+
+    /**
+     * Calculate and update the total amount based on subtotal, discount, transport, and other expenses
+     * Matches the calculation logic in the view
+     */
+    public function calculateTotalAmount(): float
+    {
+        $discountAmount = $this->discount_amount;
+        
+        $total = $this->subtotal 
+                 - $discountAmount 
+                 + $this->transport_cost 
+                 + $this->other_expenses;
+        
+        return max(0, $total);
+    }
+
+    /**
+     * Update payment status based on paid amount vs total amount
+     * This should be called whenever paid_amount or total_amount changes
+     */
+    public function updatePaymentStatus(): void
+    {
+        if ($this->paid_amount <= 0) {
+            $this->payment_status = self::PAYMENT_STATUS_UNPAID;
+        } elseif ($this->paid_amount >= $this->total_amount) {
+            $this->payment_status = self::PAYMENT_STATUS_PAID;
+        } else {
+            $this->payment_status = self::PAYMENT_STATUS_PARTIAL;
+        }
+    }
+
+    /**
+     * Recalculate subtotal from items
+     */
+    public function recalculateSubtotal(): float
+    {
+        return $this->items()->sum(\DB::raw('quantity * purchase_price'));
     }
 }

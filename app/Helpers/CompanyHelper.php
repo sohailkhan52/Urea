@@ -2,7 +2,6 @@
 
 namespace App\Helpers;
 
-use App\Models\WelcomePageSetting;
 use Illuminate\Support\Facades\Cache;
 
 class CompanyHelper
@@ -15,11 +14,7 @@ class CompanyHelper
      */
     public static function getSettings()
     {
-        try {
-            return WelcomePageSetting::first() ?? self::getDefaults();
-        } catch (\Throwable $e) {
-            return self::getDefaults();
-        }
+        return self::getDefaults();
     }
 
     /**
@@ -28,7 +23,7 @@ class CompanyHelper
     private static function getDefaults()
     {
         return (object) [
-            'company_name' => config('app.name', 'Fertilizer Management System'),
+            'company_name' => config('app.name', 'DeraNexa'),
             'company_short_name' => 'DeraNexa',
             'company_logo' => null,
             'favicon' => null,
@@ -41,12 +36,7 @@ class CompanyHelper
      */
     public static function getCompanyName()
     {
-        try {
-            $settings = self::getSettings();
-            return $settings->company_name ?? config('app.name', 'Fertilizer Management System');
-        } catch (\Throwable $e) {
-            return config('app.name', 'Fertilizer Management System');
-        }
+        return config('app.name', 'DeraNexa');
     }
 
     /**
@@ -54,12 +44,7 @@ class CompanyHelper
      */
     public static function getCompanyShortName()
     {
-        try {
-            $settings = self::getSettings();
-            return $settings->company_short_name ?? self::getCompanyName();
-        } catch (\Throwable $e) {
-            return 'DeraNexa';
-        }
+        return 'DeraNexa';
     }
 
     /**
@@ -67,29 +52,11 @@ class CompanyHelper
      */
     public static function getCompanyLogo()
     {
-        try {
-            $settings = self::getSettings();
-            if ($settings->company_logo) {
-                return asset('storage/' . $settings->company_logo);
-            }
-            return null;
-        } catch (\Throwable $e) {
-            return null;
-        }
+        return null;
     }
 
     public static function getFaviconUrl()
     {
-        try {
-            $settings = self::getSettings();
-            if ($settings->favicon) {
-                $version = $settings->updated_at?->timestamp ?? time();
-                return asset('storage/' . $settings->favicon) . '?v=' . $version;
-            }
-        } catch (\Throwable $e) {
-            // Fall back to the bundled icon when settings are unavailable.
-        }
-
         return asset('favicon.svg');
     }
 
@@ -98,12 +65,7 @@ class CompanyHelper
      */
     public static function getCompanyDescription()
     {
-        try {
-            $settings = self::getSettings();
-            return $settings->company_description;
-        } catch (\Throwable $e) {
-            return null;
-        }
+        return null;
     }
 
     /**

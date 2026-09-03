@@ -1,278 +1,317 @@
 @extends('layouts.admin')
 
-@section('title', 'Create Purchase')
-
 @section('content')
 <div class="container-fluid">
-    <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="h3 mb-0">Create Purchase Order</h1>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-0 mt-2">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.purchases.index') }}">Purchases</a></li>
-                        <li class="breadcrumb-item active">Create</li>
-                    </ol>
-                </nav>
+    <div class="page-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">Create New Purchase</h1>
             </div>
-            <a href="{{ route('admin.purchases.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i> Back to List
-            </a>
+            <div class="col-md-4 text-end">
+                <a href="{{ route('admin.purchases.index') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Purchases
+                </a>
+            </div>
         </div>
     </div>
 
     @if ($errors->any())
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>Validation Errors</h5>
-        <ul class="mb-0">
-            @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error!</strong> Please fix the following errors:
+            <ul class="mb-0 mt-2">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     @endif
 
-    <form action="{{ route('admin.purchases.store') }}" method="POST" id="purchase-form">
+    <form id="purchaseForm" action="{{ route('admin.purchases.store') }}" method="POST" class="needs-validation" novalidate>
         @csrf
+        
+        <!-- Hidden action field for validation -->
+        <input type="hidden" name="action" value="confirm">
 
         <div class="row">
-            {{-- Left Column: Purchase Header & Items --}}
+            <!-- LEFT COLUMN: Supplier & Products -->
             <div class="col-lg-8">
-                {{-- PURCHASE HEADER SECTION --}}
+                <!-- SUPPLIER SECTION -->
                 <div class="card mb-4">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Purchase Information</h5>
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-building"></i> Select Supplier
+                        </h5>
                     </div>
                     <div class="card-body">
-                        <div class="row g-3">
-                            {{-- Supplier --}}
-                            <div class="col-md-6">
-                                <label for="supplier_id" class="form-label">Supplier <span class="text-danger">*</span></label>
-                                <select class="form-select @error('supplier_id') is-invalid @enderror" 
-                                        id="supplier_id" 
-                                        name="supplier_id"
-                                        required>
-                                    <option value="">-- Select Supplier --</option>
-                                    @foreach($suppliers as $supplier)
-                                    <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
-                                        {{ $supplier->name }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('supplier_id')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                            </div>
+                        <div class="row">
+                            <div class="col-md-10">
+                                <div class="form-group mb-0">
+                                    <label for="supplier_id" class="form-label">Supplier <span class="text-danger">*</span></label>
+                                    <input type="hidden" id="supplier_id" name="supplier_id" value="{{ old('supplier_id') }}" required>
+                                    
+                                    <div class="input-group">
+                                        <input type="text" 
+                                               id="supplierSearch" 
+                                               class="form-control" 
+                                               placeholder="Search supplier by name, company, or phone..."
+                                               autocomplete="off">
+                                        <button class="btn btn-outline-secondary" type="button" id="clearSupplier">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
 
-                            {{-- Warehouse (REQUIRED) --}}
-                            <div class="col-md-6">
-                                <label for="warehouse_id" class="form-label">Warehouse <span class="text-danger">*</span></label>
-                                <select class="form-select @error('warehouse_id') is-invalid @enderror" 
-                                        id="warehouse_id" 
-                                        name="warehouse_id" 
-                                        required>
-                                    <option value="">-- Select Warehouse --</option>
-                                    @foreach($warehouses as $warehouse)
-                                    <option value="{{ $warehouse->id }}" 
-                                            {{ (old('warehouse_id') == $warehouse->id) || (!old('warehouse_id') && $defaultWarehouse && $defaultWarehouse->id == $warehouse->id) ? 'selected' : '' }}>
-                                        {{ $warehouse->name }}{{ $warehouse->is_default ? ' ⭐' : '' }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('warehouse_id')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                            </div>
+                                    <!-- Recent Used Suppliers -->
+                                    <div id="recentSuppliers" class="mt-2" style="display: none;">
+                                        <small class="text-muted">Recently Used:</small>
+                                        <div class="d-flex flex-wrap gap-2 mt-1" id="recentSuppliersList"></div>
+                                    </div>
 
-                            {{-- Purchase Date --}}
-                            <div class="col-md-6">
-                                <label for="purchase_date" class="form-label">Purchase Date <span class="text-danger">*</span></label>
-                                <input type="date" 
-                                       class="form-control @error('purchase_date') is-invalid @enderror" 
-                                       id="purchase_date" 
-                                       name="purchase_date" 
-                                       value="{{ old('purchase_date', date('Y-m-d')) }}"
-                                       required>
-                                @error('purchase_date')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                            </div>
+                                    <!-- Supplier dropdown list -->
+                                    <div id="supplierDropdown" class="mt-2" style="display: none; max-height: 400px; overflow-y: auto;">
+                                        <div class="row g-2" id="supplierGrid"></div>
+                                    </div>
 
-                            {{-- Notes --}}
-                            <div class="col-12">
-                                <label for="notes" class="form-label">Notes</label>
-                                <textarea class="form-control @error('notes') is-invalid @enderror" 
-                                          id="notes" 
-                                          name="notes" 
-                                          rows="2"
-                                          placeholder="Add any additional notes..."
-                                          maxlength="1000">{{ old('notes') }}</textarea>
-                                <small class="text-muted d-block mt-1"><span id="notes-count">0</span>/1000 characters</small>
-                                @error('notes')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
+                                    <!-- Selected supplier info -->
+                                    <div id="supplierInfo" class="alert alert-info mt-3" style="display: none;">
+                                        <div><strong>Selected:</strong> <span id="selectedSupplierName"></span></div>
+                                        <div><small id="selectedSupplierDetails"></small></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-primary w-100 mt-4" data-bs-toggle="modal" data-bs-target="#newSupplierModal">
+                                    <i class="bi bi-plus-lg"></i> New Supplier
+                                </button>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="warehouse_id" name="warehouse_id" value="{{ $defaultWarehouse->id }}")>
+                        <input type="hidden" id="purchase_date" name="purchase_date" value="{{ \Carbon\Carbon::today()->toDateString() }}">
+                    </div>
+                </div>
+
+                <!-- PRODUCT SEARCH SECTION -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-search"></i> Search & Add Products
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-9">
+                                <div class="form-group mb-0">
+                                    <label for="productSearch" class="form-label">Search Product</label>
+                                    <input type="text" 
+                                           id="productSearch" 
+                                           class="form-control" 
+                                           placeholder="Search by name, SKU, or barcode..."
+                                           autocomplete="off">
+                                    
+                                    <!-- Recent Used Products -->
+                                    <div id="recentProducts" class="mt-2" style="display: none;">
+                                        <small class="text-muted">Recently Used:</small>
+                                        <div class="d-flex flex-wrap gap-2 mt-1" id="recentProductsList"></div>
+                                    </div>
+
+                                    <!-- Product dropdown grid -->
+                                    <div id="productDropdown" class="mt-2" style="display: none; max-height: 400px; overflow-y: auto;">
+                                        <div class="row g-2" id="productGrid"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="button" class="btn btn-primary w-100 mt-4" data-bs-toggle="modal" data-bs-target="#newProductModal">
+                                    <i class="bi bi-plus-lg"></i> New Product
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- PURCHASE ITEMS SECTION --}}
-                <div class="card">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>Purchase Items</h5>
-                        <button type="button" class="btn btn-sm btn-primary" id="add-row-btn" title="Add a new product to the purchase">
-                            <i class="bi bi-plus-circle me-1"></i> Add Item
-                        </button>
+                <!-- PURCHASE ITEMS SECTION -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-ul"></i> Purchase Items
+                        </h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0" id="items-table">
+                            <table class="table table-sm table-hover" id="itemsTable">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 30%;">Product</th>
-                                        <th style="width: 15%;">Quantity</th>
-                                        <th style="width: 18%;">Unit Price</th>
-                                        <th style="width: 15%;">Discount</th>
-                                        <th style="width: 15%;" class="text-end">Subtotal</th>
-                                        <th style="width: 7%;" class="text-center">Actions</th>
+                                        <th>Product</th>
+                                        <th style="width: 80px;">Qty</th>
+                                        <th style="width: 100px;">Unit</th>
+                                        <th style="width: 100px;">Cost Price</th>
+                                        <th style="width: 100px;">Sell Price</th>
+                                        <th style="width: 100px;">Total</th>
+                                        <th style="width: 60px;">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="items-tbody">
-                                    <!-- Rows will be added here -->
+                                <tbody id="itemsBody">
+                                    <tr id="emptyRow" class="text-center text-muted">
+                                        <td colspan="7" class="py-3">
+                                            <i class="bi bi-inbox"></i> No items added yet. Search and select products above.
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
-                            <div id="no-items-message" class="text-center text-muted py-5">
-                                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-                                <p class="mt-3">No items added yet. Click "Add Item" to start.</p>
-                            </div>
                         </div>
-                        @error('items')
-                        <div class="alert alert-danger mt-3 mb-0"><i class="bi bi-exclamation-circle me-2"></i>{{ $message }}</div>
-                        @enderror
+
+                        <!-- Hidden input to store items as JSON -->
+                        <input type="hidden" id="items" name="items" value="[]">
                     </div>
                 </div>
             </div>
 
-            {{-- Right Column: Summary & Actions --}}
+            <!-- RIGHT COLUMN: Summary & Payment -->
             <div class="col-lg-4">
-                {{-- PURCHASE SUMMARY SECTION --}}
+                <!-- CALCULATIONS SECTION -->
                 <div class="card mb-4 sticky-top" style="top: 20px;">
                     <div class="card-header bg-light">
-                        <h5 class="mb-0"><i class="bi bi-calculator me-2"></i>Purchase Summary</h5>
+                        <h5 class="mb-0">
+                            <i class="bi bi-calculator"></i> Summary
+                        </h5>
                     </div>
                     <div class="card-body">
-                        <div class="row g-3 mb-3">
+                        <div class="row mb-3">
                             <div class="col-6">
-                                <small class="text-muted d-block">Item Count</small>
-                                <h6 id="item-count" class="mb-0 fw-bold">0</h6>
+                                <label class="form-label text-muted small">Subtotal</label>
+                                <div class="h5 mb-0">Rs. <span id="subtotal">0.00</span></div>
                             </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block">Total Qty</small>
-                                <h6 id="total-qty" class="mb-0 fw-bold">0.00</h6>
+                            <div class="col-6 text-end">
+                                <label class="form-label text-muted small">Items</label>
+                                <div class="h5 mb-0"><span id="itemCount">0</span></div>
                             </div>
                         </div>
 
-                        <div class="table-sm mb-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Subtotal</span>
-                                <strong id="subtotal" class="text-dark">PKR 0.00</strong>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Item Discounts</span>
-                                <span id="item-discounts" class="text-success">- PKR 0.00</span>
-                            </div>
-                            <hr class="my-2">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Purchase Discount</span>
-                                <span id="purchase-discount-display" class="text-success">- PKR 0.00</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Transport Cost</span>
-                                <span id="transport-display" class="text-danger">+ PKR 0.00</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-3">
-                                <span>Other Expenses</span>
-                                <span id="other-expenses-display" class="text-danger">+ PKR 0.00</span>
-                            </div>
-                        </div>
+                        <hr>
 
-                        <div class="mb-3 border-top pt-3">
-                            <label for="discount" class="form-label">Purchase Discount (Optional)</label>
-                            <div class="input-group input-group-sm mb-2">
-                                <span class="input-group-text">PKR</span>
+                        <!-- Discount Section -->
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label for="discountType" class="form-label">Discount Type</label>
+                                <select id="discountType" class="form-select form-select-sm" onchange="updateDiscount()">
+                                    <option value="amount">Amount (Rs.)</option>
+                                    <option value="percentage">Percentage (%)</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label for="discount" class="form-label">Discount</label>
                                 <input type="number" 
-                                       class="form-control" 
                                        id="discount" 
                                        name="discount" 
-                                       value="{{ old('discount', 0) }}"
+                                       class="form-control form-control-sm" 
+                                       placeholder="0"
                                        min="0" 
                                        step="0.01"
-                                       placeholder="0.00">
-                            </div>
-
-                            <label for="transport_cost" class="form-label mt-2">Transport Cost</label>
-                            <div class="input-group input-group-sm mb-2">
-                                <span class="input-group-text">PKR</span>
-                                <input type="number" 
-                                       class="form-control" 
-                                       id="transport_cost" 
-                                       name="transport_cost" 
-                                       value="{{ old('transport_cost', 0) }}"
-                                       min="0" 
-                                       step="0.01"
-                                       placeholder="0.00">
-                            </div>
-
-                            <label for="other_expenses" class="form-label mt-2">Other Expenses</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">PKR</span>
-                                <input type="number" 
-                                       class="form-control" 
-                                       id="other_expenses" 
-                                       name="other_expenses" 
-                                       value="{{ old('other_expenses', 0) }}"
-                                       min="0" 
-                                       step="0.01"
-                                       placeholder="0.00">
-                            </div>
-                        </div>
-
-                        <div class="alert alert-info py-3 mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold"><i class="bi bi-tag me-2"></i>Grand Total</span>
-                                <span class="fs-5 fw-bold text-primary" id="grand-total">PKR 0.00</span>
+                                       oninput="updateDiscount()">
                             </div>
                         </div>
 
                         <hr>
 
-                        {{-- Payment Amount Input --}}
+                        <!-- Transport & Other Costs -->
                         <div class="mb-3">
-                            <label for="paid_amount" class="form-label">Amount Paid <span class="text-muted">(Optional)</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text">PKR</span>
-                                <input type="number" 
-                                       class="form-control" 
-                                       id="paid_amount" 
-                                       name="paid_amount" 
-                                       value="{{ old('paid_amount', 0) }}"
-                                       min="0" 
-                                       step="0.01"
-                                       placeholder="0.00">
-                            </div>
-                            <small class="text-muted d-block mt-1">Enter amount paid (0 for unpaid, full amount for paid, or partial)</small>
+                            <label for="transport_cost" class="form-label">Transport Cost (Rs.)</label>
+                            <input type="number" 
+                                   id="transport_cost" 
+                                   name="transport_cost" 
+                                   class="form-control form-control-sm" 
+                                   placeholder="0"
+                                   min="0" 
+                                   step="0.01"
+                                   oninput="updateCalculations()">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="other_expenses" class="form-label">Other Expenses (Rs.)</label>
+                            <input type="number" 
+                                   id="other_expenses" 
+                                   name="other_expenses" 
+                                   class="form-control form-control-sm" 
+                                   placeholder="0"
+                                   min="0" 
+                                   step="0.01"
+                                   oninput="updateCalculations()">
                         </div>
 
                         <hr>
 
-                        {{-- Action Buttons --}}
+                        <!-- Total Payment -->
+                        <div class="mb-3 p-3 bg-light rounded">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Subtotal:</span>
+                                <strong>Rs. <span id="display_subtotal">0.00</span></strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">- Discount:</span>
+                                <strong class="text-danger">Rs. <span id="display_discount">0.00</span></strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">+ Transport:</span>
+                                <strong>Rs. <span id="display_transport">0.00</span></strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3 pb-2 border-bottom">
+                                <span class="text-muted">+ Other:</span>
+                                <strong>Rs. <span id="display_other">0.00</span></strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <strong>Total Payment:</strong>
+                                <strong class="h5 text-success">Rs. <span id="total_amount">0.00</span></strong>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- PAYMENT SECTION -->
+                        <div class="mb-3">
+                            <label for="paid_amount" class="form-label">Paid Amount (Rs.)</label>
+                            <input type="number" 
+                                   id="paid_amount" 
+                                   name="paid_amount" 
+                                   class="form-control" 
+                                   placeholder="0"
+                                   min="0" 
+                                   max="999999.99"
+                                   step="0.01"
+                                   oninput="updatePaymentStatus()">
+                        </div>
+
+                        <!-- Remaining Payable -->
+                        <div class="mb-3 p-3 bg-warning bg-opacity-10 rounded">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Remaining Payable:</span>
+                                <strong class="text-warning">Rs. <span id="remaining_payable">0.00</span></strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Payment Status:</span>
+                                <span id="paymentStatus" class="badge bg-secondary">Not Started</span>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Notes -->
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea id="notes" 
+                                      name="notes" 
+                                      class="form-control form-control-sm" 
+                                      rows="3" 
+                                      placeholder="Add any notes about this purchase..."></textarea>
+                        </div>
+
+                        <!-- Submit Buttons -->
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg" id="confirm-btn" name="action" value="confirm">
-                                <i class="bi bi-check-circle me-1"></i> Create & Confirm Purchase
+                            <button type="submit" class="btn btn-success btn-lg" id="submitBtn" disabled>
+                                <i class="bi bi-check-circle"></i> Save & Confirm Purchase
                             </button>
                             <a href="{{ route('admin.purchases.index') }}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle me-1"></i> Cancel
+                                <i class="bi bi-x-lg"></i> Cancel
                             </a>
                         </div>
                     </div>
@@ -282,624 +321,1016 @@
     </form>
 </div>
 
-<style>
-    @media (max-width: 768px) {
-        .sticky-top {
-            position: static !important;
-        }
-        
-        .table-responsive {
-            font-size: 0.85rem;
-        }
-        
-        .col-lg-4 {
-            margin-top: 2rem;
-        }
-    }
-    
-    .table-hover tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .is-invalid {
-        border-color: #dc3545;
-    }
-    
-    .invalid-feedback {
-        color: #dc3545;
-        font-size: 0.875rem;
-    }
-    
-    .product-search-input {
-        min-width: 200px;
-    }
-    
-    .input-group-text {
-        border-right: none;
-    }
-    
-    .product-search-input {
-        border-left: none;
-        border-right: none;
-    }
-    
-    .dropdown-toggle {
-        border-left: none;
-    }
-    
-    .input-group:focus-within .input-group-text,
-    .input-group:focus-within .dropdown-toggle {
-        border-color: #86b7fe;
-    }
-    
-    .product-dropdown-list {
-        margin-top: 2px;
-        max-height: 200px !important; /* Show ~4 items (50px each) */
-        overflow-y: auto;
-        position: fixed !important;
-        z-index: 2000 !important;
-    }
-    
-    .product-dropdown-list .dropdown-item {
-        border-bottom: 1px solid #f0f0f0;
-        min-height: 50px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    
-    .product-dropdown-list .dropdown-item:last-child {
-        border-bottom: none;
-    }
-    
-    /* Scrollbar styling for better UX */
-    .product-dropdown-list::-webkit-scrollbar {
-        width: 8px;
-    }
-    
-    .product-dropdown-list::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 4px;
-    }
-    
-    .product-dropdown-list::-webkit-scrollbar-thumb {
-        background: #888;
-        border-radius: 4px;
-    }
-    
-    .product-dropdown-list::-webkit-scrollbar-thumb:hover {
-        background: #555;
-    }
-</style>
+<!-- NEW SUPPLIER MODAL -->
+<div class="modal fade" id="newSupplierModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Supplier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newSupplierForm">
+                    <div class="mb-3">
+                        <label for="supplier_name" class="form-label">Supplier Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="supplier_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="supplier_company" class="form-label">Company Name</label>
+                        <input type="text" class="form-control" id="supplier_company" name="company_name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="supplier_phone" class="form-label">Phone</label>
+                        <input type="tel" class="form-control" id="supplier_phone" name="phone">
+                    </div>
+                    <div class="mb-3">
+                        <label for="supplier_email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="supplier_email" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="supplier_address" class="form-label">Address</label>
+                        <textarea class="form-control" id="supplier_address" name="address" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="supplier_city" class="form-label">City</label>
+                        <input type="text" class="form-control" id="supplier_city" name="city">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveSupplierBtn">Save Supplier</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-@endsection
+<!-- NEW PRODUCT MODAL -->
+<div class="modal fade" id="newProductModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newProductForm">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="product_name" class="form-label">Product Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="product_name" name="name" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="product_unit" class="form-label">Unit <span class="text-danger">*</span></label>
+                                <select class="form-select" id="product_unit" name="unit" required>
+                                    <option value="">-- Select Unit --</option>
+                                    <option value="KG">Kilogram (KG)</option>
+                                    <option value="MG">Milligram (MG)</option>
+                                    <option value="Piece">Piece</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="product_purchase_price" class="form-label">Purchase Price (Rs.) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="product_purchase_price" name="purchase_price" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="product_sale_price" class="form-label">Sale Price (Rs.) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="product_sale_price" name="sale_price" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveProductBtn">Save Product</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // ============ DOM Elements ============
-    const form = document.getElementById('purchase-form');
-    const supplierSelect = document.getElementById('supplier_id');
-    const warehouseSelect = document.getElementById('warehouse_id');
-    const addRowBtn = document.getElementById('add-row-btn');
-    const itemsTable = document.getElementById('items-table');
-    const itemsTbody = document.getElementById('items-tbody');
-    const noItemsMessage = document.getElementById('no-items-message');
-    const discountInput = document.getElementById('discount');
-    const transportCostInput = document.getElementById('transport_cost');
-    const otherExpensesInput = document.getElementById('other_expenses');
-    const notesInput = document.getElementById('notes');
-    const notesCount = document.getElementById('notes-count');
-    
-    // Summary elements
-    const itemCountDisplay = document.getElementById('item-count');
-    const totalQtyDisplay = document.getElementById('total-qty');
-    const subtotalDisplay = document.getElementById('subtotal');
-    const itemDiscountsDisplay = document.getElementById('item-discounts');
-    const purchaseDiscountDisplay = document.getElementById('purchase-discount-display');
-    const transportDisplay = document.getElementById('transport-display');
-    const otherExpensesDisplay = document.getElementById('other-expenses-display');
-    const grandTotalDisplay = document.getElementById('grand-total');
+    // ========== DATA STORAGE ==========
+    let purchaseItems = [];
+    let allProducts = [];
+    let allSuppliers = [];
+    let currentSupplier = null;
 
-    // ============ State ============
-    let itemCount = 0;
-    let productCache = {}; // Cache for warehouse products
-    
-    // ============ Notes Counter ============
-    notesInput.addEventListener('input', function() {
-        notesCount.textContent = this.value.length;
+    // ========== INITIALIZATION ==========
+    document.addEventListener('DOMContentLoaded', function() {
+        // Display recent items immediately (from localStorage)
+        displayRecentSuppliers();
+        displayRecentProducts();
+        // Then load fresh data from server
+        loadSuppliers();
+        loadProducts();
+        setupEventListeners();
     });
-    notesCount.textContent = notesInput.value.length;
 
-    // ============ Warehouse Change Handler ============
-    warehouseSelect.addEventListener('change', function() {
-        if (itemsTbody.children.length > 0) {
-            if (confirm('Changing warehouse will clear all items. Continue?')) {
-                itemsTbody.innerHTML = '';
-                itemCount = 0;
-                updateNoItemsMessage();
-                updateSummary();
-            } else {
-                warehouseSelect.value = warehouseSelect.dataset.previousValue || '';
-                return;
+    // ========== LOAD DATA FROM SERVER ==========
+    function loadSuppliers() {
+        fetch('{{ route("admin.suppliers.getAll") }}')
+            .then(response => response.json())
+            .then(data => {
+                allSuppliers = data;
+                
+                // Update recent suppliers in localStorage - remove deleted ones and update data
+                let recentSuppliers = JSON.parse(localStorage.getItem('recentSuppliers') || '[]');
+                if (recentSuppliers.length > 0) {
+                    // Filter out deleted suppliers and update with fresh data
+                    recentSuppliers = recentSuppliers
+                        .filter(recent => data.some(supplier => supplier.id === recent.id))
+                        .map(recent => {
+                            const fresh = data.find(s => s.id === recent.id);
+                            return fresh || recent;
+                        });
+                    localStorage.setItem('recentSuppliers', JSON.stringify(recentSuppliers));
+                }
+                
+                // Initialize localStorage with server data if empty
+                if (recentSuppliers.length === 0 && data.length > 0) {
+                    // Take first 10 from server as initial recent
+                    let recent = data.slice(0, Math.min(10, data.length));
+                    localStorage.setItem('recentSuppliers', JSON.stringify(recent));
+                }
+                
+                displayRecentSuppliers();
+            })
+            .catch(error => console.error('Error loading suppliers:', error));
+    }
+
+    function loadProducts() {
+        fetch('{{ route("admin.products.getAll") }}')
+            .then(response => response.json())
+            .then(data => {
+                allProducts = data;
+                
+                // Update recent products in localStorage - remove deleted ones and update with fresh prices
+                let recentProducts = JSON.parse(localStorage.getItem('recentProducts') || '[]');
+                if (recentProducts.length > 0) {
+                    // Filter out deleted products and update with fresh data
+                    recentProducts = recentProducts
+                        .filter(recent => data.some(product => product.id === recent.id))
+                        .map(recent => {
+                            const fresh = data.find(p => p.id === recent.id);
+                            return fresh || recent; // Use fresh data if available
+                        });
+                    localStorage.setItem('recentProducts', JSON.stringify(recentProducts));
+                }
+                
+                // Initialize localStorage with server data if empty
+                if (recentProducts.length === 0 && data.length > 0) {
+                    // Take first 10 from server as initial recent
+                    let recent = data.slice(0, Math.min(10, data.length));
+                    localStorage.setItem('recentProducts', JSON.stringify(recent));
+                }
+                
+                displayRecentProducts();
+            })
+            .catch(error => console.error('Error loading products:', error));
+    }
+
+    // ========== RECENT USED TRACKING ==========
+    function addToRecentSuppliers(supplier) {
+        let recent = JSON.parse(localStorage.getItem('recentSuppliers') || '[]');
+        // Remove if exists to avoid duplicates
+        recent = recent.filter(s => s.id !== supplier.id);
+        // Add to beginning
+        recent.unshift(supplier);
+        // Keep only last 10
+        recent = recent.slice(0, 10);
+        localStorage.setItem('recentSuppliers', JSON.stringify(recent));
+        displayRecentSuppliers();
+    }
+
+    function addToRecentProducts(product) {
+        // Always use fresh product data from allProducts array to get latest prices
+        const freshProduct = allProducts.find(p => p.id === product.id) || product;
+        
+        let recent = JSON.parse(localStorage.getItem('recentProducts') || '[]');
+        // Remove if exists to avoid duplicates
+        recent = recent.filter(p => p.id !== freshProduct.id);
+        // Add fresh data to beginning
+        recent.unshift(freshProduct);
+        // Keep only last 10
+        recent = recent.slice(0, 10);
+        localStorage.setItem('recentProducts', JSON.stringify(recent));
+        displayRecentProducts();
+    }
+
+    function displayRecentSuppliers() {
+        const recentContainer = document.getElementById('recentSuppliers');
+        const recentList = document.getElementById('recentSuppliersList');
+        
+        let recent = JSON.parse(localStorage.getItem('recentSuppliers') || '[]');
+        
+        // Filter out deleted suppliers - only show those that exist in allSuppliers
+        const validRecent = recent.filter(recentSupplier => 
+            allSuppliers.some(supplier => supplier.id === recentSupplier.id)
+        );
+        
+        // Update localStorage to remove deleted suppliers
+        if (validRecent.length !== recent.length) {
+            localStorage.setItem('recentSuppliers', JSON.stringify(validRecent));
+        }
+        
+        // Deduplicate by name - keep first occurrence only
+        const seenNames = new Set();
+        const uniqueRecent = [];
+        for (const supplier of validRecent) {
+            if (!seenNames.has(supplier.name)) {
+                seenNames.add(supplier.name);
+                uniqueRecent.push(supplier);
             }
         }
-        if (warehouseSelect.value) {
-            warehouseSelect.dataset.previousValue = warehouseSelect.value;
-        }
-    });
-
-    warehouseSelect.dataset.previousValue = warehouseSelect.value;
-
-    // ============ Fetch Products ============
-    async function loadProducts(warehouseId) {
-        if (!warehouseId) return [];
         
-        if (productCache[warehouseId]) {
-            return productCache[warehouseId];
+        if (uniqueRecent.length === 0) {
+            recentContainer.style.display = 'none';
+            return;
         }
 
-        try {
-            const response = await fetch(`/admin/purchases-products`);
-            if (!response.ok) throw new Error('Failed to load products');
+        recentContainer.style.display = 'block';
+        recentList.innerHTML = '';
+
+        uniqueRecent.forEach(supplier => {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-light text-dark border cursor-pointer';
+            badge.style.cursor = 'pointer';
+            badge.textContent = supplier.name;
+            badge.addEventListener('click', function() {
+                selectSupplier(supplier);
+            });
+            recentList.appendChild(badge);
+        });
+    }
+
+    function displayRecentProducts() {
+        const recentContainer = document.getElementById('recentProducts');
+        const recentList = document.getElementById('recentProductsList');
+        
+        let recent = JSON.parse(localStorage.getItem('recentProducts') || '[]');
+        
+        // Filter out deleted products - only show those that exist in allProducts
+        const validRecent = recent.filter(recentProduct => 
+            allProducts.some(product => product.id === recentProduct.id)
+        );
+        
+        // Update localStorage to remove deleted products
+        if (validRecent.length !== recent.length) {
+            localStorage.setItem('recentProducts', JSON.stringify(validRecent));
+        }
+        
+        // Deduplicate by name - keep first occurrence only
+        const seenNames = new Set();
+        const uniqueRecent = [];
+        for (const product of validRecent) {
+            if (!seenNames.has(product.name)) {
+                seenNames.add(product.name);
+                uniqueRecent.push(product);
+            }
+        }
+        
+        if (uniqueRecent.length === 0) {
+            recentContainer.style.display = 'none';
+            return;
+        }
+
+        recentContainer.style.display = 'block';
+        recentList.innerHTML = '';
+
+        uniqueRecent.forEach(product => {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-light text-dark border cursor-pointer';
+            badge.style.cursor = 'pointer';
+            badge.textContent = product.name;
+            badge.addEventListener('click', function() {
+                // Fetch fresh product data from server to get latest prices
+                const freshProduct = allProducts.find(p => p.id === product.id);
+                if (freshProduct) {
+                    addProductToItems(freshProduct);
+                } else {
+                    // Fallback to cached data if not found in allProducts
+                    addProductToItems(product);
+                }
+            });
+            recentList.appendChild(badge);
+        });
+    }
+
+    // ========== SUPPLIER SEARCH & SELECTION ==========
+    function setupEventListeners() {
+        // Supplier Search
+        const supplierSearch = document.getElementById('supplierSearch');
+        const supplierDropdown = document.getElementById('supplierDropdown');
+        const clearSupplierBtn = document.getElementById('clearSupplier');
+
+        // Show all suppliers on focus/click
+        supplierSearch.addEventListener('focus', function() {
+            displaySupplierResults(allSuppliers);
+            // Hide recent items when showing full dropdown
+            document.getElementById('recentSuppliers').style.display = 'none';
+            supplierDropdown.style.display = allSuppliers.length > 0 ? 'block' : 'none';
+        });
+
+        // Filter suppliers on input
+        supplierSearch.addEventListener('input', function() {
+            const term = this.value.trim();
             
-            const data = await response.json();
-            productCache[warehouseId] = data;
-            return data;
-        } catch (error) {
-            console.error('Error loading products:', error);
-            alert('Failed to load products');
-            return [];
+            if (term.length === 0) {
+                // If empty, show all suppliers
+                displaySupplierResults(allSuppliers);
+                // Show recent items again when clearing search
+                displayRecentSuppliers();
+                supplierDropdown.style.display = allSuppliers.length > 0 ? 'block' : 'none';
+                return;
+            }
+
+            const filtered = allSuppliers.filter(s =>
+                s.name.toLowerCase().includes(term.toLowerCase()) ||
+                (s.company_name && s.company_name.toLowerCase().includes(term.toLowerCase())) ||
+                (s.phone && s.phone.includes(term))
+            );
+
+            displaySupplierResults(filtered);
+            // Hide recent items when filtering
+            document.getElementById('recentSuppliers').style.display = 'none';
+            supplierDropdown.style.display = filtered.length > 0 ? 'block' : 'none';
+        });
+
+        clearSupplierBtn.addEventListener('click', function() {
+            supplierSearch.value = '';
+            supplierDropdown.style.display = 'none';
+            document.getElementById('supplier_id').value = '';
+            document.getElementById('supplierInfo').style.display = 'none';
+            currentSupplier = null;
+            checkFormValidity();
+        });
+
+        // Product Search
+        const productSearch = document.getElementById('productSearch');
+        const productDropdown = document.getElementById('productDropdown');
+
+        // Show all products on focus/click
+        productSearch.addEventListener('focus', function() {
+            displayProductResults(allProducts);
+            // Hide recent items when showing full dropdown
+            document.getElementById('recentProducts').style.display = 'none';
+            productDropdown.style.display = allProducts.length > 0 ? 'block' : 'none';
+        });
+
+        // Filter products on input
+        productSearch.addEventListener('input', function() {
+            const term = this.value.trim();
+
+            if (term.length === 0) {
+                // If empty, show all products
+                displayProductResults(allProducts);
+                // Show recent items again when clearing search
+                displayRecentProducts();
+                productDropdown.style.display = allProducts.length > 0 ? 'block' : 'none';
+                return;
+            }
+
+            const filtered = allProducts.filter(p =>
+                p.name.toLowerCase().includes(term.toLowerCase()) ||
+                (p.sku && p.sku.toLowerCase().includes(term.toLowerCase())) ||
+                (p.barcode && p.barcode.includes(term))
+            );
+
+            displayProductResults(filtered);
+            // Hide recent items when filtering
+            document.getElementById('recentProducts').style.display = 'none';
+            productDropdown.style.display = filtered.length > 0 ? 'block' : 'none';
+        });
+
+        // Close dropdowns on outside click
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('#supplierSearch') && !event.target.closest('#supplierDropdown')) {
+                supplierDropdown.style.display = 'none';
+            }
+            if (!event.target.closest('#productSearch') && !event.target.closest('#productDropdown')) {
+                productDropdown.style.display = 'none';
+            }
+        });
+
+        // New Supplier Modal
+        document.getElementById('saveSupplierBtn').addEventListener('click', saveNewSupplier);
+
+        // New Product Modal
+        const saveProductBtn = document.getElementById('saveProductBtn');
+        if (saveProductBtn) {
+            console.log('Save Product button found, attaching event listener');
+            saveProductBtn.addEventListener('click', function(e) {
+                console.log('Save Product button clicked!', e);
+                saveNewProduct();
+            });
+        } else {
+            console.error('Save Product button NOT FOUND!');
         }
     }
 
-    // ============ Create Row HTML ============
-    function createItemRow(rowIndex) {
-        const row = document.createElement('tr');
-        row.id = `item-row-${rowIndex}`;
-        row.className = 'item-row';
-        
-        row.innerHTML = `
-            <td>
-                <div class="input-group input-group-sm position-relative">
-                    <span class="input-group-text bg-white">
-                        <i class="bi bi-search"></i>
-                    </span>
-                    <input type="text" 
-                           class="form-control product-search-input" 
-                           data-row="${rowIndex}" 
-                           placeholder="Type to search or select..."
-                           autocomplete="off">
-                    <input type="hidden" class="product-id-input" data-row="${rowIndex}">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-row="${rowIndex}"></button>
-                    <div class="product-dropdown-list" data-row="${rowIndex}" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:1000; background:white; border:1px solid #ddd; border-radius:0.25rem; max-height:200px; overflow-y:auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    // ========== SUPPLIER FUNCTIONS ==========
+    function displaySupplierResults(suppliers) {
+        const grid = document.getElementById('supplierGrid');
+        grid.innerHTML = '';
+
+        // Limit to 15 suppliers (most recent)
+        const limited = suppliers.slice(0, 15);
+
+        limited.forEach(supplier => {
+            const col = document.createElement('div');
+            col.className = 'col-lg-2 col-md-3 col-sm-4 col-6'; // 5 items per row on large screens
+            col.innerHTML = `
+                <div class="card h-100 cursor-pointer supplier-card" style="cursor: pointer; border: 1px solid #ddd; transition: all 0.2s;">
+                    <div class="card-body p-3">
+                        <div class="text-center">
+                            <div class="fw-bold small mb-1" style="word-break: break-word;">
+                                ${supplier.name}
+                            </div>
+                            ${supplier.company_name ? `<small class="text-muted d-block" style="font-size: 11px;">${supplier.company_name}</small>` : ''}
+                            ${supplier.phone ? `<small class="text-primary d-block" style="font-size: 11px;">${supplier.phone}</small>` : ''}
+                        </div>
                     </div>
                 </div>
-                <small class="text-danger error-message" style="display:none;"></small>
-            </td>
-            <td>
-                <input type="number" class="form-control form-control-sm quantity-input" 
-                       data-row="${rowIndex}" value="1" min="0.01" step="0.01" required>
-                <small class="text-danger error-message" style="display:none;"></small>
-            </td>
-            <td>
-                <input type="number" class="form-control form-control-sm unit-price-input" 
-                       data-row="${rowIndex}" value="0" min="0" step="0.01" required>
-                <small class="text-danger error-message" style="display:none;"></small>
-            </td>
-            <td>
-                <input type="number" class="form-control form-control-sm discount-input" 
-                       data-row="${rowIndex}" value="0" min="0" step="0.01">
-            </td>
-            <td class="text-end">
-                <strong class="subtotal-display">PKR 0.00</strong>
-            </td>
-            <td class="text-center">
-                <button type="button" class="btn btn-sm btn-danger remove-row-btn" data-row="${rowIndex}" title="Remove this item">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </td>
-        `;
-
-        return row;
-    }
-
-    // ============ Get Selected Product IDs ============
-    function getSelectedProductIds() {
-        const selectedIds = [];
-        document.querySelectorAll('.product-id-input').forEach(input => {
-            if (input.value) {
-                selectedIds.push(parseInt(input.value));
-            }
-        });
-        return selectedIds;
-    }
-
-    // ============ Filter Products (Exclude Already Selected) ============
-    function filterAvailableProducts(products) {
-        const selectedIds = getSelectedProductIds();
-        return products.filter(product => !selectedIds.includes(product.id));
-    }
-
-    // ============ Setup Searchable Dropdown ============
-    async function setupProductDropdown(rowIndex) {
-        const products = await loadProducts(warehouseSelect.value);
-        const row = document.getElementById(`item-row-${rowIndex}`);
-        const searchInput = row.querySelector('.product-search-input');
-        const productIdInput = row.querySelector('.product-id-input');
-        const dropdownList = row.querySelector('.product-dropdown-list');
-        const dropdownToggle = row.querySelector('.dropdown-toggle');
-        const unitPriceInput = row.querySelector('.unit-price-input');
-
-        document.body.appendChild(dropdownList);
-
-        function positionDropdown() {
-            const groupBounds = searchInput.closest('.input-group').getBoundingClientRect();
-            dropdownList.style.top = `${groupBounds.bottom + 2}px`;
-            dropdownList.style.left = `${groupBounds.left}px`;
-            dropdownList.style.width = `${groupBounds.width}px`;
-        }
-
-        // Render dropdown items
-        function renderDropdown(searchTerm = '') {
-            const availableProducts = filterAvailableProducts(products);
-            const filtered = searchTerm 
-                ? availableProducts.filter(product => 
-                    product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                    product.sku.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
-                : availableProducts;
-
-            dropdownList.innerHTML = '';
-
-            if (filtered.length === 0) {
-                dropdownList.innerHTML = '<div class="dropdown-item text-muted">No products found</div>';
-                return;
-            }
-
-            filtered.forEach(product => {
-                const item = document.createElement('div');
-                item.className = 'dropdown-item';
-                item.style.cursor = 'pointer';
-                item.style.padding = '0.5rem 1rem';
-                item.innerHTML = `
-                    <div><strong>${product.name}</strong></div>
-                    <small class="text-muted">${product.sku}</small>
-                `;
-                
-                item.addEventListener('mouseenter', function() {
-                    this.style.backgroundColor = '#f8f9fa';
-                });
-                
-                item.addEventListener('mouseleave', function() {
-                    this.style.backgroundColor = 'white';
-                });
-                
-                // Use mousedown instead of click to prevent blur event
-                item.addEventListener('mousedown', function(e) {
-                    e.preventDefault(); // Prevent blur event
-                    selectProduct(product);
-                });
-                
-                dropdownList.appendChild(item);
+            `;
+            
+            col.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectSupplier(supplier);
             });
-        }
-
-        // Select a product
-        function selectProduct(product) {
-            searchInput.value = `${product.name} (${product.sku})`;
-            productIdInput.value = product.id;
-            productIdInput.dataset.price = product.purchase_price || product.sale_price;
             
-            unitPriceInput.value = parseFloat(product.purchase_price || product.sale_price || 0).toFixed(2);
+            col.addEventListener('mouseover', function() {
+                this.querySelector('.supplier-card').style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                this.querySelector('.supplier-card').style.borderColor = '#007bff';
+            });
             
-            dropdownList.style.display = 'none';
+            col.addEventListener('mouseout', function() {
+                this.querySelector('.supplier-card').style.boxShadow = 'none';
+                this.querySelector('.supplier-card').style.borderColor = '#ddd';
+            });
             
-            updateRowSubtotal(rowIndex);
-            updateSummary();
-            clearValidationError(row, 'product');
-        }
-
-        // Show dropdown
-        function showDropdown() {
-            renderDropdown(searchInput.value);
-            positionDropdown();
-            dropdownList.style.display = 'block';
-        }
-
-        // Hide dropdown
-        function hideDropdown() {
-            setTimeout(() => {
-                dropdownList.style.display = 'none';
-            }, 200);
-        }
-
-        // Search input events
-        searchInput.addEventListener('focus', showDropdown);
-        searchInput.addEventListener('blur', hideDropdown);
-        searchInput.addEventListener('input', function() {
-            renderDropdown(this.value);
-            positionDropdown();
-            dropdownList.style.display = 'block';
+            grid.appendChild(col);
         });
-
-        window.addEventListener('resize', positionDropdown);
-        window.addEventListener('scroll', positionDropdown, true);
-
-        // Dropdown toggle button
-        dropdownToggle.addEventListener('mousedown', function(e) {
-            e.preventDefault(); // Prevent blur on input
-            if (dropdownList.style.display === 'none') {
-                searchInput.focus();
-                showDropdown();
-            } else {
-                dropdownList.style.display = 'none';
-            }
-        });
-
-        // Initial render
-        renderDropdown();
     }
 
-    // ============ Add Row ============
-    addRowBtn.addEventListener('click', async function() {
-        if (!warehouseSelect.value) {
-            alert('Please select a warehouse first');
-            warehouseSelect.focus();
+    function selectSupplier(supplier) {
+        currentSupplier = supplier;
+        
+        // Validate supplier object
+        if (!supplier || !supplier.id) {
+            console.error('Invalid supplier object:', supplier);
+            showAlert('danger', 'Invalid supplier data');
             return;
         }
 
-        const newRow = createItemRow(itemCount);
-        itemsTbody.appendChild(newRow);
+        const supplierIdField = document.getElementById('supplier_id');
+        const supplierSearchField = document.getElementById('supplierSearch');
+        const supplierDropdown = document.getElementById('supplierDropdown');
+        const supplierInfo = document.getElementById('supplierInfo');
+        const selectedSupplierName = document.getElementById('selectedSupplierName');
+        const selectedSupplierDetails = document.getElementById('selectedSupplierDetails');
+
+        // Safety checks for all elements
+        if (supplierIdField) supplierIdField.value = supplier.id;
+        if (supplierSearchField) supplierSearchField.value = supplier.name;
+        if (supplierDropdown) supplierDropdown.style.display = 'none';
         
-        await setupProductDropdown(itemCount);
-        attachRowEventListeners(itemCount);
+        if (selectedSupplierName) {
+            selectedSupplierName.textContent = supplier.name || '';
+        }
         
-        itemCount++;
-        updateNoItemsMessage();
-        updateSummary();
-    });
+        if (selectedSupplierDetails) {
+            selectedSupplierDetails.innerHTML = `
+                ${supplier.company_name ? `<strong>${supplier.company_name}</strong> | ` : ''}
+                ${supplier.phone ? `Phone: ${supplier.phone}` : ''}
+            `;
+        }
+        
+        if (supplierInfo) {
+            supplierInfo.style.display = 'block';
+        }
 
-    // ============ Attach Row Event Listeners ============
-    function attachRowEventListeners(rowIndex) {
-        const row = document.getElementById(`item-row-${rowIndex}`);
-        const quantityInput = row.querySelector('.quantity-input');
-        const unitPriceInput = row.querySelector('.unit-price-input');
-        const discountInput = row.querySelector('.discount-input');
-        const removeBtn = row.querySelector('.remove-row-btn');
-
-        // Quantity change
-        quantityInput.addEventListener('change', function() {
-            clearValidationError(row, 'quantity');
-            updateRowSubtotal(rowIndex);
-            updateSummary();
-        });
-
-        quantityInput.addEventListener('input', function() {
-            updateRowSubtotal(rowIndex);
-            updateSummary();
-        });
-
-        // Unit price change
-        unitPriceInput.addEventListener('change', function() {
-            clearValidationError(row, 'unit_price');
-            updateRowSubtotal(rowIndex);
-            updateSummary();
-        });
-
-        unitPriceInput.addEventListener('input', function() {
-            updateRowSubtotal(rowIndex);
-            updateSummary();
-        });
-
-        // Discount change
-        discountInput.addEventListener('input', function() {
-            updateRowSubtotal(rowIndex);
-            updateSummary();
-        });
-
-        // Remove row
-        removeBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            row.remove();
-            updateNoItemsMessage();
-            updateSummary();
-        });
+        // Track this supplier as recently used
+        addToRecentSuppliers(supplier);
+        
+        checkFormValidity();
     }
 
-    // ============ Validation ============
-    function clearValidationError(row, fieldType) {
-        const input = row.querySelector(`.${fieldType}-input, .product-select`);
-        if (input) {
-            const errorMsg = input.parentElement.querySelector('.error-message');
-            if (errorMsg) {
-                errorMsg.style.display = 'none';
+    function saveNewSupplier() {
+        const form = document.getElementById('newSupplierForm');
+        
+        // Validate form
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            return;
+        }
+
+        const formData = new FormData(form);
+
+        fetch('{{ route("admin.suppliers.storeAjax") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             }
-            input.classList.remove('is-invalid');
-        }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.message || 'Failed to create supplier');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.id || !data.name) {
+                throw new Error('Invalid supplier data received');
+            }
+            allSuppliers.push(data);
+            selectSupplier(data);
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('newSupplierModal'));
+            if (modal) modal.hide();
+            
+            form.reset();
+            form.classList.remove('was-validated');
+            showAlert('success', data.message || 'Supplier created successfully.');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('danger', 'Error creating supplier: ' + error.message);
+        });
     }
 
-    // ============ Calculate Row Subtotal ============
-    function updateRowSubtotal(rowIndex) {
-        const row = document.getElementById(`item-row-${rowIndex}`);
-        if (!row) return;
+    // ========== PRODUCT FUNCTIONS ==========
+    function displayProductResults(products) {
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = '';
 
-        const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
-        const unitPrice = parseFloat(row.querySelector('.unit-price-input').value) || 0;
-        const discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+        // Limit to 15 products (most recent)
+        const limited = products.slice(0, 15);
 
-        const subtotal = (quantity * unitPrice) - discount;
-        row.querySelector('.subtotal-display').textContent = `PKR ${Math.max(0, subtotal).toFixed(2)}`;
+        limited.forEach(product => {
+            const col = document.createElement('div');
+            col.className = 'col-lg-2 col-md-3 col-sm-4 col-6'; // 5 items per row on large screens
+            col.innerHTML = `
+                <div class="card h-100 cursor-pointer product-card" style="cursor: pointer; border: 1px solid #ddd; transition: all 0.2s;">
+                    <div class="card-body p-3">
+                        <div class="text-center">
+                            <div class="fw-bold small mb-1" style="word-break: break-word;">
+                                ${product.name}
+                            </div>
+                            <small class="text-success d-block" style="font-size: 11px;">
+                                Rs. ${parseFloat(product.purchase_price).toFixed(0)}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            col.addEventListener('click', function(e) {
+                e.preventDefault();
+                addProductToItems(product);
+            });
+            
+            col.addEventListener('mouseover', function() {
+                this.querySelector('.product-card').style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                this.querySelector('.product-card').style.borderColor = '#007bff';
+            });
+            
+            col.addEventListener('mouseout', function() {
+                this.querySelector('.product-card').style.boxShadow = 'none';
+                this.querySelector('.product-card').style.borderColor = '#ddd';
+            });
+            
+            grid.appendChild(col);
+        });
     }
 
-    // ============ Update No Items Message ============
-    function updateNoItemsMessage() {
-        if (itemsTbody.children.length === 0) {
-            noItemsMessage.style.display = 'block';
-            itemsTable.style.display = 'none';
+    function addProductToItems(product) {
+        // Check if product already exists
+        const existingItem = purchaseItems.find(item => item.product_id === product.id);
+        if (existingItem) {
+            existingItem.quantity += 1;
         } else {
-            noItemsMessage.style.display = 'none';
-            itemsTable.style.display = 'table';
+            purchaseItems.push({
+                product_id: product.id,
+                product_name: product.name,
+                quantity: 1,
+                unit_price: parseFloat(product.purchase_price),
+                sale_price: parseFloat(product.sale_price),
+                unit: product.unit
+            });
         }
+
+        // Track this product as recently used
+        addToRecentProducts(product);
+
+        document.getElementById('productSearch').value = '';
+        document.getElementById('productDropdown').style.display = 'none';
+        renderItemsTable();
+        updateCalculations();
     }
 
-    // ============ Update Summary ============
-    function updateSummary() {
-        let itemCountVal = 0;
-        let totalQtyVal = 0;
-        let subtotalVal = 0;
-        let itemDiscountsVal = 0;
+    function saveNewProduct() {
+        console.log('saveNewProduct called!'); // Debug: Function called
+        
+        const form = document.getElementById('newProductForm');
+        
+        if (!form) {
+            console.error('Form not found!');
+            showAlert('danger', 'Form not found. Please refresh the page.');
+            return;
+        }
+        
+        console.log('Form found:', form); // Debug: Form element
+        
+        // Client-side validation
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            showAlert('warning', 'Please fill in all required fields');
+            console.log('Form validation failed');
+            return;
+        }
 
-        document.querySelectorAll('.item-row').forEach(row => {
-            itemCountVal++;
-            const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
-            const unitPrice = parseFloat(row.querySelector('.unit-price-input').value) || 0;
-            const discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+        console.log('Form validation passed'); // Debug: Validation passed
 
-            totalQtyVal += quantity;
-            subtotalVal += (quantity * unitPrice);
-            itemDiscountsVal += discount;
+        const formData = new FormData(form);
+
+        // Debug logging
+        console.log('Sending product data:', {
+            name: formData.get('name'),
+            unit: formData.get('unit'),
+            purchase_price: formData.get('purchase_price'),
+            sale_price: formData.get('sale_price')
         });
 
-        const purchaseDiscount = parseFloat(discountInput.value) || 0;
-        const transportCost = parseFloat(transportCostInput.value) || 0;
-        const otherExpenses = parseFloat(otherExpensesInput.value) || 0;
-        const grandTotal = subtotalVal - itemDiscountsVal - purchaseDiscount + transportCost + otherExpenses;
-
-        itemCountDisplay.textContent = itemCountVal;
-        totalQtyDisplay.textContent = totalQtyVal.toFixed(2);
-        subtotalDisplay.textContent = `PKR ${subtotalVal.toFixed(2)}`;
-        itemDiscountsDisplay.textContent = itemDiscountsVal > 0 ? `- PKR ${itemDiscountsVal.toFixed(2)}` : '- PKR 0.00';
-        purchaseDiscountDisplay.textContent = purchaseDiscount > 0 ? `- PKR ${purchaseDiscount.toFixed(2)}` : '- PKR 0.00';
-        transportDisplay.textContent = transportCost > 0 ? `+ PKR ${transportCost.toFixed(2)}` : '+ PKR 0.00';
-        otherExpensesDisplay.textContent = otherExpenses > 0 ? `+ PKR ${otherExpenses.toFixed(2)}` : '+ PKR 0.00';
-        grandTotalDisplay.textContent = `PKR ${Math.max(0, grandTotal).toFixed(2)}`;
+        fetch('{{ route("admin.products.storeAjax") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            
+            if (response.status === 422) {
+                // Validation error - extract error messages
+                return response.json().then(errors => {
+                    console.error('Validation errors:', errors);
+                    const errorMessages = Object.values(errors.errors || errors).flat();
+                    throw new Error(errorMessages.join(', '));
+                });
+            }
+            
+            if (!response.ok) {
+                // Try to get error message from response
+                return response.json().then(errorData => {
+                    console.error('Server error data:', errorData);
+                    throw new Error(errorData.message || errorData.error || 'Server error: ' + response.statusText);
+                }).catch(jsonError => {
+                    // If JSON parsing fails, just use status text
+                    console.error('Failed to parse error JSON:', jsonError);
+                    throw new Error('Server error (' + response.status + '): ' + response.statusText);
+                });
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            console.log('Product created:', data);
+            
+            allProducts.push({
+                id: data.id,
+                name: data.name,
+                unit: data.unit,
+                purchase_price: data.purchase_price,
+                sale_price: data.sale_price
+            });
+            
+            addProductToItems(data);
+            bootstrap.Modal.getInstance(document.getElementById('newProductModal')).hide();
+            form.reset();
+            form.classList.remove('was-validated');
+            showAlert('success', 'Product created and added to purchase items');
+        })
+        .catch(error => {
+            console.error('Error creating product:', error);
+            showAlert('danger', 'Error creating product: ' + error.message);
+        });
     }
 
-    // Expense change listeners
-    discountInput.addEventListener('input', updateSummary);
-    transportCostInput.addEventListener('input', updateSummary);
-    otherExpensesInput.addEventListener('input', updateSummary);
+    // ========== ITEMS TABLE RENDERING ==========
+    function renderItemsTable() {
+        const tbody = document.getElementById('itemsBody');
+        const emptyRow = document.getElementById('emptyRow');
 
-    // ============ Form Submission ============
-    form.addEventListener('submit', async function(e) {
+        // Store the currently focused element and cursor position
+        const activeElement = document.activeElement;
+        let activeIndex = -1;
+        let activeField = null;
+        let cursorPosition = 0;
+
+        // Check if the active element is one of our input fields
+        if (activeElement && activeElement.tagName === 'INPUT' && activeElement.type === 'number') {
+            // Find which row and field is active
+            const row = activeElement.closest('tr');
+            if (row) {
+                activeIndex = Array.from(tbody.children).indexOf(row);
+                // Determine which field (quantity, unit_price, or sale_price)
+                if (activeElement.getAttribute('data-field')) {
+                    activeField = activeElement.getAttribute('data-field');
+                }
+                cursorPosition = activeElement.selectionStart;
+            }
+        }
+
+        if (purchaseItems.length === 0) {
+            tbody.innerHTML = '<tr id="emptyRow" class="text-center text-muted"><td colspan="7" class="py-3"><i class="bi bi-inbox"></i> No items added yet. Search and select products above.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = purchaseItems.map((item, index) => `
+            <tr>
+                <td>
+                    <strong>${item.product_name}</strong>
+                </td>
+                <td>
+                    <input type="number" 
+                           class="form-control form-control-sm" 
+                           value="${item.quantity}" 
+                           min="0.01" 
+                           step="0.01"
+                           data-field="quantity"
+                           data-index="${index}"
+                           oninput="updateItemQuantity(${index}, this.value)"
+                           onblur="updateItemQuantity(${index}, this.value)">
+                </td>
+                <td>
+                    <small class="text-muted">${item.unit || 'KG'}</small>
+                </td>
+                <td>
+                    <input type="number" 
+                           class="form-control form-control-sm" 
+                           value="${item.unit_price.toFixed(2)}" 
+                           min="0" 
+                           step="0.01"
+                           data-field="unit_price"
+                           data-index="${index}"
+                           oninput="updateItemPrice(${index}, this.value)"
+                           onblur="updateItemPrice(${index}, this.value)">
+                </td>
+                <td>
+                    <input type="number" 
+                           class="form-control form-control-sm" 
+                           value="${item.sale_price.toFixed(2)}" 
+                           min="0" 
+                           step="0.01"
+                           data-field="sale_price"
+                           data-index="${index}"
+                           oninput="updateItemSalePrice(${index}, this.value)"
+                           onblur="updateItemSalePrice(${index}, this.value)">
+                </td>
+                <td>
+                    <strong>Rs. ${(item.quantity * item.unit_price).toFixed(2)}</strong>
+                </td>
+                <td>
+                    <button type="button" 
+                            class="btn btn-sm btn-danger rounded-circle p-2" 
+                            onclick="removeItem(${index})"
+                            title="Remove item"
+                            style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        // Restore focus and cursor position if there was an active element
+        if (activeIndex >= 0 && activeField) {
+            const newRow = tbody.children[activeIndex];
+            if (newRow) {
+                const input = newRow.querySelector(`input[data-field="${activeField}"]`);
+                if (input) {
+                    input.focus();
+                    input.setSelectionRange(cursorPosition, cursorPosition);
+                }
+            }
+        }
+    }
+
+    function updateItemQuantity(index, value) {
+        purchaseItems[index].quantity = parseFloat(value) || 0;
+        // Update the row total display
+        updateRowTotal(index);
+        // Only update calculations, don't re-render the table to preserve cursor
+        updateCalculationsOnly();
+    }
+
+    function updateItemPrice(index, value) {
+        purchaseItems[index].unit_price = parseFloat(value) || 0;
+        // Update the row total display
+        updateRowTotal(index);
+        // Only update calculations, don't re-render the table to preserve cursor
+        updateCalculationsOnly();
+    }
+
+    function updateItemSalePrice(index, value) {
+        purchaseItems[index].sale_price = parseFloat(value) || 0;
+        // No need to update row total as sale price doesn't affect purchase total
+    }
+
+    // Update the total display for a specific row without re-rendering
+    function updateRowTotal(index) {
+        const tbody = document.getElementById('itemsBody');
+        const row = tbody.children[index];
+        if (row) {
+            const item = purchaseItems[index];
+            const totalCell = row.cells[5]; // 6th column (0-indexed) is the Total column
+            if (totalCell) {
+                totalCell.innerHTML = `<strong>Rs. ${(item.quantity * item.unit_price).toFixed(2)}</strong>`;
+            }
+        }
+    }
+
+    function removeItem(index) {
+        purchaseItems.splice(index, 1);
+        renderItemsTable();
+        updateCalculations();
+    }
+
+    // ========== CALCULATIONS ==========
+    // Update only totals without re-rendering the table
+    function updateCalculationsOnly() {
+        const subtotal = purchaseItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+        
+        document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+        document.getElementById('itemCount').textContent = purchaseItems.length;
+        
+        updateDiscount();
+    }
+
+    // Full update with table re-render
+    function updateCalculations() {
+        const subtotal = purchaseItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+        const transportCost = parseFloat(document.getElementById('transport_cost').value) || 0;
+        const otherExpenses = parseFloat(document.getElementById('other_expenses').value) || 0;
+
+        let discount = parseFloat(document.getElementById('discount').value) || 0;
+        const discountType = document.getElementById('discountType').value;
+
+        // If percentage, calculate actual discount amount
+        if (discountType === 'percentage') {
+            discount = (subtotal * discount) / 100;
+        }
+
+        const totalAmount = subtotal - discount + transportCost + otherExpenses;
+
+        // Update display
+        document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+        document.getElementById('display_subtotal').textContent = subtotal.toFixed(2);
+        document.getElementById('display_discount').textContent = discount.toFixed(2);
+        document.getElementById('display_transport').textContent = transportCost.toFixed(2);
+        document.getElementById('display_other').textContent = otherExpenses.toFixed(2);
+        document.getElementById('total_amount').textContent = totalAmount.toFixed(2);
+        document.getElementById('itemCount').textContent = purchaseItems.length;
+
+        updatePaymentStatus();
+    }
+
+    function updateDiscount() {
+        updateCalculations();
+    }
+
+    function updatePaymentStatus() {
+        const totalAmount = parseFloat(document.getElementById('total_amount').textContent) || 0;
+        const paidAmount = parseFloat(document.getElementById('paid_amount').value) || 0;
+        const remainingPayable = Math.max(0, totalAmount - paidAmount);
+
+        document.getElementById('remaining_payable').textContent = remainingPayable.toFixed(2);
+
+        let status = 'Not Started';
+        let statusBadge = 'secondary';
+
+        if (paidAmount === 0) {
+            status = 'Unpaid';
+            statusBadge = 'danger';
+        } else if (paidAmount >= totalAmount) {
+            status = 'Paid';
+            statusBadge = 'success';
+        } else if (paidAmount > 0) {
+            status = 'Partial';
+            statusBadge = 'warning';
+        }
+
+        document.getElementById('paymentStatus').textContent = status;
+        document.getElementById('paymentStatus').className = `badge bg-${statusBadge}`;
+    }
+
+    // ========== FORM SUBMISSION ==========
+    function checkFormValidity() {
+        const supplierId = document.getElementById('supplier_id').value;
+        const hasItems = purchaseItems.length > 0;
+        const submitBtn = document.getElementById('submitBtn');
+
+        submitBtn.disabled = !supplierId || !hasItems;
+    }
+
+    document.getElementById('purchaseForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
-        // Validation
-        if (itemsTbody.children.length === 0) {
-            alert('Please add at least one product item');
-            addRowBtn.focus();
+        const supplierId = document.getElementById('supplier_id').value;
+        if (!supplierId) {
+            showAlert('danger', 'Please select a supplier');
             return;
         }
 
-        if (!warehouseSelect.value) {
-            alert('Please select a warehouse');
-            warehouseSelect.focus();
+        if (purchaseItems.length === 0) {
+            showAlert('danger', 'Please add at least one product');
             return;
         }
 
-        if (!supplierSelect.value) {
-            alert('Please select a supplier');
-            supplierSelect.focus();
-            return;
-        }
+        // Debug: Log items before submission
+        console.log('Purchase Items Before Submission:', purchaseItems);
+        console.log('Purchase Items JSON:', JSON.stringify(purchaseItems));
 
-        // Validate all rows
-        let hasErrors = false;
-        document.querySelectorAll('.item-row').forEach((row, idx) => {
-            const productIdInput = row.querySelector('.product-id-input');
-            const productSearchInput = row.querySelector('.product-search-input');
-            const quantityInput = row.querySelector('.quantity-input');
-            const unitPriceInput = row.querySelector('.unit-price-input');
-            const quantity = parseFloat(quantityInput.value) || 0;
-            const unitPrice = parseFloat(unitPriceInput.value) || 0;
+        // Store items as JSON
+        document.getElementById('items').value = JSON.stringify(purchaseItems);
 
-            // Check product selected
-            if (!productIdInput.value) {
-                productSearchInput.classList.add('is-invalid');
-                const errMsg = row.querySelector('.error-message');
-                if (errMsg) {
-                    errMsg.textContent = 'Product is required';
-                    errMsg.style.display = 'block';
-                }
-                hasErrors = true;
-            } else {
-                productSearchInput.classList.remove('is-invalid');
-            }
-
-            // Check quantity
-            if (quantity <= 0) {
-                quantityInput.classList.add('is-invalid');
-                const errMsg = quantityInput.parentElement.querySelector('.error-message');
-                if (errMsg) {
-                    errMsg.textContent = 'Quantity must be greater than 0';
-                    errMsg.style.display = 'block';
-                }
-                hasErrors = true;
-            }
-
-            // Check unit price
-            if (unitPrice <= 0) {
-                unitPriceInput.classList.add('is-invalid');
-                const errMsg = unitPriceInput.parentElement.querySelector('.error-message');
-                if (errMsg) {
-                    errMsg.textContent = 'Unit price must be greater than 0';
-                    errMsg.style.display = 'block';
-                }
-                hasErrors = true;
-            } else {
-                unitPriceInput.classList.remove('is-invalid');
-            }
-        });
-
-        if (hasErrors) {
-            alert('Please fix the highlighted errors');
-            return;
-        }
-
-        // Collect item data
-        const items = [];
-        document.querySelectorAll('.item-row').forEach(row => {
-            items.push({
-                product_id: parseInt(row.querySelector('.product-id-input').value),
-                quantity: parseFloat(row.querySelector('.quantity-input').value),
-                unit_price: parseFloat(row.querySelector('.unit-price-input').value),
-                discount: parseFloat(row.querySelector('.discount-input').value) || 0,
-            });
-        });
-
-        // Add items to hidden input
-        let itemsInput = document.querySelector('input[name="items"]');
-        if (!itemsInput) {
-            itemsInput = document.createElement('input');
-            itemsInput.type = 'hidden';
-            itemsInput.name = 'items';
-            form.appendChild(itemsInput);
-        }
-        itemsInput.value = JSON.stringify(items);
-
-        // Add action to hidden input
-        let actionInput = document.querySelector('input[name="action"]');
-        if (!actionInput) {
-            actionInput = document.createElement('input');
-            actionInput.type = 'hidden';
-            actionInput.name = 'action';
-            form.appendChild(actionInput);
-        }
-        actionInput.value = 'confirm';
-
-        // Disable submit buttons and show loading state
-        const submitButtons = form.querySelectorAll('button[type="submit"]');
-        submitButtons.forEach(btn => {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Processing...';
-        });
-
-        // Submit the form normally
-        form.submit();
+        // Submit the form
+        this.submit();
     });
 
-    updateNoItemsMessage();
-});
+    // Watch for item changes to enable/disable submit button
+    const observer = new MutationObserver(() => checkFormValidity());
+    observer.observe(document.getElementById('itemsTable'), { childList: true, subtree: true });
+
+    // ========== UTILITY FUNCTIONS ==========
+    function showAlert(type, message) {
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.querySelector('.page-header').insertAdjacentHTML('afterend', alertHtml);
+        setTimeout(() => {
+            document.querySelector('.alert')?.remove();
+        }, 5000);
+    }
+
+    // Initialize calculations on page load
+    updateCalculations();
+    checkFormValidity();
 </script>
 @endpush
+
+@push('styles')
+<style>
+    .sticky-top {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .list-group-item {
+        cursor: pointer;
+    }
+
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .table-responsive {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .form-control-sm:focus,
+    .form-select-sm:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    #emptyRow td {
+        padding: 3rem 1rem;
+    }
+</style>
+@endpush
+@endsection

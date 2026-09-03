@@ -7,7 +7,7 @@
     <div class="mb-4">
         <div class="d-flex justify-content-between align-items-center">
             <div>
-                <h1 class="h3 mb-0">Sale Details</h1>
+                <h1 class="h3 mb-0">Sale Invoice Details</h1>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-0 mt-2">
                         <li class="breadcrumb-item"><a href="{{ route('admin.sales.index') }}">Sales</a></li>
@@ -16,25 +16,19 @@
                 </nav>
             </div>
             <div class="btn-group">
+                @can('sales.view')
+                <a href="{{ route('admin.sales.print-invoice', $sale) }}" 
+                   class="btn btn-primary" 
+                   target="_blank"
+                   title="Print Invoice">
+                    <i class="bi bi-printer me-1"></i> Print
+                </a>
+                @endcan
                 @if($sale->isDraft())
                     @can('sales.update')
                     <a href="{{ route('admin.sales.edit', $sale) }}" class="btn btn-warning">
                         <i class="bi bi-pencil me-1"></i> Edit
                     </a>
-                    @endcan
-                @endif
-                @if($sale->isConfirmed())
-                    @can('sales.approve')
-                    <a href="{{ route('admin.sales.print-invoice', $sale) }}" class="btn btn-info" target="_blank">
-                        <i class="bi bi-printer me-1"></i> Print Invoice
-                    </a>
-                    @endcan
-                @endif
-                @if($sale->isConfirmed() && $sale->due_amount > 0)
-                    @can('sales.approve')
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentModal">
-                        <i class="bi bi-cash-coin me-1"></i> Record Payment
-                    </button>
                     @endcan
                 @endif
                 <a href="{{ route('admin.sales.index') }}" class="btn btn-outline-secondary">
@@ -52,7 +46,7 @@
                     <div class="row align-items-center">
                         <div class="col">
                             <h5 class="mb-0">
-                                <i class="bi bi-file-earmark-text me-2"></i>
+                                <i class="bi bi-receipt me-2"></i>
                                 {{ $sale->invoice_number }}
                             </h5>
                         </div>
@@ -69,28 +63,33 @@
                                 <p class="mb-0">
                                     <strong>{{ $sale->customer->name }}</strong>
                                 </p>
-                                <small class="text-muted">{{ $sale->customer->customer_type }}</small>
                                 @if($sale->customer->phone)
-                                <br><small>
+                                <small>
                                     <i class="bi bi-telephone me-1"></i>
                                     {{ $sale->customer->phone }}
                                 </small>
                                 @endif
-                            @else
-                                <p class="mb-0">
-                                    <span class="badge bg-secondary">Walk-in Customer</span>
-                                </p>
-                                @if($sale->walkin_customer_name)
-                                <p class="mb-0 mt-2">
-                                    <strong>{{ $sale->walkin_customer_name }}</strong>
-                                </p>
+                                @if($sale->customer->email)
+                                <br><small>
+                                    <i class="bi bi-envelope me-1"></i>
+                                    {{ $sale->customer->email }}
+                                </small>
                                 @endif
+                            @elseif($sale->walkin_customer_name)
+                                <p class="mb-0">
+                                    <strong>{{ $sale->walkin_customer_name }}</strong>
+                                    <span class="badge bg-secondary ms-2">Walk-in</span>
+                                </p>
                                 @if($sale->walkin_customer_contact)
                                 <small>
                                     <i class="bi bi-telephone me-1"></i>
                                     {{ $sale->walkin_customer_contact }}
                                 </small>
                                 @endif
+                            @else
+                                <p class="mb-0">
+                                    <span class="badge bg-secondary">Walk-in Customer</span>
+                                </p>
                             @endif
                         </div>
                         <div class="col-md-6">
@@ -151,49 +150,62 @@
                             <thead>
                                 <tr>
                                     <th>Product</th>
-                                    <th class="text-end">Qty</th>
+                                    <th class="text-end">Quantity</th>
                                     <th class="text-end">Unit Price</th>
-                                    <th class="text-end">Item Discount</th>
-                                    <th class="text-end">Return Status</th>
                                     <th class="text-end">Total</th>
+                                    <th class="text-center">Return Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($sale->items as $item)
                                 @php
-                                    $returnedQty = $salesReturnService->getReturnedQuantity($item->id);
-                                    $remainingQty = $salesReturnService->getRemainingReturnableQuantity($item);
-                                    $isFullyReturned = $remainingQty <= 0;
-                                    $isPartiallyReturned = $returnedQty > 0 && !$isFullyReturned;
+                                    $returnedQty = $item->total_returned_quantity ?? 0;
+                                    $remaining = $item->returnable_quantity ?? $item->quantity;
+                                    $isFullyReturned = $remaining <= 0;
+                                    $isPartiallyReturned = $returnedQty > 0 && $remaining > 0;
                                 @endphp
                                 <tr>
                                     <td>
-                                        <div class="fw-semibold">{{ $item->product->name }}</div>
-                                        <small class="text-muted">
-                                            SKU: {{ $item->product->sku }} | Category: {{ $item->product->category->name }}
-                                        </small>
+                                        @if($item->product)
+                                            <div class="fw-semibold">{{ $item->product->name }}</div>
+                                            <small class="text-muted">
+                                                Unit: {{ $item->product->unit }}
+                                                @if($item->product->sku)
+                                                    | SKU: {{ $item->product->sku }}
+                                                @endif
+                                            </small>
+                                        @else
+                                            <div class="fw-semibold text-danger">Product Deleted</div>
+                                            <small class="text-muted">Product ID: {{ $item->product_id }}</small>
+                                        @endif
                                     </td>
                                     <td class="text-end">
-                                        <span class="badge bg-light text-dark">{{ number_format($item->quantity, 2) }}</span>
+                                        <span class="badge bg-light text-dark">{{ $item->quantity }}</span>
                                     </td>
                                     <td class="text-end">
                                         {{ number_format($item->unit_price, 2) }}
                                     </td>
                                     <td class="text-end">
-                                        {{ number_format($item->discount, 2) }}
-                                    </td>
-                                    <td class="text-end">
-                                        @if($isFullyReturned)
-                                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Fully Returned</span>
-                                        @elseif($isPartiallyReturned)
-                                            <span class="badge bg-warning"><i class="bi bi-exclamation-circle me-1"></i>Partially Returned</span>
-                                            <br><small class="text-muted">{{ number_format($returnedQty, 2) }} / {{ number_format($item->quantity, 2) }}</small>
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-end">
                                         <strong>{{ number_format($item->total, 2) }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        @if($isFullyReturned)
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i> Fully Returned
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">{{ number_format($returnedQty, 2) }} / {{ number_format($item->quantity, 2) }}</small>
+                                        @elseif($isPartiallyReturned)
+                                            <span class="badge bg-warning">
+                                                <i class="bi bi-exclamation-circle me-1"></i> Partially Returned
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">{{ number_format($returnedQty, 2) }} / {{ number_format($item->quantity, 2) }}</small>
+                                        @else
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-dash-circle me-1"></i> Not Returned
+                                            </span>
+                                        @endif
                                     </td>
                                 </tr>
                                 @endforeach
@@ -241,7 +253,7 @@
                             <strong>{{ number_format($sale->subtotal, 2) }}</strong>
                         </div>
                         <div class="d-flex justify-content-between">
-                            <small class="text-muted">Sale Discount</small>
+                            <small class="text-muted">Discount</small>
                             <small class="text-danger">- {{ number_format($sale->discount, 2) }}</small>
                         </div>
                     </div>
@@ -263,15 +275,21 @@
                             <strong>{{ number_format($sale->paid_amount, 2) }}</strong>
                         </div>
                         <div class="d-flex justify-content-between">
-                            <small class="text-muted">Amount Due</small>
-                            <strong class="text-{{ $sale->due_amount > 0 ? 'danger' : 'success' }}">{{ number_format($sale->due_amount, 2) }}</strong>
+                            <small class="text-muted">Balance Due</small>
+                            <strong class="text-warning">{{ number_format($sale->due_amount, 2) }}</strong>
                         </div>
                     </div>
 
-                    <div class="alert alert-{{ $sale->payment_status === 'paid' ? 'success' : ($sale->payment_status === 'partial' ? 'warning' : 'info') }}">
+                    <div class="alert alert-{{ $sale->paid_amount == 0 ? 'warning' : ($sale->paid_amount >= $sale->total_amount ? 'success' : 'info') }}">
                         <small>
                             <strong>Payment Status:</strong><br>
-                            {{ ucfirst($sale->payment_status) }}
+                            @if($sale->paid_amount == 0)
+                                Unpaid
+                            @elseif($sale->paid_amount >= $sale->total_amount)
+                                Fully Paid
+                            @else
+                                Partial Payment
+                            @endif
                         </small>
                     </div>
                 </div>
@@ -284,7 +302,7 @@
                     <i class="bi bi-exclamation-triangle me-1"></i>
                     Draft Status
                 </strong>
-                <p class="mb-0 small mt-2">This sale has not been confirmed yet. No stock has been reduced from the warehouse.</p>
+                <p class="mb-0 small mt-2">This sale has not been confirmed yet. No stock has been deducted from the warehouse.</p>
                 @can('sales.update')
                 <a href="{{ route('admin.sales.edit', $sale) }}" class="btn btn-sm btn-warning mt-2">
                     <i class="bi bi-pencil me-1"></i> Continue Editing
@@ -297,7 +315,7 @@
                     <i class="bi bi-check-circle me-1"></i>
                     Confirmed
                 </strong>
-                <p class="mb-0 small mt-2">This sale has been confirmed. Stock has been reduced from the warehouse.</p>
+                <p class="mb-0 small mt-2">This sale has been confirmed. Stock has been deducted from the warehouse.</p>
             </div>
             @else
             <div class="alert alert-danger mt-3">
@@ -305,7 +323,7 @@
                     <i class="bi bi-x-circle me-1"></i>
                     Cancelled
                 </strong>
-                <p class="mb-0 small mt-2">This sale has been cancelled. Stock has been reversed.</p>
+                <p class="mb-0 small mt-2">This sale has been cancelled. No stock movements were created.</p>
             </div>
             @endif
 
@@ -321,21 +339,18 @@
                         <form action="{{ route('admin.sales.confirm', $sale) }}" method="POST">
                             @csrf
                             <button type="submit" class="btn btn-success w-100"
-                                    onclick="return confirm('Confirm this sale? Stock will be reduced from the warehouse.');">
+                                    onclick="return confirm('Confirm this sale? Stock will be deducted from the warehouse.');">
                                 <i class="bi bi-check-circle me-1"></i> Confirm Sale
                             </button>
                         </form>
                         @endcan
                     @endif
 
-                    {{-- Debug: Check if button should show --}}
-                    <!-- isConfirmed: {{ $sale->isConfirmed() ? 'true' : 'false' }} | due_amount: {{ $sale->due_amount }} | due_amount > 0: {{ $sale->due_amount > 0 ? 'true' : 'false' }} -->
-                    
-                    @if($sale->isConfirmed() && $sale->due_amount > 0)
-                        @can('sales.approve')
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentModal">
-                            <i class="bi bi-cash-coin me-1"></i> Record Payment
-                        </button>
+                    @if($sale->isConfirmed())
+                        @can('sales.create')
+                        <a href="{{ route('admin.sale-returns.create', ['sale_id' => $sale->id]) }}" class="btn btn-danger">
+                            <i class="bi bi-arrow-return-left me-1"></i> Create Return
+                        </a>
                         @endcan
                     @endif
 
@@ -364,7 +379,7 @@
                         </div>
                         <div class="d-flex justify-content-between">
                             <span>Total Quantity:</span>
-                            <strong>{{ number_format($sale->items()->sum('quantity'), 2) }}</strong>
+                            <strong>{{ $sale->items()->sum('quantity') }}</strong>
                         </div>
                     </div>
                 </div>
@@ -393,67 +408,16 @@
                                       rows="3"
                                       placeholder="Enter cancellation reason..."></textarea>
                         </div>
-                        @if($sale->isConfirmed())
                         <div class="alert alert-info">
                             <small>
                                 <i class="bi bi-info-circle me-1"></i>
-                                This confirmed sale will have its stock reversed to the warehouse.
+                                Cancelled sales will NOT affect warehouse stock.
                             </small>
                         </div>
-                        @endif
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-danger">Cancel Sale</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    @endcan
-
-    {{-- Payment Modal --}}
-    @can('sales.approve')
-    <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Record Payment</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="{{ route('admin.sales.recordPayment', $sale) }}" method="POST" id="paymentForm">
-                    @csrf
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label text-muted">Amount Due</label>
-                            <h4 class="mb-0 text-danger">{{ number_format($sale->due_amount, 2) }} PKR</h4>
-                        </div>
-                        <div class="mb-3">
-                            <label for="payment_amount" class="form-label">Payment Amount <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text">PKR</span>
-                                <input type="number" 
-                                       class="form-control @error('amount') is-invalid @enderror" 
-                                       id="payment_amount" 
-                                       name="amount" 
-                                       step="0.01"
-                                       min="0.01"
-                                       max="{{ (float)$sale->due_amount }}"
-                                       placeholder="Enter payment amount"
-                                       required
-                                       autofocus
-                                       value="{{ old('amount') }}">
-                            </div>
-                            @error('amount')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle me-1"></i> Record Payment
-                        </button>
                     </div>
                 </form>
             </div>

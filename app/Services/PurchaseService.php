@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\PurchasePayment;
+use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -81,6 +82,14 @@ class PurchaseService
         }
 
         return DB::transaction(function () use ($purchase, $productId, $quantity, $unitPrice) {
+            // Debug logging
+            \Log::info('addItem called', [
+                'product_id' => $productId,
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'unit_price_type' => gettype($unitPrice),
+            ]);
+            
             // Check if product already exists in purchase
             $existingItem = $purchase->items()->where('product_id', $productId)->first();
 
@@ -93,6 +102,14 @@ class PurchaseService
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
                 'total' => $quantity * $unitPrice,
+            ]);
+
+            // Verify what was stored
+            \Log::info('Purchase item created', [
+                'item_id' => $item->id,
+                'stored_unit_price' => $item->unit_price,
+                'stored_quantity' => $item->quantity,
+                'stored_total' => $item->total,
             ]);
 
             // Recalculate purchase totals
@@ -214,13 +231,59 @@ class PurchaseService
      * @return Purchase
      * @throws \Exception
      */
-    public function confirmPurchase(Purchase $purchase, float $amountPaid = 0): Purchase
+    public function confirmPurchase(Purchase $purchase, float $amountPaid = 0, ?array $itemsData = null): Purchase
     {
         if (!$purchase->canBeConfirmed()) {
             throw new \Exception("This purchase cannot be confirmed. It must be in draft status and have items.");
         }
 
-        return DB::transaction(function () use ($purchase, $amountPaid) {
+        return DB::transaction(function () use ($purchase, $amountPaid, $itemsData) {
+            // Update product prices with the purchase prices before adding stock
+            foreach ($purchase->items as $item) {
+                try {
+                    // Reload product fresh to avoid any stale cache
+                    $product = Product::find($item->product_id);
+                    if (!$product) {
+                        Log::warning('Product not found for purchase item', [
+                            'product_id' => $item->product_id,
+                            'purchase_id' => $purchase->id,
+                        ]);
+                        continue;
+                    }
+                    
+                    // Prepare update data
+                    $updateData = [
+                        'purchase_price' => floatval($item->unit_price),
+                    ];
+                    
+                    // If itemsData provided, check for sale_price updates
+                    if ($itemsData && is_array($itemsData)) {
+                        $itemData = collect($itemsData)->firstWhere('product_id', $item->product_id);
+                        if ($itemData && isset($itemData['sale_price']) && floatval($itemData['sale_price']) > 0) {
+                            $updateData['sale_price'] = floatval($itemData['sale_price']);
+                        }
+                    }
+                    
+                    // Update product
+                    $product->update($updateData);
+                    
+                    Log::info('Product price updated on purchase confirmation', [
+                        'product_id' => $item->product_id,
+                        'product_name' => $product->name,
+                        'old_purchase_price' => $product->getOriginal('purchase_price'),
+                        'new_purchase_price' => $item->unit_price,
+                        'sale_price_updated' => isset($updateData['sale_price']),
+                        'purchase_id' => $purchase->id,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to update product price', [
+                        'product_id' => $item->product_id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+            }
+
             // Add stock for each item
             foreach ($purchase->items as $item) {
                 try {
@@ -232,7 +295,7 @@ class PurchaseService
                         referenceType: Purchase::class,
                         referenceId: $purchase->id,
                         unitCost: $item->unit_price,
-                        remarks: "Purchase Order #{$purchase->purchase_number} from {$purchase->supplier->name}",
+                        remarks: "Purchase Order #{$purchase->purchase_number}",
                         userId: Auth::id()
                     );
                 } catch (\Exception $e) {
@@ -294,9 +357,6 @@ class PurchaseService
                 'confirmed_at' => now(),
                 'confirmed_by' => Auth::id(),
             ]);
-
-            // Create initial ledger entry for this purchase
-            $this->createSupplierLedgerEntry($purchase);
 
             // Record purchase creation in payable history
             $this->historyService->recordPurchaseCreated($purchase, Auth::id());
@@ -512,39 +572,5 @@ class PurchaseService
         } else {
             return Purchase::PAYMENT_STATUS_PARTIAL;
         }
-    }
-
-    /**
-     * Create initial supplier ledger entry when purchase is confirmed
-     * 
-     * @param Purchase $purchase
-     * @throws \Exception
-     */
-    private function createSupplierLedgerEntry(Purchase $purchase): void
-    {
-        $suppLedgerModel = \App\Models\SupplierLedger::class;
-        
-        // Get previous balance for this supplier
-        $previousEntry = $suppLedgerModel::where('supplier_id', $purchase->supplier_id)
-            ->orderBy('date', 'desc')
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $previousBalance = $previousEntry ? $previousEntry->balance : 0;
-        $payableAmount = $purchase->total_amount - $purchase->paid_amount;
-        $newBalance = $previousBalance + $payableAmount;
-
-        $suppLedgerModel::create([
-            'supplier_id' => $purchase->supplier_id,
-            'type' => $suppLedgerModel::TYPE_PURCHASE,
-            'purchase_id' => $purchase->id,
-            'payable_added' => $payableAmount,
-            'payment_made' => $purchase->paid_amount,
-            'balance' => $newBalance,
-            'description' => "Purchase {$purchase->purchase_number} - Rs. " . number_format($payableAmount, 2) . " payable",
-            'reference_number' => $purchase->purchase_number,
-            'date' => $purchase->purchase_date,
-            'created_by' => Auth::id(),
-        ]);
     }
 }

@@ -6,17 +6,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
+ * Supplier Ledger - Running balance of supplier payables
+ * 
+ * This table maintains a complete transaction history for each supplier.
+ * Each entry represents a debit (purchase) or credit (payment).
+ * The running balance is calculated for accounting and reporting.
+ * 
  * @property int $id
  * @property int $supplier_id
- * @property string $type
+ * @property string $type - 'opening_balance', 'purchase', 'payment', 'return', 'adjustment'
  * @property int|null $purchase_id
  * @property int|null $purchase_payment_id
- * @property float $payable_added
- * @property float $payment_made
- * @property float $balance
+ * @property int|null $purchase_return_id
+ * @property float $debit - Amount owed to supplier (purchase)
+ * @property float $credit - Amount paid to supplier (payment)
+ * @property float $balance - Running balance after this transaction
  * @property string|null $description
  * @property string|null $reference_number
- * @property \Illuminate\Support\Carbon $date
+ * @property \Carbon\Carbon $date
  * @property int $created_by
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
@@ -25,10 +32,8 @@ class SupplierLedger extends Model
 {
     use HasFactory;
 
-    public $timestamps = false;
-
     /**
-     * Ledger entry types
+     * Transaction type constants
      */
     public const TYPE_OPENING_BALANCE = 'opening_balance';
     public const TYPE_PURCHASE = 'purchase';
@@ -36,27 +41,12 @@ class SupplierLedger extends Model
     public const TYPE_RETURN = 'return';
     public const TYPE_ADJUSTMENT = 'adjustment';
 
-    /**
-     * Available types
-     */
-    public static array $types = [
-        self::TYPE_OPENING_BALANCE => 'Opening Balance',
-        self::TYPE_PURCHASE => 'Purchase',
-        self::TYPE_PAYMENT => 'Payment',
-        self::TYPE_RETURN => 'Return',
-        self::TYPE_ADJUSTMENT => 'Adjustment',
-    ];
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'supplier_id',
         'type',
         'purchase_id',
         'purchase_payment_id',
+        'purchase_return_id',
         'payable_added',
         'payment_made',
         'balance',
@@ -66,11 +56,6 @@ class SupplierLedger extends Model
         'created_by',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -84,11 +69,7 @@ class SupplierLedger extends Model
     }
 
     /**
-     * Relationships
-     */
-
-    /**
-     * Get the supplier this ledger belongs to
+     * Get the supplier for this ledger entry
      */
     public function supplier()
     {
@@ -96,7 +77,7 @@ class SupplierLedger extends Model
     }
 
     /**
-     * Get the purchase that created this entry (if any)
+     * Get the purchase if this is a purchase entry
      */
     public function purchase()
     {
@@ -104,11 +85,19 @@ class SupplierLedger extends Model
     }
 
     /**
-     * Get the payment that created this entry (if any)
+     * Get the payment if this is a payment entry
      */
     public function purchasePayment()
     {
-        return $this->belongsTo(PurchasePayment::class);
+        return $this->belongsTo(PurchasePayment::class, 'purchase_payment_id');
+    }
+
+    /**
+     * Get the purchase return if this is a return entry
+     */
+    public function purchaseReturn()
+    {
+        return $this->belongsTo(PurchaseReturn::class, 'purchase_return_id');
     }
 
     /**
@@ -120,33 +109,41 @@ class SupplierLedger extends Model
     }
 
     /**
-     * Get type label
+     * Get transaction type label
      */
     public function getTypeLabelAttribute(): string
     {
-        return self::$types[$this->type] ?? 'Unknown';
-    }
-
-    /**
-     * Get the purchase return that created this entry (if any)
-     */
-    public function purchaseReturn()
-    {
-        return $this->belongsTo(PurchaseReturn::class);
-    }
-
-    /**
-     * Get type badge class
-     */
-    public function getTypeBadgeAttribute(): string
-    {
         return match($this->type) {
-            self::TYPE_OPENING_BALANCE => 'secondary',
-            self::TYPE_PURCHASE => 'warning',
-            self::TYPE_PAYMENT => 'success',
-            self::TYPE_RETURN => 'info',
-            self::TYPE_ADJUSTMENT => 'info',
-            default => 'secondary',
+            self::TYPE_OPENING_BALANCE => 'Opening Balance',
+            self::TYPE_PURCHASE => 'Purchase',
+            self::TYPE_PAYMENT => 'Payment',
+            self::TYPE_RETURN => 'Return',
+            self::TYPE_ADJUSTMENT => 'Adjustment',
+            default => 'Unknown',
         };
+    }
+
+    /**
+     * Get formatted debit for display
+     */
+    public function getFormattedDebitAttribute(): string
+    {
+        return $this->debit > 0 ? 'Rs. ' . number_format($this->debit, 2) : '-';
+    }
+
+    /**
+     * Get formatted credit for display
+     */
+    public function getFormattedCreditAttribute(): string
+    {
+        return $this->credit > 0 ? 'Rs. ' . number_format($this->credit, 2) : '-';
+    }
+
+    /**
+     * Get formatted balance for display
+     */
+    public function getFormattedBalanceAttribute(): string
+    {
+        return 'Rs. ' . number_format($this->balance, 2);
     }
 }

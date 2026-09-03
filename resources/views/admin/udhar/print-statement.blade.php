@@ -282,12 +282,7 @@
     <div class="container">
         <div class="header">
             @php
-                try {
-                    $sidebarSettings = \App\Models\WelcomePageSetting::first();
-                    $companyName = $sidebarSettings?->company_name ?? 'Company Name';
-                } catch (\Exception $e) {
-                    $companyName = 'Company Name';
-                }
+                $companyName = 'DeraNexa';
             @endphp
             <h1>{{ $companyName }}</h1>
             <p>Udhar Statement - Customer Account Statement</p>

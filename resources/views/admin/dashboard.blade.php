@@ -107,7 +107,7 @@
 
     <!-- Payables Card -->
     <div class="col-xl-3 col-md-6 mb-4">
-        <a href="{{ route('admin.payables.index') }}" class="text-decoration-none">
+        <a href="{{ route('admin.supplier-payables.index') }}" class="text-decoration-none">
             <div class="card management-card h-100" style="cursor: pointer; transition: all 0.3s ease;">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">

@@ -100,7 +100,7 @@ class Category extends Model
      */
     public function activeProducts(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(Product::class)->where('status', Product::STATUS_ACTIVE);
+        return $this->hasMany(Product::class); // Return all products since we don't have status field
     }
 
     /**

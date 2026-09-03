@@ -300,14 +300,8 @@
             <div class="row align-items-center">
                 <div class="col">
                     @php
-                        try {
-                            $sidebarSettings = \App\Models\WelcomePageSetting::first();
-                            $companyName = $sidebarSettings?->company_name ?? 'Company Name';
-                            $companyShortName = $sidebarSettings?->company_short_name ?? '';
-                        } catch (\Exception $e) {
-                            $companyName = 'Company Name';
-                            $companyShortName = '';
-                        }
+                        $companyName = 'DeraNexa';
+                        $companyShortName = 'DeraNexa';
                     @endphp
                     <div class="company-name">{{ $companyName }}</div>
                     <p style="color: #999; margin: 5px 0;"></p>

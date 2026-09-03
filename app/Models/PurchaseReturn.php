@@ -10,8 +10,24 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * Purchase Return Model
  * 
- * Represents products returned to suppliers from the warehouse.
- * Returns remove stock and create financial adjustments.
+ * @property int $id
+ * @property string $return_number
+ * @property int $purchase_id
+ * @property int $supplier_id
+ * @property int $warehouse_id
+ * @property \Illuminate\Support\Carbon $return_date
+ * @property string $status
+ * @property float $subtotal
+ * @property float $transport_cost
+ * @property float $total_amount
+ * @property float $refund_amount
+ * @property string $refund_status
+ * @property string|null $reason
+ * @property string|null $notes
+ * @property \Illuminate\Support\Carbon|null $confirmed_at
+ * @property \Illuminate\Support\Carbon|null $cancelled_at
+ * @property int $created_by
+ * @property int|null $confirmed_by
  */
 class PurchaseReturn extends Model
 {
@@ -25,33 +41,14 @@ class PurchaseReturn extends Model
     public const STATUS_CANCELLED = 'cancelled';
 
     /**
-     * Return type constants
+     * Refund status constants
      */
-    public const RETURN_TYPE_WHOLE_ORDER = 'WHOLE_ORDER';
-    public const RETURN_TYPE_PARTIAL_ITEMS = 'PARTIAL_ITEMS';
-
-    /**
-     * Payment status constants
-     */
-    public const PAYMENT_STATUS_PENDING = 'pending';
-    public const PAYMENT_STATUS_REFUNDED = 'refunded';
-    public const PAYMENT_STATUS_CREDITED = 'credited';
-    public const PAYMENT_STATUS_PARTIAL = 'partial';
-
-    /**
-     * Refund methods
-     */
-    public const REFUND_METHOD_CASH = 'cash';
-    public const REFUND_METHOD_BANK_TRANSFER = 'bank_transfer';
-    public const REFUND_METHOD_EASYPAISA = 'easypaisa';
-    public const REFUND_METHOD_JAZZ_CASH = 'jazz_cash';
-    public const REFUND_METHOD_CHEQUE = 'cheque';
-    public const REFUND_METHOD_OTHER = 'other';
+    public const REFUND_STATUS_PENDING = 'pending';
+    public const REFUND_STATUS_PARTIAL = 'partial';
+    public const REFUND_STATUS_COMPLETED = 'completed';
 
     /**
      * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
      */
     protected $fillable = [
         'return_number',
@@ -59,29 +56,21 @@ class PurchaseReturn extends Model
         'supplier_id',
         'warehouse_id',
         'return_date',
-        'return_type',
+        'status',
         'subtotal',
-        'discount_adjustment',
         'total_amount',
         'refund_amount',
-        'supplier_credit_amount',
-        'refund_method',
-        'refund_reference',
-        'payment_status',
-        'status',
+        'refund_status',
         'reason',
         'notes',
-        'created_by',
-        'confirmed_by',
-        'cancelled_by',
         'confirmed_at',
         'cancelled_at',
+        'created_by',
+        'confirmed_by',
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * The attributes that should be cast.
      */
     protected function casts(): array
     {
@@ -93,25 +82,25 @@ class PurchaseReturn extends Model
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',
             'subtotal' => 'decimal:2',
-            'discount_adjustment' => 'decimal:2',
             'total_amount' => 'decimal:2',
             'refund_amount' => 'decimal:2',
-            'supplier_credit_amount' => 'decimal:2',
         ];
     }
+
+    // ========== RELATIONSHIPS ==========
 
     /**
      * Get the original purchase
      */
-    public function purchase()
+    public function purchase(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Purchase::class)->withTrashed();
+        return $this->belongsTo(Purchase::class);
     }
 
     /**
      * Get the supplier
      */
-    public function supplier()
+    public function supplier(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Supplier::class);
     }
@@ -119,61 +108,39 @@ class PurchaseReturn extends Model
     /**
      * Get the warehouse
      */
-    public function warehouse()
+    public function warehouse(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
     }
 
     /**
-     * Get return items
+     * Get the return items
      */
-    public function items()
+    public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(PurchaseReturnItem::class);
     }
 
     /**
-     * Get creator (user)
+     * Get the user who created this return
      */
-    public function creator()
+    public function creator(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
     /**
-     * Get confirmer (user)
+     * Get the user who confirmed this return
      */
-    public function confirmer()
+    public function confirmer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'confirmed_by');
     }
 
-    /**
-     * Get canceller (user)
-     */
-    public function canceller()
-    {
-        return $this->belongsTo(User::class, 'cancelled_by');
-    }
+    // ========== STATUS CHECK METHODS ==========
 
     /**
-     * Get ledger entries
-     */
-    public function ledgerEntries()
-    {
-        return $this->hasMany(SupplierLedger::class, 'purchase_return_id');
-    }
-
-    /**
-     * Get stock movements
-     */
-    public function stockMovements()
-    {
-        return $this->morphMany(StockMovement::class, 'reference');
-    }
-
-    /**
-     * Check if return is draft
+     * Check if return is in draft status
      */
     public function isDraft(): bool
     {
@@ -189,47 +156,45 @@ class PurchaseReturn extends Model
     }
 
     /**
-     * Get credit amount (alias for supplier_credit_amount)
-     */
-    public function getCreditAmountAttribute()
-    {
-        return $this->supplier_credit_amount;
-    }
-
-    /**
-     * Check if this is a whole order return
-     */
-    public function isWholeOrderReturn(): bool
-    {
-        return $this->return_type === self::RETURN_TYPE_WHOLE_ORDER;
-    }
-
-    /**
-     * Check if this is a partial items return
-     */
-    public function isPartialItemsReturn(): bool
-    {
-        return $this->return_type === self::RETURN_TYPE_PARTIAL_ITEMS;
-    }
-
-    /**
-     * Get return type label
-     */
-    public function getReturnTypeLabelAttribute(): string
-    {
-        return match($this->return_type) {
-            self::RETURN_TYPE_WHOLE_ORDER => 'Whole Order',
-            self::RETURN_TYPE_PARTIAL_ITEMS => 'Partial Items',
-            default => 'Unknown',
-        };
-    }
-
-    /**
      * Check if return is cancelled
      */
     public function isCancelled(): bool
     {
         return $this->status === self::STATUS_CANCELLED;
+    }
+
+    /**
+     * Check if refund is pending
+     */
+    public function isRefundPending(): bool
+    {
+        return $this->refund_status === self::REFUND_STATUS_PENDING;
+    }
+
+    /**
+     * Check if refund is partial
+     */
+    public function isRefundPartial(): bool
+    {
+        return $this->refund_status === self::REFUND_STATUS_PARTIAL;
+    }
+
+    /**
+     * Check if refund is completed
+     */
+    public function isRefundCompleted(): bool
+    {
+        return $this->refund_status === self::REFUND_STATUS_COMPLETED;
+    }
+
+    // ========== PERMISSION METHODS ==========
+
+    /**
+     * Check if return can be edited
+     */
+    public function canBeEdited(): bool
+    {
+        return $this->isDraft();
     }
 
     /**
@@ -245,8 +210,70 @@ class PurchaseReturn extends Model
      */
     public function canBeCancelled(): bool
     {
-        return $this->isConfirmed();
+        return !$this->isCancelled();
     }
+
+    // ========== QUERY SCOPES ==========
+
+    /**
+     * Scope to filter draft returns
+     */
+    public function scopeDraft($query)
+    {
+        return $query->where('status', self::STATUS_DRAFT);
+    }
+
+    /**
+     * Scope to filter confirmed returns
+     */
+    public function scopeConfirmed($query)
+    {
+        return $query->where('status', self::STATUS_CONFIRMED);
+    }
+
+    /**
+     * Scope to filter cancelled returns
+     */
+    public function scopeCancelled($query)
+    {
+        return $query->where('status', self::STATUS_CANCELLED);
+    }
+
+    /**
+     * Scope to filter by refund status
+     */
+    public function scopeByRefundStatus($query, $status)
+    {
+        return $query->where('refund_status', $status);
+    }
+
+    // ========== COMPUTED ATTRIBUTES ==========
+
+    /**
+     * Get remaining refund amount
+     */
+    public function getRemainingRefundAttribute(): float
+    {
+        return max(0, $this->total_amount - $this->refund_amount);
+    }
+
+    /**
+     * Get total items count
+     */
+    public function getTotalItemsCountAttribute(): int
+    {
+        return $this->items()->count();
+    }
+
+    /**
+     * Get total quantity of all items
+     */
+    public function getTotalQuantityAttribute(): float
+    {
+        return $this->items()->sum('quantity');
+    }
+
+    // ========== DISPLAY ATTRIBUTES ==========
 
     /**
      * Get status label
@@ -275,98 +302,60 @@ class PurchaseReturn extends Model
     }
 
     /**
-     * Get payment status label
+     * Get refund status label
      */
-    public function getPaymentStatusLabelAttribute(): string
+    public function getRefundStatusLabelAttribute(): string
     {
-        return match($this->payment_status) {
-            self::PAYMENT_STATUS_PENDING => 'Pending',
-            self::PAYMENT_STATUS_REFUNDED => 'Refunded',
-            self::PAYMENT_STATUS_CREDITED => 'Credited',
-            self::PAYMENT_STATUS_PARTIAL => 'Partial',
+        return match($this->refund_status) {
+            self::REFUND_STATUS_COMPLETED => 'Completed',
+            self::REFUND_STATUS_PARTIAL => 'Partial',
+            self::REFUND_STATUS_PENDING => 'Pending',
             default => 'Unknown',
         };
     }
 
     /**
-     * Get payment status badge class
+     * Get refund status badge class
      */
-    public function getPaymentStatusBadgeAttribute(): string
+    public function getRefundStatusBadgeAttribute(): string
     {
-        return match($this->payment_status) {
-            self::PAYMENT_STATUS_PENDING => 'secondary',
-            self::PAYMENT_STATUS_REFUNDED => 'success',
-            self::PAYMENT_STATUS_CREDITED => 'info',
-            self::PAYMENT_STATUS_PARTIAL => 'warning',
+        return match($this->refund_status) {
+            self::REFUND_STATUS_COMPLETED => 'success',
+            self::REFUND_STATUS_PARTIAL => 'warning',
+            self::REFUND_STATUS_PENDING => 'danger',
             default => 'secondary',
         };
     }
 
+    // ========== HELPER METHODS ==========
+
     /**
-     * Scope to filter confirmed returns
+     * Calculate and update the total amount
      */
-    public function scopeConfirmed($query)
+    public function calculateTotalAmount(): float
     {
-        return $query->where('status', self::STATUS_CONFIRMED);
+        return $this->subtotal;
     }
 
     /**
-     * Scope to filter by purchase
+     * Update refund status based on refund amount
      */
-    public function scopeByPurchase($query, $purchaseId)
+    public function updateRefundStatus(): void
     {
-        return $query->where('purchase_id', $purchaseId);
-    }
-
-    /**
-     * Scope to filter by supplier
-     */
-    public function scopeBySupplier($query, $supplierId)
-    {
-        return $query->where('supplier_id', $supplierId);
-    }
-
-    /**
-     * Scope to filter by date range
-     */
-    public function scopeByDateRange($query, $startDate, $endDate)
-    {
-        return $query->whereBetween('return_date', [$startDate, $endDate]);
-    }
-
-    /**
-     * Get refund method label
-     */
-    public function getRefundMethodLabelAttribute(): ?string
-    {
-        if (!$this->refund_method) {
-            return null;
+        if ($this->refund_amount <= 0) {
+            $this->refund_status = self::REFUND_STATUS_PENDING;
+        } elseif ($this->refund_amount >= $this->total_amount) {
+            $this->refund_status = self::REFUND_STATUS_COMPLETED;
+        } else {
+            $this->refund_status = self::REFUND_STATUS_PARTIAL;
         }
-
-        return match($this->refund_method) {
-            self::REFUND_METHOD_CASH => 'Cash',
-            self::REFUND_METHOD_BANK_TRANSFER => 'Bank Transfer',
-            self::REFUND_METHOD_EASYPAISA => 'EasyPaisa',
-            self::REFUND_METHOD_JAZZ_CASH => 'Jazz Cash',
-            self::REFUND_METHOD_CHEQUE => 'Cheque',
-            self::REFUND_METHOD_OTHER => 'Other',
-            default => ucfirst($this->refund_method),
-        };
     }
 
     /**
-     * Get total items count
+     * Recalculate subtotal from items
      */
-    public function getTotalItemsCountAttribute(): int
+    public function recalculateSubtotal(): float
     {
-        return $this->items()->count();
-    }
-
-    /**
-     * Get total quantity
-     */
-    public function getTotalQuantityAttribute(): float
-    {
-        return $this->items()->sum('quantity');
+        return $this->items()->sum(\DB::raw('quantity * unit_price'));
     }
 }
