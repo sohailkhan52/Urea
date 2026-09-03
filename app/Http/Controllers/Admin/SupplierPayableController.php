@@ -59,7 +59,7 @@ class SupplierPayableController extends Controller
         $suppliers = collect();
         
         if (!empty($supplierIds)) {
-            $suppliers = Supplier::whereIn('id', $supplierIds)
+            $allSuppliers = Supplier::whereIn('id', $supplierIds)
                 ->get()
                 ->map(function ($supplier) use ($allPurchases, $user) {
                     // Get purchases for this supplier
@@ -96,6 +96,17 @@ class SupplierPayableController extends Controller
                 })
                 ->sortByDesc('outstanding_payable')
                 ->values();
+            
+            // Paginate the results (10 per page)
+            $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+            $perPage = 10;
+            $suppliers = new \Illuminate\Pagination\LengthAwarePaginator(
+                $allSuppliers->forPage($page, $perPage)->values(),
+                $allSuppliers->count(),
+                $perPage,
+                $page,
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+            );
         }
         
         $summary = [

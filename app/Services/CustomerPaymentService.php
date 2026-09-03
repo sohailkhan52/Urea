@@ -145,8 +145,16 @@ class CustomerPaymentService
      */
     public function getUdharSummary(array $filters = [])
     {
+        // FIX: Use eager loading with database aggregation to avoid N+1 queries
+        // Before: 3N + 1 queries (N customers × 3 aggregates + 1 initial)
+        // After: 1 query with aggregates
         $query = Customer::with(['family', 'warehouse'])
-            ->has('sales'); // Only customers with sales
+            ->withSum('sales as total_sales_amount', 'total_amount')
+            ->withSum('sales as total_paid_amount', 'paid_amount')
+            ->withSum('payments as total_additional_payments', 'amount')
+            ->whereHas('sales', function ($q) {
+                $q->where('status', Sale::STATUS_CONFIRMED);
+            });
 
         // Apply filters
         if (!empty($filters['family_id'])) {
@@ -171,17 +179,11 @@ class CustomerPaymentService
 
         $customers = $query->get();
 
-        // Calculate udhar for each customer
+        // Calculate udhar for each customer using pre-aggregated values
         $customersWithUdhar = $customers->map(function ($customer) {
-            $totalSales = $customer->sales()
-                ->where('status', Sale::STATUS_CONFIRMED)
-                ->sum('total_amount');
-
-            $initialPaid = $customer->sales()
-                ->where('status', Sale::STATUS_CONFIRMED)
-                ->sum('paid_amount');
-
-            $additionalPayments = $customer->payments()->sum('amount');
+            $totalSales = (float)($customer->total_sales_amount ?? 0);
+            $initialPaid = (float)($customer->total_paid_amount ?? 0);
+            $additionalPayments = (float)($customer->total_additional_payments ?? 0);
 
             $totalPaid = $initialPaid + $additionalPayments;
             $currentUdhar = max(0, $totalSales - $totalPaid);

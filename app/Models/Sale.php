@@ -145,7 +145,10 @@ class Sale extends Model
      */
     public function getTotalAdditionalPaymentsAttribute(): float
     {
-        return $this->customerPayments()->sum('amount');
+        // FIX: Use cached aggregate instead of query to avoid N+1 when accessed in loops
+        // This value should be pre-loaded with ->withSum('customerPayments', 'amount') when querying sales
+        // Fallback to query if not pre-loaded (slower but safe)
+        return (float)($this->attributes['customer_payments_sum_amount'] ?? $this->customerPayments()->sum('amount') ?? 0);
     }
 
     /**
@@ -449,5 +452,89 @@ class Sale extends Model
             self::PAYMENT_STATUS_UNPAID => 'Unpaid',
             default => ucfirst($status),
         };
+    }
+
+    /**
+     * Get total cost of goods sold for this sale
+     * Calculates from sale items cost_price
+     */
+    public function getTotalCOGSAttribute(): float
+    {
+        return $this->items->sum('COGS');
+    }
+
+    /**
+     * Get net revenue for this sale (after returns)
+     */
+    public function getNetRevenueAttribute(): float
+    {
+        return $this->items->sum('net_revenue');
+    }
+
+    /**
+     * Get gross profit for this sale
+     * Formula: Net Revenue - COGS
+     */
+    public function getGrossProfitAttribute(): float
+    {
+        return $this->net_revenue - $this->total_COGS;
+    }
+
+    /**
+     * Get profit margin percentage
+     * Formula: (Gross Profit / Net Revenue) × 100
+     */
+    public function getProfitMarginPercentageAttribute(): float
+    {
+        if ($this->net_revenue == 0) {
+            return 0;
+        }
+        return ($this->gross_profit / $this->net_revenue) * 100;
+    }
+
+    /**
+     * Get profit status: 'profit', 'loss', or 'break-even'
+     */
+    public function getProfitStatusAttribute(): string
+    {
+        $profit = $this->gross_profit;
+        if ($profit > 0) {
+            return 'profit';
+        } elseif ($profit < 0) {
+            return 'loss';
+        } else {
+            return 'break-even';
+        }
+    }
+
+    /**
+     * Check if cost data is available for profit calculation
+     */
+    public function hasCostDataAttribute(): bool
+    {
+        return $this->items->whereNotNull('cost_price')->count() === $this->items->count();
+    }
+
+    /**
+     * Scope to filter sales with profit
+     */
+    public function scopeWithProfit($query)
+    {
+        return $query->with(['items' => function ($query) {
+            $query->whereNotNull('cost_price');
+        }]);
+    }
+
+    /**
+     * Scope for user warehouse authorization
+     */
+    public function scopeForUserWarehouses($query, $user)
+    {
+        if ($user->isSuperAdmin()) {
+            return $query;
+        }
+
+        $warehouseIds = $user->warehouses()->pluck('warehouses.id');
+        return $query->whereIn('warehouse_id', $warehouseIds);
     }
 }

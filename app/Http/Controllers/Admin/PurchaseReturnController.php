@@ -55,7 +55,7 @@ class PurchaseReturnController extends Controller
             });
         }
 
-        $returns = $query->paginate(15);
+        $returns = $query->paginate(10);
 
         return view('admin.purchase-returns.index', compact('returns'));
     }

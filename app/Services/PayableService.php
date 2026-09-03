@@ -128,6 +128,10 @@ class PayableService
      */
     public function getSuppliersWithPayables(array $filters = []): Collection
     {
+        // FIX: Use eager loading to avoid N+1 queries when accessing supplier payments
+        // Before: N + 1 queries (one for purchases, N for supplier payments)
+        // After: 2 queries (one for purchases, one for suppliers with eager-loaded payments)
+        
         // Get all confirmed purchases with outstanding balance
         $purchasesWithPayable = Purchase::where('status', Purchase::STATUS_CONFIRMED)
             ->where(function ($q) {
@@ -138,10 +142,18 @@ class PayableService
             ->get()
             ->groupBy('supplier_id');
 
+        // Get all suppliers with their latest payment eager-loaded
+        $suppliers = Supplier::whereIn('id', $purchasesWithPayable->keys())
+            ->with(['payments' => function ($query) {
+                $query->orderBy('payment_date', 'desc')->limit(1);
+            }])
+            ->get()
+            ->keyBy('id');
+
         $suppliersData = [];
 
         foreach ($purchasesWithPayable as $supplierId => $purchases) {
-            $supplier = $purchases->first()->supplier;
+            $supplier = $suppliers[$supplierId];
             
             // Calculate totals for this supplier
             $totalPurchaseAmount = $purchases->sum('total_amount');
@@ -157,10 +169,8 @@ class PayableService
                 continue;
             }
 
-            // Get last payment date
-            $lastPayment = $supplier->payments()
-                ->orderBy('payment_date', 'desc')
-                ->first();
+            // Get last payment from eager-loaded collection (no additional query)
+            $lastPayment = $supplier->payments->first();
 
             $suppliersData[] = [
                 'supplier_id' => $supplier->id,
@@ -243,6 +253,10 @@ class PayableService
      */
     public function getAgingPayables(?int $supplierId = null): array
     {
+        // FIX: Use database-level aggregation instead of PHP-level processing
+        // Before: Fetches ALL purchases then processes in PHP loop
+        // After: Uses database CASE statement and GROUP BY for aggregation
+        
         $query = Purchase::where('status', Purchase::STATUS_CONFIRMED)
             ->where(function ($q) {
                 $q->where('payment_status', Purchase::PAYMENT_STATUS_UNPAID)
@@ -253,56 +267,45 @@ class PayableService
             $query->where('supplier_id', $supplierId);
         }
 
-        $purchases = $query->get();
+        // Use database-level aggregation with CASE statements
+        // This is much more efficient than fetching all purchases into PHP and processing them
+        $agingData = $query
+            ->select(
+                \DB::raw('CASE 
+                    WHEN DATEDIFF(NOW(), purchase_date) <= 30 THEN "current"
+                    WHEN DATEDIFF(NOW(), purchase_date) <= 60 THEN "aged_30_60"
+                    WHEN DATEDIFF(NOW(), purchase_date) <= 90 THEN "aged_60_90"
+                    ELSE "aged_90_plus" 
+                END as aging_bucket'),
+                \DB::raw('COUNT(*) as purchase_count'),
+                \DB::raw('SUM(total_amount - paid_amount) as total_amount')
+            )
+            ->groupBy('aging_bucket')
+            ->get()
+            ->keyBy('aging_bucket');
 
-        $currentDate = now();
-        $aging = [
+        // Build response with all buckets (even if zero)
+        return [
             'current' => [
                 'label' => '0-30 Days',
-                'purchases' => 0,
-                'amount' => 0,
+                'purchases' => (int)($agingData['current']->purchase_count ?? 0),
+                'amount' => (float)($agingData['current']->total_amount ?? 0),
             ],
             'aged_30_60' => [
                 'label' => '31-60 Days',
-                'purchases' => 0,
-                'amount' => 0,
+                'purchases' => (int)($agingData['aged_30_60']->purchase_count ?? 0),
+                'amount' => (float)($agingData['aged_30_60']->total_amount ?? 0),
             ],
             'aged_60_90' => [
                 'label' => '61-90 Days',
-                'purchases' => 0,
-                'amount' => 0,
+                'purchases' => (int)($agingData['aged_60_90']->purchase_count ?? 0),
+                'amount' => (float)($agingData['aged_60_90']->total_amount ?? 0),
             ],
             'aged_90_plus' => [
                 'label' => '90+ Days',
-                'purchases' => 0,
-                'amount' => 0,
+                'purchases' => (int)($agingData['aged_90_plus']->purchase_count ?? 0),
+                'amount' => (float)($agingData['aged_90_plus']->total_amount ?? 0),
             ],
         ];
-
-        foreach ($purchases as $purchase) {
-            $daysOld = $currentDate->diffInDays($purchase->purchase_date);
-            $payableAmount = $purchase->total_amount - $purchase->paid_amount;
-
-            if ($daysOld <= 30) {
-                $aging['current']['purchases']++;
-                $aging['current']['amount'] += $payableAmount;
-            } elseif ($daysOld <= 60) {
-                $aging['aged_30_60']['purchases']++;
-                $aging['aged_30_60']['amount'] += $payableAmount;
-            } elseif ($daysOld <= 90) {
-                $aging['aged_60_90']['purchases']++;
-                $aging['aged_60_90']['amount'] += $payableAmount;
-            } else {
-                $aging['aged_90_plus']['purchases']++;
-                $aging['aged_90_plus']['amount'] += $payableAmount;
-            }
-        }
-
-        // Convert amounts to float
-        foreach ($aging as &$bucket) {
-            $bucket['amount'] = (float)$bucket['amount'];
-        }
-
-        return $aging;
     }
 }

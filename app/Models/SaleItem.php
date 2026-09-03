@@ -30,6 +30,7 @@ class SaleItem extends Model
         'product_id',
         'quantity',
         'unit_price',
+        'cost_price',
         'discount',
         'total',
     ];
@@ -44,6 +45,7 @@ class SaleItem extends Model
         return [
             'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',
+            'cost_price' => 'decimal:2',
             'discount' => 'decimal:2',
             'total' => 'decimal:2',
             'created_at' => 'datetime',
@@ -108,6 +110,67 @@ class SaleItem extends Model
     public function canBeReturned(): bool
     {
         return $this->returnable_quantity > 0;
+    }
+
+    /**
+     * Get net quantity sold (after returns)
+     */
+    public function getNetQuantityAttribute(): float
+    {
+        return max(0, $this->quantity - $this->total_returned_quantity);
+    }
+
+    /**
+     * Get net revenue (after returns and discount)
+     */
+    public function getNetRevenueAttribute(): float
+    {
+        return $this->net_quantity * $this->unit_price;
+    }
+
+    /**
+     * Get cost of goods sold for this item (after returns)
+     */
+    public function getCOGSAttribute(): float
+    {
+        if (!$this->cost_price) {
+            return 0;
+        }
+        return $this->net_quantity * $this->cost_price;
+    }
+
+    /**
+     * Get gross profit for this item
+     */
+    public function getGrossProfitAttribute(): float
+    {
+        return $this->net_revenue - $this->COGS;
+    }
+
+    /**
+     * Get profit margin percentage for this item
+     */
+    public function getProfitMarginAttribute(): float
+    {
+        if ($this->net_revenue == 0) {
+            return 0;
+        }
+        return ($this->gross_profit / $this->net_revenue) * 100;
+    }
+
+    /**
+     * Get profit status: 'profit', 'loss', or 'break-even'
+     */
+    public function getProfitStatusAttribute(): string
+    {
+        $profit = $this->gross_profit;
+        if ($profit > 0) {
+            return 'profit';
+        } elseif ($profit < 0) {
+            return 'loss';
+        } else {
+            return 'break-even';
+        }
     }
 
     /**

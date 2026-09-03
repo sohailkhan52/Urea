@@ -90,10 +90,15 @@ class SalesService
                         throw new \Exception("Insufficient stock for {$product->name}. Available: {$availableStock}, Requested: {$itemData['quantity']}");
                     }
 
+                    // Get product's current purchase price as cost
+                    $product = Product::find($itemData['product_id']);
+                    $costPrice = $product ? $product->purchase_price : 0;
+
                     $sale->items()->create([
                         'product_id' => $itemData['product_id'],
                         'quantity' => $itemData['quantity'],
                         'unit_price' => $itemData['unit_price'],
+                        'cost_price' => $costPrice,
                         'discount' => $itemData['discount'] ?? 0,
                     ]);
                 }
@@ -168,10 +173,15 @@ class SalesService
                 return $existingItem;
             }
 
+            // Get product's current purchase price as cost
+            $product = Product::find($productId);
+            $costPrice = $product ? $product->purchase_price : 0;
+
             $item = $sale->items()->create([
                 'product_id' => $productId,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
+                'cost_price' => $costPrice,
                 'discount' => $discount,
             ]);
 
@@ -300,7 +310,7 @@ class SalesService
                     type: \App\Models\StockMovement::TYPE_SALE,
                     referenceType: Sale::class,
                     referenceId: $sale->id,
-                    unitCost: $item->unit_price,
+                    unitCost: $item->cost_price ?? $item->unit_price, // Use cost_price, fallback to unit_price if null
                     remarks: "Sale #{$sale->invoice_number}",
                     userId: auth()->id()
                 );

@@ -324,7 +324,10 @@ class Purchase extends Model
      */
     public function getTotalItemsCountAttribute(): int
     {
-        return $this->items()->count();
+        // FIX: Use cached aggregate instead of query to avoid N+1 when accessed in loops
+        // This value should be pre-loaded with ->withCount('items') when querying purchases
+        // Fallback to query if not pre-loaded (slower but safe)
+        return (int)($this->attributes['items_count'] ?? $this->items()->count() ?? 0);
     }
 
     /**
@@ -332,7 +335,10 @@ class Purchase extends Model
      */
     public function getTotalQuantityAttribute(): float
     {
-        return $this->items()->sum('quantity');
+        // FIX: Use cached aggregate instead of query to avoid N+1 when accessed in loops
+        // This value should be pre-loaded with ->withSum('items', 'quantity') when querying purchases
+        // Fallback to query if not pre-loaded (slower but safe)
+        return (float)($this->attributes['items_sum_quantity'] ?? $this->items()->sum('quantity') ?? 0);
     }
 
     // ========== DISPLAY ATTRIBUTES ==========

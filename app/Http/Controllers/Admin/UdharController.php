@@ -47,7 +47,18 @@ class UdharController extends Controller
         }
 
         // Get udhar summary
-        $customersWithUdhar = $this->paymentService->getUdharSummary($filters);
+        $customersWithUdharCollection = $this->paymentService->getUdharSummary($filters);
+
+        // Paginate the results (10 per page)
+        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+        $perPage = 10;
+        $customersWithUdhar = new \Illuminate\Pagination\LengthAwarePaginator(
+            $customersWithUdharCollection->forPage($page, $perPage)->values(),
+            $customersWithUdharCollection->count(),
+            $perPage,
+            $page,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+        );
 
         // Get filter options
         $families = Family::active()->orderBy('name')->get();
@@ -57,10 +68,10 @@ class UdharController extends Controller
             : $user->warehouses()->where('status', 'active')->orderBy('name')->get();
 
         // Calculate totals
-        $totalUdhar = $customersWithUdhar->sum('current_udhar');
-        $totalSales = $customersWithUdhar->sum('total_sales');
-        $totalPaid = $customersWithUdhar->sum('total_paid');
-        $customersCount = $customersWithUdhar->count();
+        $totalUdhar = $customersWithUdharCollection->sum('current_udhar');
+        $totalSales = $customersWithUdharCollection->sum('total_sales');
+        $totalPaid = $customersWithUdharCollection->sum('total_paid');
+        $customersCount = $customersWithUdharCollection->count();
 
         return view('admin.udhar.index', compact(
             'customersWithUdhar',

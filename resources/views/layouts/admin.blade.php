@@ -754,13 +754,13 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
                     <li>
-                        <a href="{{ route('admin.purchases.index') }}" class="dropdown-item">
+                        <a href="{{ route('admin.purchases.index') }}" class="dropdown-item {{ request()->routeIs('admin.purchases.index') ? 'active' : '' }}">
                             <i class="bi bi-list me-2"></i> View All
                         </a>
                     </li>
                     @can('purchases.create')
                     <li>
-                        <a href="{{ route('admin.purchases.create') }}" class="dropdown-item">
+                        <a href="{{ route('admin.purchases.create') }}" class="dropdown-item {{ request()->routeIs('admin.purchases.create') ? 'active' : '' }}">
                             <i class="bi bi-plus-circle me-2"></i> Add Purchase
                         </a>
                     </li>
@@ -816,26 +816,37 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
                     <li>
-                        <a href="{{ route('admin.sales.index') }}" class="dropdown-item">
+                        <a href="{{ route('admin.sales.index') }}" class="dropdown-item {{ request()->routeIs('admin.sales.index') ? 'active' : '' }}">
                             <i class="bi bi-list me-2"></i> View All
                         </a>
                     </li>
                     @can('sales.create')
                     <li>
-                        <a href="{{ route('admin.sales.create') }}" class="dropdown-item">
+                        <a href="{{ route('admin.sales.create') }}" class="dropdown-item {{ request()->routeIs('admin.sales.create') ? 'active' : '' }}">
                             <i class="bi bi-plus-circle me-2"></i> Add Sale
                         </a>
                     </li>
+                    @endcan
+                </ul>
+            </div>
+            @endpermission
+
+            @permission('sales.view')
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.sale-returns.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-arrow-return-left"></i>
+                    <div class="nav-link-wrapper">
+      </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
                     <li>
-                        <a href="{{ route('admin.sale-returns.create') }}" class="dropdown-item">
-                            <i class="bi bi-arrow-return-right me-2"></i> Sales Return
+                        <a href="{{ route('admin.sale-returns.index') }}" class="dropdown-item {{ request()->routeIs('admin.sale-returns.index') ? 'active' : '' }}">
+                            <i class="bi bi-list me-2"></i> View All Returns
                         </a>
                     </li>
-                    @endcan
-                    @can('sales.view')
+                    @can('sales.create')
                     <li>
-                        <a href="{{ route('admin.sale-returns.index') }}" class="dropdown-item">
-                            <i class="bi bi-arrow-return-left me-2"></i> View Returns
+                        <a href="{{ route('admin.sale-returns.create') }}" class="dropdown-item {{ request()->routeIs('admin.sale-returns.create') ? 'active' : '' }}">
+                            <i class="bi bi-plus-circle me-2"></i> Create Return
                         </a>
                     </li>
                     @endcan
@@ -851,6 +862,46 @@
                     <span class="nav-link-text-ur">اُدھار</span>
                 </div>
             </a>
+            @endpermission
+            @endanypermission
+
+            {{-- Reports Section --}}
+            @anypermission(['sales.view', 'purchases.view'])
+            <div class="nav-section-title">Reports</div>
+
+            @permission('sales.view')
+            <div class="nav-dropdown">
+                <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}" aria-expanded="false">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <div class="nav-link-wrapper">
+                        <span class="nav-link-text-en">Reports</span>
+                        <span class="nav-link-text-ur">رپورٹس</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                    @can('sales.view')
+                    <li>
+                        <a href="{{ route('admin.reports.sales.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.sales.*') ? 'active' : '' }}">
+                            <i class="bi bi-receipt me-2"></i> Sale Report
+                        </a>
+                    </li>
+                    @endcan
+                    @can('purchases.view')
+                    <li>
+                        <a href="{{ route('admin.reports.purchases.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.purchases.*') ? 'active' : '' }}">
+                            <i class="bi bi-cart me-2"></i> Purchase Report
+                        </a>
+                    </li>
+                    @endcan
+                    @can('sales.view')
+                    <li>
+                        <a href="{{ route('admin.reports.profit-loss.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.profit-loss.*') ? 'active' : '' }}">
+                            <i class="bi bi-graph-up-arrow me-2"></i> Profit & Loss
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </div>
             @endpermission
             @endanypermission
 
@@ -873,9 +924,20 @@
                 <i class="bi bi-list"></i>
             </button>
 
-            <a href="{{ url('/') }}" class="btn btn-outline-secondary btn-sm me-3" title="Go to Home Page">
+            <a href="{{ url('/') }}" class="btn btn-outline-secondary btn-sm me-2" title="Go to Home Page">
                 <i class="bi bi-house-fill me-1"></i>Home
             </a>
+
+            {{-- Back Button (Hidden on Dashboard and Welcome) --}}
+            @php
+                $currentRoute = Route::currentRouteName();
+                $showBackButton = !in_array($currentRoute, ['admin.dashboard', 'dashboard', 'welcome', 'home']);
+            @endphp
+            @if($showBackButton)
+            <button onclick="window.history.back()" class="btn btn-outline-secondary btn-sm me-3" title="Go to Previous Page">
+                <i class="bi bi-arrow-left me-1"></i>Back
+            </button>
+            @endif
 
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">

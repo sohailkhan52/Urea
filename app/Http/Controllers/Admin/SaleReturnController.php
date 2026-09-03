@@ -93,7 +93,7 @@ class SaleReturnController extends Controller
             $query->where('return_date', '<=', $request->date_to);
         }
 
-        $returns = $query->latest('return_date')->paginate(15)->withQueryString();
+        $returns = $query->latest('return_date')->paginate(10)->withQueryString();
 
         // Get warehouses the user can see
         $warehouses = $user->isSuperAdmin()

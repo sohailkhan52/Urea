@@ -20,6 +20,11 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes - Home/Welcome
 Route::get('/', function () {
+    if (auth()->check()) {
+        // Authenticated users (admin) go to dashboard
+        return redirect()->route('admin.dashboard');
+    }
+    // Guests see welcome page
     return view('welcome');
 })->name('home');
 
@@ -205,6 +210,33 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     Route::get('/purchases/{purchase}/print', [\App\Http\Controllers\Admin\PurchaseController::class, 'print'])
         ->name('purchases.print')
         ->middleware('permission:purchases.view');
+
+    // ============ SALE REPORTS ============
+    Route::prefix('reports/sales')->name('reports.sales.')->middleware('permission:sales.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\SaleReportController::class, 'index'])->name('index');
+        Route::get('/{sale}', [\App\Http\Controllers\Admin\SaleReportController::class, 'show'])->name('show');
+        Route::delete('/bulk-delete', [\App\Http\Controllers\Admin\SaleReportController::class, 'bulkDelete'])
+            ->name('bulk-delete')
+            ->middleware('permission:sales.delete');
+    });
+    // ============ END SALE REPORTS ============
+
+    // ============ PURCHASE REPORTS ============
+    Route::prefix('reports/purchases')->name('reports.purchases.')->middleware('permission:purchases.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PurchaseReportController::class, 'index'])->name('index');
+        Route::get('/{purchase}', [\App\Http\Controllers\Admin\PurchaseReportController::class, 'show'])->name('show');
+        Route::delete('/bulk-delete', [\App\Http\Controllers\Admin\PurchaseReportController::class, 'bulkDelete'])
+            ->name('bulk-delete')
+            ->middleware('permission:purchases.delete');
+    });
+    // ============ END PURCHASE REPORTS ============
+
+    // ============ PROFIT & LOSS REPORTS ============
+    Route::prefix('reports/profit-loss')->name('reports.profit-loss.')->middleware('permission:sales.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ProfitLossController::class, 'index'])->name('index');
+        Route::get('/{sale}', [\App\Http\Controllers\Admin\ProfitLossController::class, 'show'])->name('show');
+    });
+    // ============ END PROFIT & LOSS REPORTS ============
 
     // Sales Management
     // AJAX endpoints for returns (must come before resource route)

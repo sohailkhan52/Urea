@@ -27,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
         // Fix for MySQL key length issue (1000 byte limit with utf8mb4)
         Schema::defaultStringLength(191);
         
+        // Configure pagination view
+        \Illuminate\Pagination\Paginator::useBootstrapFive();
+        
         $this->configureDefaults();
         $this->registerBladeDirectives();
         $this->registerViewComposers();

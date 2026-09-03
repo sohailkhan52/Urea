@@ -71,7 +71,7 @@ class PurchaseController extends Controller
             $query->where('status', $request->status);
         }
 
-        $purchases = $query->latest()->paginate(15)->withQueryString();
+        $purchases = $query->latest()->paginate(10)->withQueryString();
 
         // Get warehouses the user can see
         $warehouses = $user->isSuperAdmin()
