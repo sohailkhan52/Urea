@@ -10,14 +10,17 @@ use App\Models\StockMovement;
 use App\Models\SupplierLedger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class PurchaseReturnService
 {
     protected StockService $stockService;
+    protected PayableHistoryService $payableHistoryService;
 
-    public function __construct(StockService $stockService)
+    public function __construct(StockService $stockService, PayableHistoryService $payableHistoryService)
     {
         $this->stockService = $stockService;
+        $this->payableHistoryService = $payableHistoryService;
     }
 
     /**
@@ -53,10 +56,14 @@ class PurchaseReturnService
             // Generate return number
             $returnNumber = $this->generateReturnNumber();
 
-            // Calculate subtotal
-            $subtotal = collect($items)->sum(function ($item) {
-                return $item['quantity'] * $item['unit_price'];
-            });
+            // Calculate subtotal (only for items with quantity > 0)
+            $subtotal = collect($items)
+                ->filter(function ($item) {
+                    return $item['quantity'] > 0;
+                })
+                ->sum(function ($item) {
+                    return $item['quantity'] * $item['unit_price'];
+                });
 
             // Create purchase return
             $return = PurchaseReturn::create([
@@ -75,8 +82,13 @@ class PurchaseReturnService
                 'created_by' => $createdBy,
             ]);
 
-            // Create return items
+            // Create return items (only for items with quantity > 0)
             foreach ($items as $itemData) {
+                // Skip items with 0 quantity
+                if ($itemData['quantity'] <= 0) {
+                    continue;
+                }
+
                 PurchaseReturnItem::create([
                     'purchase_return_id' => $return->id,
                     'purchase_item_id' => $itemData['purchase_item_id'],
@@ -187,7 +199,17 @@ class PurchaseReturnService
      */
     protected function validateReturnQuantities(array $items, Purchase $purchase): void
     {
-        foreach ($items as $itemData) {
+        // Filter out items with 0 quantity first
+        $itemsToReturn = array_filter($items, function($item) {
+            return $item['quantity'] > 0;
+        });
+
+        // At least one item must have quantity > 0
+        if (empty($itemsToReturn)) {
+            throw new \Exception('Please select at least one item with quantity greater than zero to return.');
+        }
+
+        foreach ($itemsToReturn as $itemData) {
             $purchaseItem = $purchase->items->find($itemData['purchase_item_id']);
 
             if (!$purchaseItem) {
@@ -250,9 +272,11 @@ class PurchaseReturnService
             ->first();
 
         $previousBalance = $previousEntry ? $previousEntry->balance : 0;
+        $previousPayableAmount = $previousBalance;
 
         // Return reduces the payable (credit to supplier)
         $newBalance = max(0, $previousBalance - $return->total_amount);
+        $currentPayableAmount = $newBalance;
 
         SupplierLedger::create([
             'supplier_id' => $return->supplier_id,
@@ -267,6 +291,17 @@ class PurchaseReturnService
             'date' => $return->return_date,
             'created_by' => $confirmedBy,
         ]);
+
+        // Record in PayableHistory
+        $this->payableHistoryService->recordReturnCreated(
+            $return->purchase,
+            $return->total_amount,
+            $previousPayableAmount,
+            $currentPayableAmount,
+            $return->return_number,
+            $return->refund_status,
+            $confirmedBy
+        );
 
         Log::info('Supplier ledger entry created for purchase return', [
             'return_id' => $return->id,

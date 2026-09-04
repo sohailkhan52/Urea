@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
@@ -60,6 +61,13 @@ class SalesService
             // Validate customer is provided
             if (empty($data['customer_id'])) {
                 throw new \Exception('Customer is required for sale.');
+            }
+
+            $customer = Customer::findOrFail($data['customer_id']);
+
+            // If a family is provided for the sale, update the customer's family
+            if (!empty($data['family_id'])) {
+                $customer->update(['family_id' => $data['family_id']]);
             }
 
             // Create the sale

@@ -634,6 +634,13 @@ function selectCustomer(id, name, phone) {
 
     document.getElementById('selectedCustomerCard').style.display = 'block';
 
+    // Auto-populate family from customer's family_id
+    const customer = allCustomers.find(c => c.id == id);
+    if (customer && customer.family_id) {
+        document.getElementById('family_id').value = customer.family_id;
+        document.getElementById('family_id').dispatchEvent(new Event('change'));
+    }
+
 }
 
 // Clear customer selection
@@ -645,6 +652,10 @@ function clearCustomer() {
     document.getElementById('selectedCustomerCard').style.display = 'none';
 
     document.getElementById('existingCustomerSelect').value = '';
+
+    // Also clear family
+    document.getElementById('family_id').value = '';
+    document.getElementById('familyInfo').style.display = 'none';
 
 }
 

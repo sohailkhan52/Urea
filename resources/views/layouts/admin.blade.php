@@ -59,6 +59,7 @@
             background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
             color: #ecf0f1;
             overflow-y: auto;
+            overflow-x: hidden;
             transition: all 0.3s;
             z-index: 1040;
         }
@@ -155,12 +156,18 @@
             justify-content: space-between;
             width: 100%;
             gap: 8px;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .nav-link-text-en {
             font-size: 0.95rem;
             line-height: 1.2;
             flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .nav-link-text-ur {
@@ -169,6 +176,9 @@
             line-height: 1.2;
             text-align: right;
             flex-shrink: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         /* Dropdown Menu Styles */

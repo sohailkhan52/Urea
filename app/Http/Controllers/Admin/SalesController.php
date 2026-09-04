@@ -798,6 +798,7 @@ class SalesController extends Controller
                 'email' => $customer->email,
                 'address' => $customer->address,
                 'city' => $customer->city,
+                'family_id' => $customer->family_id,
             ];
         });
 

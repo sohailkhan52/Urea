@@ -329,13 +329,28 @@ class SaleReportController extends Controller
     {
         $this->authorize('sales.delete');
 
-        $request->validate([
-            'sale_ids' => 'required|array|min:1',
-            'sale_ids.*' => 'required|integer|exists:sales,id',
-        ]);
+        // Ensure sale_ids exists and is an array
+        $saleIds = (array) $request->input('sale_ids', []);
+        
+        if (empty($saleIds)) {
+            return redirect()->route('admin.reports.sales.index')
+                ->with('error', 'No sales selected for deletion.');
+        }
+
+        // Validate each ID is an integer and exists
+        foreach ($saleIds as $id) {
+            if (!is_numeric($id)) {
+                return redirect()->route('admin.reports.sales.index')
+                    ->with('error', 'Invalid sale ID provided.');
+            }
+            
+            if (!Sale::where('id', $id)->exists()) {
+                return redirect()->route('admin.reports.sales.index')
+                    ->with('error', 'One or more sales do not exist.');
+            }
+        }
 
         $user = auth()->user();
-        $saleIds = $request->sale_ids;
         
         $errors = [];
         $deletedCount = 0;

@@ -326,4 +326,51 @@ class PayableHistoryService
             ->limit($limit)
             ->get();
     }
+
+    /**
+     * Record purchase return (payable reduced via return)
+     * 
+     * @param Purchase $purchase
+     * @param float $returnAmount
+     * @param float $previousPayableAmount
+     * @param float $currentPayableAmount
+     * @param string $returnNumber
+     * @param string $refundStatus
+     * @param int|null $userId
+     * @return PayableHistory
+     */
+    public function recordReturnCreated(
+        Purchase $purchase,
+        float $returnAmount,
+        float $previousPayableAmount,
+        float $currentPayableAmount,
+        string $returnNumber,
+        string $refundStatus,
+        ?int $userId = null
+    ): PayableHistory
+    {
+        $userId = $userId ?? Auth::id() ?? 1;
+
+        return PayableHistory::create([
+            'supplier_id' => $purchase->supplier_id,
+            'purchase_id' => $purchase->id,
+            'payment_id' => null,
+            'transaction_type' => PayableHistory::TYPE_PAYMENT_ADJUSTED,
+            'previous_total_amount' => $purchase->total_amount,
+            'current_total_amount' => $purchase->total_amount,
+            'previous_paid_amount' => $purchase->paid_amount,
+            'current_paid_amount' => $purchase->paid_amount,
+            'previous_payable_amount' => $previousPayableAmount,
+            'current_payable_amount' => $currentPayableAmount,
+            'amount_changed' => -$returnAmount, // Negative because payable decreased
+            'description' => "Purchase return created - {$returnNumber}",
+            'notes' => "Return amount: Rs. {$returnAmount} applied to payable. Refund Status: {$refundStatus}",
+            'payment_method' => 'return',
+            'reference_number' => $returnNumber,
+            'status' => PayableHistory::STATUS_COMPLETED,
+            'created_by' => $userId,
+            'ip_address' => Request::ip(),
+            'transaction_date' => now(),
+        ]);
+    }
 }

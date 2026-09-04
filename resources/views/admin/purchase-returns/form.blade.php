@@ -71,7 +71,8 @@
                                 </th>
                                 <th>Product</th>
                                 <th class="text-center" style="width: 100px;">Purchased Qty</th>
-                                <th class="text-center" style="width: 100px;">Can Return</th>
+                                <th class="text-center" style="width: 80px;">Returned</th>
+                                <th class="text-center" style="width: 80px;">Remaining</th>
                                 <th class="text-end" style="width: 100px;">Unit Price</th>
                                 <th style="width: 150px;">Return Qty</th>
                                 <th class="text-end" style="width: 150px;">Return Amount</th>
@@ -88,7 +89,12 @@
                                     </td>
                                     <td><strong>{{ $item->product->name }}</strong></td>
                                     <td class="text-center">{{ $item->quantity }}</td>
-                                    <td class="text-center">{{ $item->quantity }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">{{ $returnedQuantities[$item->id] ?? 0 }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-warning">{{ $item->quantity - ($returnedQuantities[$item->id] ?? 0) }}</span>
+                                    </td>
                                     <td class="text-end">Rs. {{ number_format($item->unit_price, 2) }}</td>
                                     <td>
                                         <input type="number" 
@@ -96,10 +102,9 @@
                                                name="items[{{ $index }}][quantity]"
                                                data-index="{{ $index }}"
                                                min="0" 
-                                               max="{{ $item->quantity }}" 
+                                               max="{{ $item->quantity - ($returnedQuantities[$item->id] ?? 0) }}" 
                                                step="0.01"
                                                value="0"
-                                               disabled
                                                onchange="updateItemRow({{ $index }})">
                                     </td>
                                     <td class="text-end">
@@ -111,7 +116,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">No items in this purchase order</td>
+                                    <td colspan="8" class="text-center text-muted py-4">No items in this purchase order</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -194,14 +199,8 @@ function updateItemRow(index) {
     const qtyInput = document.querySelector(`.return-qty[data-index="${index}"]`);
     const amountSpan = document.querySelector(`.return-amount[data-index="${index}"]`);
     
-    if (checkbox.checked) {
-        qtyInput.disabled = false;
-        if (qtyInput.value == 0) {
-            qtyInput.value = qtyInput.max;
-        }
-    } else {
-        qtyInput.disabled = true;
-        qtyInput.value = 0;
+    if (checkbox.checked && qtyInput.value == 0) {
+        qtyInput.value = qtyInput.max;
     }
     
     updateAmount(index);

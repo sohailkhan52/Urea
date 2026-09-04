@@ -194,63 +194,9 @@
 
     {{-- Main Content Row --}}
     <div class="row mb-4">
-        {{-- Charts Column --}}
-        <div class="col-lg-8">
-            {{-- Daily Sales Chart --}}
-            <div class="card mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Daily Sales (Last 30 Days)</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="dailySalesChart" height="80"></canvas>
-                </div>
-            </div>
-
-            {{-- Monthly Sales Chart --}}
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Monthly Sales (Last 12 Months)</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="monthlySalesChart" height="80"></canvas>
-                </div>
-            </div>
-        </div>
-
         {{-- Sidebar Column --}}
-        <div class="col-lg-4">
-            {{-- Inventory Stats --}}
-            <div class="card mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="bi bi-boxes me-2"></i> Inventory Status</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3 pb-3 border-bottom">
-                        <div class="d-flex justify-content-between mb-1">
-                            <small class="text-muted">Total Products</small>
-                            <strong>{{ $inventoryStats['total_products'] }}</strong>
-                        </div>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <div class="d-flex justify-content-between mb-1">
-                            <small class="text-muted">Total Stock Units</small>
-                            <strong>{{ number_format($inventoryStats['total_stock_units'], 0) }}</strong>
-                        </div>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <div class="d-flex justify-content-between mb-1">
-                            <small class="text-muted">Low Stock Items</small>
-                            <span class="badge bg-warning">{{ $inventoryStats['low_stock_count'] }}</span>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <small class="text-muted">Out of Stock</small>
-                            <span class="badge bg-danger">{{ $inventoryStats['out_of_stock_count'] }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="col-lg-12">
+
 
             {{-- Financial Summary --}}
             <div class="card">
@@ -487,68 +433,5 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-<script>
-// Daily Sales Chart
-const dailyCtx = document.getElementById('dailySalesChart').getContext('2d');
-const dailySalesData = {!! $dailySalesData !!};
-new Chart(dailyCtx, {
-    type: 'line',
-    data: {
-        labels: dailySalesData.map(d => d.date),
-        datasets: [{
-            label: 'Sales Amount',
-            data: dailySalesData.map(d => d.amount),
-            borderColor: '#0d6efd',
-            backgroundColor: 'rgba(13, 110, 253, 0.1)',
-            tension: 0.4,
-            fill: true,
-            borderWidth: 2,
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: false }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: { callback: function(value) { return '₨' + value.toLocaleString(); } }
-            }
-        }
-    }
-});
-
-// Monthly Sales Chart
-const monthlyCtx = document.getElementById('monthlySalesChart').getContext('2d');
-const monthlySalesData = {!! $monthlySalesData !!};
-new Chart(monthlyCtx, {
-    type: 'bar',
-    data: {
-        labels: monthlySalesData.map(d => d.month),
-        datasets: [{
-            label: 'Monthly Sales',
-            data: monthlySalesData.map(d => d.amount),
-            backgroundColor: '#198754',
-            borderColor: '#198754',
-            borderWidth: 1,
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: false }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: { callback: function(value) { return '₨' + value.toLocaleString(); } }
-            }
-        }
-    }
-});
-</script>
 @endpush
 @endsection

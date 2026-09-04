@@ -84,7 +84,13 @@ class PurchaseReturnController extends Controller
                 abort(403, 'You do not have permission to create returns for this purchase.');
             }
 
-            return view('admin.purchase-returns.form', compact('purchase'));
+            // Calculate returned quantities for each item
+            $returnedQuantities = [];
+            foreach ($purchase->items as $item) {
+                $returnedQuantities[$item->id] = $this->returnService->getReturnedQuantity($item->id);
+            }
+
+            return view('admin.purchase-returns.form', compact('purchase', 'returnedQuantities'));
         }
 
         // Show list of purchases to select from
@@ -116,7 +122,7 @@ class PurchaseReturnController extends Controller
             'items' => 'required|array|min:1',
             'items.*.purchase_item_id' => 'required|exists:purchase_items,id',
             'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.quantity' => 'required|numeric|min:0',
             'items.*.unit_price' => 'required|numeric|min:0',
             'reason' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:1000',

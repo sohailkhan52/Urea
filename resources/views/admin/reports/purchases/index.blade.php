@@ -319,8 +319,11 @@
 
     // Show bulk delete confirmation
     function confirmBulkDelete() {
+        console.log('confirmBulkDelete() called');
+        
         const checkboxes = document.querySelectorAll('.purchase-checkbox:checked');
         const selectedCount = checkboxes.length;
+        console.log('Selected count:', selectedCount);
         
         if (selectedCount === 0) {
             alert('Please select at least one purchase to delete.');
@@ -328,22 +331,63 @@
         }
 
         // Update modal content
-        document.getElementById('selectedCount').textContent = selectedCount;
-        document.getElementById('returnWarning').style.display = 'none';
+        const selectedCountElement = document.getElementById('selectedCount');
+        if (selectedCountElement) {
+            selectedCountElement.textContent = selectedCount;
+            console.log('Updated selectedCount element');
+        } else {
+            console.error('selectedCount element not found!');
+        }
+        
+        const returnWarningElement = document.getElementById('returnWarning');
+        if (returnWarningElement) {
+            returnWarningElement.style.display = 'none';
+            console.log('Hid return warning');
+        } else {
+            console.error('returnWarning element not found!');
+        }
 
         // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('bulkDeleteModal'));
-        modal.show();
+        const modalElement = document.getElementById('bulkDeleteModal');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            console.log('Modal shown');
+        } else {
+            console.error('bulkDeleteModal element not found!');
+            alert('Error: Modal not found. Please refresh the page and try again.');
+        }
     }
 
     // Execute bulk delete
     function executeBulkDelete() {
+        console.log('executeBulkDelete() called');
+        
         const checkboxes = document.querySelectorAll('.purchase-checkbox:checked');
         const purchaseIds = Array.from(checkboxes).map(cb => cb.value);
+        console.log('Selected purchase IDs:', purchaseIds);
+        
+        // Close the modal first
+        const modalElement = document.getElementById('bulkDeleteModal');
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+        }
         
         // Clear previous inputs
         const form = document.getElementById('bulkDeleteForm');
+        console.log('Form found:', form);
+        
+        if (!form) {
+            console.error('bulkDeleteForm not found!');
+            alert('Error: Form not found. Please refresh the page and try again.');
+            return;
+        }
+        
         const oldInputs = form.querySelectorAll('input[name^="purchase_ids"]');
+        console.log('Found old inputs to remove:', oldInputs.length);
         oldInputs.forEach(input => input.remove());
         
         // Add each ID as a separate hidden input
@@ -353,10 +397,24 @@
             input.name = 'purchase_ids[]';
             input.value = id;
             form.appendChild(input);
+            console.log('Added input for purchase ID:', id);
         });
         
-        // Submit form
-        form.submit();
+        console.log('Form inputs before submission:');
+        console.log(new FormData(form));
+        
+        console.log('Submitting form to:', form.action);
+        
+        // Submit form with a small delay to allow modal to close
+        setTimeout(() => {
+            try {
+                form.submit();
+                console.log('Form submitted successfully');
+            } catch (e) {
+                console.error('Error submitting form:', e);
+                alert('Error submitting form: ' + e.message);
+            }
+        }, 100);
     }
 
     // Update delete button on page load

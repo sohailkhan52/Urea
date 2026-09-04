@@ -192,13 +192,28 @@ class PurchaseReportController extends Controller
     {
         $this->authorize('purchases.delete');
 
-        $request->validate([
-            'purchase_ids' => 'required|array|min:1',
-            'purchase_ids.*' => 'required|integer|exists:purchases,id',
-        ]);
+        // Ensure purchase_ids exists and is an array
+        $purchaseIds = (array) $request->input('purchase_ids', []);
+        
+        if (empty($purchaseIds)) {
+            return redirect()->route('admin.reports.purchases.index')
+                ->with('error', 'No purchases selected for deletion.');
+        }
+
+        // Validate each ID is an integer and exists
+        foreach ($purchaseIds as $id) {
+            if (!is_numeric($id)) {
+                return redirect()->route('admin.reports.purchases.index')
+                    ->with('error', 'Invalid purchase ID provided.');
+            }
+            
+            if (!Purchase::where('id', $id)->exists()) {
+                return redirect()->route('admin.reports.purchases.index')
+                    ->with('error', 'One or more purchases do not exist.');
+            }
+        }
 
         $user = auth()->user();
-        $purchaseIds = $request->purchase_ids;
         
         $errors = [];
         $deletedCount = 0;

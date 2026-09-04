@@ -22,10 +22,12 @@ use Illuminate\Support\Facades\Log;
 class SaleReturnService
 {
     protected StockService $stockService;
+    protected UdharHistoryService $udharHistoryService;
 
-    public function __construct(StockService $stockService)
+    public function __construct(StockService $stockService, UdharHistoryService $udharHistoryService)
     {
         $this->stockService = $stockService;
+        $this->udharHistoryService = $udharHistoryService;
     }
 
     /**
@@ -387,6 +389,19 @@ class SaleReturnService
                 'credit_amount' => $returnAmount,
             ]);
         }
+
+        // Record return in UdharHistory
+        $previousUdhar = $sale->current_remaining_udhar;
+        $currentUdhar = max(0, $previousUdhar - $returnAmount);
+        
+        $this->udharHistoryService->recordReturnCreated(
+            $sale,
+            $returnAmount,
+            $previousUdhar,
+            $currentUdhar,
+            $return->return_number,
+            Auth::id()
+        );
     }
 
     /**

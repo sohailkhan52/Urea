@@ -326,4 +326,49 @@ class UdharHistoryService
             ->limit($limit)
             ->get();
     }
+
+    /**
+     * Record sale return (udhar reduced via return)
+     * 
+     * @param Sale $sale
+     * @param float $returnAmount
+     * @param float $previousUdharAmount
+     * @param float $currentUdharAmount
+     * @param string $returnNumber
+     * @param int|null $userId
+     * @return UdharHistory
+     */
+    public function recordReturnCreated(
+        Sale $sale,
+        float $returnAmount,
+        float $previousUdharAmount,
+        float $currentUdharAmount,
+        string $returnNumber,
+        ?int $userId = null
+    ): UdharHistory
+    {
+        $userId = $userId ?? Auth::id() ?? 1;
+
+        return UdharHistory::create([
+            'customer_id' => $sale->customer_id,
+            'sale_id' => $sale->id,
+            'payment_id' => null,
+            'transaction_type' => UdharHistory::TYPE_PAYMENT_ADJUSTED,
+            'previous_total_amount' => $sale->total_amount,
+            'current_total_amount' => $sale->total_amount,
+            'previous_paid_amount' => $sale->paid_amount,
+            'current_paid_amount' => $sale->paid_amount,
+            'previous_udhar_amount' => $previousUdharAmount,
+            'current_udhar_amount' => $currentUdharAmount,
+            'amount_changed' => -$returnAmount, // Negative because udhar decreased
+            'description' => "Sale return created - {$returnNumber}",
+            'notes' => "Return amount: Rs. {$returnAmount} adjusted from udhar/created as credit",
+            'payment_method' => 'return',
+            'reference_number' => $returnNumber,
+            'status' => UdharHistory::STATUS_COMPLETED,
+            'created_by' => $userId,
+            'ip_address' => Request::ip(),
+            'transaction_date' => now(),
+        ]);
+    }
 }
