@@ -92,7 +92,7 @@ class SalesController extends Controller
             }
         }
 
-        $sales = $query->latest()->paginate(10)->withQueryString();
+        $sales = $query->orderBy('sale_date', 'desc')->latest('created_at')->paginate(10)->withQueryString();
 
         // Get warehouses the user can see
         $warehouses = $user->isSuperAdmin()

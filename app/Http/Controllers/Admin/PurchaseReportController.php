@@ -78,8 +78,8 @@ class PurchaseReportController extends Controller
         }
 
         // ========== SORTING ==========
-        // Default: newest first
-        $query->latest('purchase_date');
+        // Default: newest first (by purchase_date, then by created_at for same-day records)
+        $query->orderBy('purchase_date', 'desc')->latest('created_at');
 
         // ========== PAGINATION ==========
         // Use withQueryString() to preserve filters across pages

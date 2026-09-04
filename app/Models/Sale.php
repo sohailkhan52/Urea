@@ -460,7 +460,9 @@ class Sale extends Model
      */
     public function getTotalCOGSAttribute(): float
     {
-        return $this->items->sum('COGS');
+        return $this->items->reduce(function($carry, $item) {
+            return $carry + $item->COGS;
+        }, 0);
     }
 
     /**
@@ -468,7 +470,9 @@ class Sale extends Model
      */
     public function getNetRevenueAttribute(): float
     {
-        return $this->items->sum('net_revenue');
+        return $this->items->reduce(function($carry, $item) {
+            return $carry + $item->net_revenue;
+        }, 0);
     }
 
     /**
@@ -477,7 +481,7 @@ class Sale extends Model
      */
     public function getGrossProfitAttribute(): float
     {
-        return $this->net_revenue - $this->total_COGS;
+        return $this->net_revenue - $this->total_cogs;
     }
 
     /**
@@ -510,8 +514,14 @@ class Sale extends Model
     /**
      * Check if cost data is available for profit calculation
      */
-    public function hasCostDataAttribute(): bool
+    /**
+     * Check if sale has cost data for all items
+     */
+    public function getHasCostDataAttribute(): bool
     {
+        if ($this->items->isEmpty()) {
+            return false;
+        }
         return $this->items->whereNotNull('cost_price')->count() === $this->items->count();
     }
 

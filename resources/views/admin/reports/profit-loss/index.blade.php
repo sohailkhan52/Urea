@@ -241,128 +241,195 @@
         </div>
     </div>
 
-    {{-- Profit & Loss Table --}}
+    {{-- Profit & Loss Statement --}}
     <div class="card">
         <div class="card-body">
-            @if($sales->count() > 0)
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Sale No.</th>
-                            <th>Date</th>
-                            <th>Customer</th>
-                            <th>Warehouse</th>
-                            <th class="text-end">Net Revenue</th>
-                            <th class="text-end">COGS</th>
-                            <th class="text-end">Gross Profit/Loss</th>
-                            <th class="text-end">Margin %</th>
-                            <th>Status</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($sales as $sale)
-                        <tr>
-                            <td>
-                                <a href="{{ route('admin.reports.profit-loss.show', $sale) }}" class="text-decoration-none fw-bold">
-                                    {{ $sale->invoice_number }}
-                                </a>
-                                @if($sale->returns_count > 0)
-                                    <br><small class="text-warning"><i class="bi bi-arrow-return-left me-1"></i>{{ $sale->returns_count }} return(s)</small>
-                                @endif
-                            </td>
-                            <td>{{ $sale->sale_date->format('d M Y') }}</td>
-                            <td>
-                                @if($sale->customer)
-                                    {{ $sale->customer->name }}
-                                    @if($sale->customer->phone)
-                                        <br><small class="text-muted">{{ $sale->customer->phone }}</small>
-                                    @endif
-                                @else
-                                    {{ $sale->walkin_customer_name ?? 'Walk-in' }}
-                                @endif
-                            </td>
-                            <td>{{ $sale->warehouse->name }}</td>
-                            <td class="text-end">
-                                @if($sale->has_cost_data)
-                                    Rs. {{ number_format($sale->net_revenue, 2) }}
-                                @else
-                                    <span class="text-muted small">N/A</span>
-                                @endif
-                            </td>
-                            <td class="text-end">
-                                @if($sale->has_cost_data)
-                                    Rs. {{ number_format($sale->total_cogs, 2) }}
-                                @else
-                                    <span class="text-muted small">N/A</span>
-                                @endif
-                            </td>
-                            <td class="text-end">
-                                @if($sale->has_cost_data)
-                                    @if($sale->profit_status === 'profit')
-                                        <span class="text-success fw-bold">
-                                            <i class="bi bi-arrow-up-circle me-1"></i>Rs. {{ number_format($sale->gross_profit, 2) }}
-                                        </span>
-                                    @elseif($sale->profit_status === 'loss')
-                                        <span class="text-danger fw-bold">
-                                            <i class="bi bi-arrow-down-circle me-1"></i>Rs. {{ number_format(abs($sale->gross_profit), 2) }}
-                                        </span>
-                                    @else
-                                        <span class="text-secondary fw-bold">
-                                            <i class="bi bi-dash-circle me-1"></i>Rs. 0.00
-                                        </span>
-                                    @endif
-                                @else
-                                    <span class="text-muted small">N/A</span>
-                                @endif
-                            </td>
-                            <td class="text-end">
-                                @if($sale->has_cost_data && $sale->net_revenue > 0)
-                                    <span class="badge bg-{{ $sale->profit_margin_percentage >= 20 ? 'success' : ($sale->profit_margin_percentage >= 10 ? 'warning' : ($sale->profit_margin_percentage >= 0 ? 'info' : 'danger')) }}">
-                                        {{ number_format($sale->profit_margin_percentage, 1) }}%
-                                    </span>
-                                @else
-                                    <span class="text-muted small">N/A</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($sale->profit_status === 'profit')
-                                    <span class="badge bg-success">Profitable</span>
-                                @elseif($sale->profit_status === 'loss')
-                                    <span class="badge bg-danger">Loss</span>
-                                @elseif($sale->profit_status === 'breakeven')
-                                    <span class="badge bg-secondary">Break-Even</span>
-                                @else
-                                    <span class="badge bg-warning">No Cost Data</span>
-                                @endif
-                            </td>
-                            <td class="text-center">
-                                <a href="{{ route('admin.reports.profit-loss.show', $sale) }}" 
-                                   class="btn btn-sm btn-outline-primary"
-                                   title="View Details">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+            @if($totals)
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <h3 class="text-center mb-2 fw-bold">Profit and Loss Statement</h3>
+                    
+                    {{-- Display Applied Filters/Date Range --}}
+                    <div class="text-center mb-4">
+                        @if(request('date_from') || request('date_to'))
+                            <small class="text-muted">
+                                Period: 
+                                <strong>{{ request('date_from') ? \Carbon\Carbon::parse(request('date_from'))->format('d M Y') : 'Start' }}</strong>
+                                to 
+                                <strong>{{ request('date_to') ? \Carbon\Carbon::parse(request('date_to'))->format('d M Y') : 'End' }}</strong>
+                            </small>
+                        @else
+                            <small class="text-muted">Period: All Transactions</small>
+                        @endif
+                        
+                        @if(request('customer_id'))
+                            <br><small class="text-muted">Customer: <strong>{{ $customers->firstWhere('id', request('customer_id'))?->name ?? 'N/A' }}</strong></small>
+                        @endif
+                        
+                        @if(request('warehouse_id'))
+                            <br><small class="text-muted">Warehouse: <strong>{{ $warehouses->firstWhere('id', request('warehouse_id'))?->name ?? 'N/A' }}</strong></small>
+                        @endif
+                    </div>
+                    
+                    @php
+                        $gross_profit = $totals->total_revenue - $totals->total_cogs;
+                    @endphp
 
-            {{-- Pagination --}}
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div>
-                    Showing {{ $sales->firstItem() ?? 0 }} to {{ $sales->lastItem() ?? 0 }} of {{ $sales->total() }} sales
-                </div>
-                <div>
-                    {{ $sales->links() }}
+                    {{-- Revenue Section --}}
+                    <div class="p-4 mb-3 rounded" style="background-color: #d1ecf1; border-left: 5px solid #0c5460;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-graph-up fs-3 me-3" style="color: #0c5460;"></i>
+                                <h5 class="mb-0 fw-bold">Revenue</h5>
+                            </div>
+                            <div class="text-end">
+                                <h5 class="mb-0 fw-bold">Rs. {{ number_format($totals->total_revenue, 2) }}</h5>
+                                <small class="text-muted">{{ number_format($totals->avg_margin, 1) }}%</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Cost of Goods Sold Section --}}
+                    <div class="p-4 mb-3 rounded" style="background-color: #d1ecf1; border-left: 5px solid #0c5460;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-graph-up fs-3 me-3" style="color: #0c5460;"></i>
+                                <h5 class="mb-0 fw-bold">Cost of Goods Sold</h5>
+                            </div>
+                            <div class="text-end">
+                                <h5 class="mb-0 fw-bold">Rs. {{ number_format($totals->total_cogs, 2) }}</h5>
+                                <small class="text-muted">{{ $totals->total_revenue > 0 ? number_format(($totals->total_cogs / $totals->total_revenue) * 100, 1) : '0.0' }}%</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Gross Profit Section (Amount) --}}
+                    <div class="p-4 mb-3 rounded" style="background-color: #d4edda; border-left: 5px solid #155724;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-currency-exchange fs-3 me-3" style="color: #155724;"></i>
+                                <h5 class="mb-0 fw-bold">Gross Profit</h5>
+                            </div>
+                            <div class="text-end">
+                                <h5 class="mb-0 fw-bold text-{{ $gross_profit >= 0 ? 'success' : 'danger' }}">
+                                    Rs. {{ number_format($gross_profit, 2) }}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Gross Profit Section (Percentage) --}}
+                    <div class="p-4 mb-3 rounded" style="background-color: #d4edda; border-left: 5px solid #155724;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-arrow-down fs-3 me-3" style="color: #155724;"></i>
+                                <h5 class="mb-0 fw-bold">Gross Profit</h5>
+                            </div>
+                            <div class="text-end">
+                                <h5 class="mb-0 fw-bold text-{{ $gross_profit >= 0 ? 'success' : 'danger' }}">
+                                    {{ number_format($totals->avg_margin, 1) }}%
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Operating Expenses Section --}}
+                    <div class="p-4 mb-3 rounded" style="background-color: #d1ecf1; border-left: 5px solid #0c5460;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-circle fs-3 me-3" style="color: #0c5460;"></i>
+                                <h5 class="mb-0 fw-bold">Operating Expenses</h5>
+                            </div>
+                            <div class="text-end">
+                                <i class="bi bi-info-circle text-muted" title="Operating expenses breakdown"></i>
+                            </div>
+                        </div>
+                        <div class="ps-5">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Salaries</span>
+                                <span class="text-muted">-</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Rent</span>
+                                <span class="text-muted">-</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Utilities</span>
+                                <span class="text-muted">-</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Marketing</span>
+                                <span class="text-muted">40.0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Operating Income Section --}}
+                    <div class="p-4 mb-3 rounded" style="background-color: #e2e3e5; border-left: 5px solid #383d41;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-graph-up fs-3 me-3" style="color: #383d41;"></i>
+                                <h5 class="mb-0 fw-bold">Operating Income</h5>
+                            </div>
+                            <div class="text-end">
+                                <h5 class="mb-0 fw-bold">Rs. {{ number_format($gross_profit, 2) }}</h5>
+                                <small class="text-muted">137%</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Other Income/Expenses Section --}}
+                    <div class="p-4 mb-3 rounded" style="background-color: #f8d7da; border-left: 5px solid #721c24;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-graph-up fs-3 me-3" style="color: #721c24;"></i>
+                                <h5 class="mb-0 fw-bold">Other Income/Expenses</h5>
+                            </div>
+                            <div class="text-end">
+                                <h5 class="mb-0 fw-bold">Rs. 0.00</h5>
+                                <small class="text-muted">$4.1%</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Net Income Section --}}
+                    <div class="p-4 mb-3 rounded" style="background-color: #fff3cd; border-left: 5px solid #856404;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-star fs-3 me-3" style="color: #856404;"></i>
+                                <h5 class="mb-0 fw-bold">Net Income</h5>
+                            </div>
+                            <div class="text-end">
+                                <h5 class="mb-0 fw-bold text-{{ $totals->net_profit >= 0 ? 'success' : 'danger' }}">
+                                    Rs. {{ number_format($totals->net_profit, 2) }}
+                                </h5>
+                                <small class="text-muted">{{ number_format($totals->avg_margin, 1) }}%</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($totals->sales_with_cost_data > 0)
+                    {{-- Summary Note --}}
+                    <div class="alert alert-info mt-4">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Note:</strong> This statement is based on {{ number_format($totals->sales_with_cost_data) }} confirmed sales with complete cost data out of {{ number_format($totals->total_sales) }} total confirmed sales
+                        @if(request('date_from') || request('date_to'))
+                            from {{ request('date_from') ? \Carbon\Carbon::parse(request('date_from'))->format('d M Y') : 'start' }} to {{ request('date_to') ? \Carbon\Carbon::parse(request('date_to'))->format('d M Y') : 'end' }}
+                        @endif
+                        . Operating expenses data is not yet integrated into the system.
+                    </div>
+                    @else
+                    <div class="alert alert-warning mt-4">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>No Data:</strong> Please apply date filters or other criteria to generate the profit & loss report.
+                    </div>
+                    @endif
                 </div>
             </div>
             @else
             <div class="text-center py-5">
                 <i class="bi bi-inbox fs-1 text-muted"></i>
-                <p class="text-muted mt-2">No sales found for the selected filters.</p>
+                <p class="text-muted mt-2">No profit & loss data available. Please apply filters to generate the report.</p>
                 <a href="{{ route('admin.reports.profit-loss.index') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-x-circle me-1"></i> Clear Filters
                 </a>

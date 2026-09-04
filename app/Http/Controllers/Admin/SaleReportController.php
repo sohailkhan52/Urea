@@ -102,8 +102,8 @@ class SaleReportController extends Controller
         }
 
         // ========== SORTING ==========
-        // Default: newest first
-        $query->latest('sale_date');
+        // Default: newest first (by sale_date, then by created_at for same-day records)
+        $query->orderBy('sale_date', 'desc')->latest('created_at');
 
         // ========== PAGINATION ==========
         // Use withQueryString() to preserve filters across pages

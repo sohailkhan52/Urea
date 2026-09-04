@@ -235,7 +235,7 @@ class SupplierPayableController extends Controller
         // Create payment record
         try {
             $payment = \App\Models\PurchasePayment::create([
-                'payment_number' => 'PP-' . now()->format('YmdHis') . '-' . $purchase->id,
+                'payment_number' => 'PP-' . now()->format('YmdHis') . '-' . str_pad(round(microtime(true) * 10000) % 10000, 4, '0', STR_PAD_LEFT),
                 'supplier_id' => $supplierId,
                 'purchase_id' => $purchase->id,
                 'amount' => $amount,

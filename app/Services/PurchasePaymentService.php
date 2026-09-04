@@ -288,10 +288,9 @@ class PurchasePaymentService
     {
         $prefix = 'PUP'; // Purchase payment
         $date = date('Ymd');
-        $count = PurchasePayment::whereDate('created_at', today())
-            ->count() + 1;
-
-        return "{$prefix}-{$date}-" . str_pad($count, 5, '0', STR_PAD_LEFT);
+        $timestamp = date('His'); // Hour:Minute:Second
+        $microseconds = str_pad(round(microtime(true) * 10000) % 10000, 4, '0', STR_PAD_LEFT);
+        return "{$prefix}-{$date}-{$timestamp}-{$microseconds}";
     }
 
     /**

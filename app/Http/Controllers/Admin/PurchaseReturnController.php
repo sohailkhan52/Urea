@@ -27,7 +27,7 @@ class PurchaseReturnController extends Controller
         $this->authorize('purchases.view');
 
         $query = PurchaseReturn::with(['purchase', 'supplier', 'warehouse', 'creator'])
-            ->latest('return_date');
+            ->orderBy('return_date', 'desc')->latest('created_at');
 
         // Filter by status
         if ($request->filled('status')) {
@@ -67,33 +67,40 @@ class PurchaseReturnController extends Controller
     {
         $this->authorize('purchases.create');
 
-        $purchase = null;
-        $itemReturnInfo = [];
-        
-        // If purchase_id is provided, load it with items
+        $user = auth()->user();
+
+        // If purchase_id is provided, show the return creation form
         if ($request->filled('purchase_id')) {
-            $purchase = Purchase::with(['items.product', 'supplier', 'warehouse'])
+            $purchase = Purchase::with(['supplier', 'warehouse', 'items.product'])
                 ->findOrFail($request->purchase_id);
-                
-            // Check if purchase is confirmed
-            if (!$purchase->isConfirmed()) {
-                return redirect()->route('admin.purchases.index')
-                    ->with('error', 'Cannot create return for unconfirmed purchase.');
+
+            if ($purchase->status !== Purchase::STATUS_CONFIRMED) {
+                return redirect()->route('admin.purchase-returns.create')
+                    ->with('error', 'Can only create returns for confirmed purchases.');
             }
 
-            // Calculate returned and available quantities for each item
-            foreach ($purchase->items as $item) {
-                $returnedQty = $this->returnService->getReturnedQuantity($item->id);
-                $availableQty = max(0, $item->quantity - $returnedQty);
-                
-                $itemReturnInfo[$item->id] = [
-                    'returned' => $returnedQty,
-                    'available' => $availableQty,
-                ];
+            // Check user has access to this warehouse
+            if (!$user->isSuperAdmin() && !$user->canAccessWarehouse($purchase->warehouse_id)) {
+                abort(403, 'You do not have permission to create returns for this purchase.');
             }
+
+            return view('admin.purchase-returns.form', compact('purchase'));
         }
 
-        return view('admin.purchase-returns.create', compact('purchase', 'itemReturnInfo'));
+        // Show list of purchases to select from
+        $query = Purchase::where('status', Purchase::STATUS_CONFIRMED)
+            ->with(['supplier', 'warehouse'])
+            ->orderBy('purchase_date', 'desc');
+
+        // Apply warehouse filtering based on user permissions
+        if (!$user->isSuperAdmin()) {
+            $warehouseIds = $user->warehouses()->pluck('warehouses.id');
+            $query->whereIn('warehouse_id', $warehouseIds);
+        }
+
+        $purchases = $query->paginate(20);
+
+        return view('admin.purchase-returns.create', compact('purchases'));
     }
 
     /**
@@ -125,8 +132,11 @@ class PurchaseReturnController extends Controller
                 $validated['notes'] ?? null
             );
 
+            // Automatically confirm the return
+            $return = $this->returnService->confirmReturn($return, auth()->id());
+
             return redirect()->route('admin.purchase-returns.show', $return)
-                ->with('success', 'Purchase return created successfully.');
+                ->with('success', 'Purchase return created and confirmed successfully. Refund status: ' . $return->refund_status_label . '.');
 
         } catch (\Exception $e) {
             return back()->withInput()

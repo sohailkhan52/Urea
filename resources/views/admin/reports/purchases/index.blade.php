@@ -294,7 +294,6 @@
 <form id="bulkDeleteForm" action="{{ route('admin.reports.purchases.bulk-delete') }}" method="POST" style="display: none;">
     @csrf
     @method('DELETE')
-    <input type="hidden" name="purchase_ids" id="purchaseIdsInput">
 </form>
 
 @endsection
@@ -342,11 +341,22 @@
         const checkboxes = document.querySelectorAll('.purchase-checkbox:checked');
         const purchaseIds = Array.from(checkboxes).map(cb => cb.value);
         
-        // Set purchase IDs in hidden input
-        document.getElementById('purchaseIdsInput').value = JSON.stringify(purchaseIds);
+        // Clear previous inputs
+        const form = document.getElementById('bulkDeleteForm');
+        const oldInputs = form.querySelectorAll('input[name^="purchase_ids"]');
+        oldInputs.forEach(input => input.remove());
+        
+        // Add each ID as a separate hidden input
+        purchaseIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'purchase_ids[]';
+            input.value = id;
+            form.appendChild(input);
+        });
         
         // Submit form
-        document.getElementById('bulkDeleteForm').submit();
+        form.submit();
     }
 
     // Update delete button on page load

@@ -93,7 +93,7 @@ class SaleReturnController extends Controller
             $query->where('return_date', '<=', $request->date_to);
         }
 
-        $returns = $query->latest('return_date')->paginate(10)->withQueryString();
+        $returns = $query->orderBy('return_date', 'desc')->latest('created_at')->paginate(10)->withQueryString();
 
         // Get warehouses the user can see
         $warehouses = $user->isSuperAdmin()
@@ -106,11 +106,44 @@ class SaleReturnController extends Controller
     /**
      * Show the form for creating a new sale return
      */
-    public function create(): View
+    public function create(Request $request): View
     {
         $this->authorize('sales.create');
 
-        return view('admin.sale-returns.create');
+        $user = auth()->user();
+
+        // If sale_id is provided, show the return creation form
+        if ($request->filled('sale_id')) {
+            $sale = Sale::with(['customer', 'family', 'warehouse', 'items'])
+                ->findOrFail($request->sale_id);
+
+            if ($sale->status !== Sale::STATUS_CONFIRMED) {
+                return redirect()->route('admin.sale-returns.create')
+                    ->with('error', 'Can only create returns for confirmed sales.');
+            }
+
+            // Check user has access to this warehouse
+            if (!$user->isSuperAdmin() && !$user->canAccessWarehouse($sale->warehouse_id)) {
+                abort(403, 'You do not have permission to create returns for this sale.');
+            }
+
+            return view('admin.sale-returns.form', compact('sale'));
+        }
+
+        // Show list of sales to select from
+        $query = Sale::where('status', Sale::STATUS_CONFIRMED)
+            ->with(['customer', 'family', 'warehouse'])
+            ->orderBy('sale_date', 'desc');
+
+        // Apply warehouse filtering based on user permissions
+        if (!$user->isSuperAdmin()) {
+            $warehouseIds = $user->warehouses()->pluck('warehouses.id');
+            $query->whereIn('warehouse_id', $warehouseIds);
+        }
+
+        $sales = $query->paginate(20);
+
+        return view('admin.sale-returns.create', compact('sales'));
     }
 
     /**
@@ -152,10 +185,12 @@ class SaleReturnController extends Controller
                 'customer_name' => $sale->customer ? $sale->customer->name : 'Walk-in Customer',
                 'customer_phone' => $sale->customer ? $sale->customer->phone : $sale->walkin_customer_contact,
                 'family_name' => $sale->family ? $sale->family->name : null,
-                'warehouse_name' => $sale->warehouse->name,
-                'sale_date' => $sale->sale_date->format('d M Y'),
-                'total_amount' => $sale->total_amount,
-                'payment_status' => $sale->current_payment_status,
+                'warehouse_name' => $sale->warehouse ? $sale->warehouse->name : 'Unknown',
+                'sale_date' => $sale->sale_date ? $sale->sale_date->format('d M Y') : date('d M Y'),
+                'total_amount' => $sale->total_amount ?? 0,
+                'paid_amount' => $sale->paid_amount ?? 0,
+                'outstanding' => ($sale->total_amount ?? 0) - ($sale->paid_amount ?? 0),
+                'payment_status' => $sale->payment_status ?? 'unpaid',
             ];
         }));
     }

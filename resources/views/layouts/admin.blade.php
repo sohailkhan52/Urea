@@ -796,13 +796,7 @@
             @endpermission
 
             @permission('purchases.view')
-            <a href="{{ route('admin.supplier-payables.index') }}" class="nav-link {{ request()->routeIs('admin.supplier-payables.*') ? 'active' : '' }}">
-                <i class="bi bi-wallet2"></i>
-                <div class="nav-link-wrapper">
-                    <span class="nav-link-text-en">Supplier Payables</span>
-                    <span class="nav-link-text-ur">سپلائر ادائیگیاں</span>
-                </div>
-            </a>
+
             @endpermission
 
             @permission('sales.view')
@@ -835,7 +829,9 @@
             <div class="nav-dropdown">
                 <a href="#" class="nav-link dropdown-toggle {{ request()->routeIs('admin.sale-returns.*') ? 'active' : '' }}" aria-expanded="false">
                     <i class="bi bi-arrow-return-left"></i>
-                    <div class="nav-link-wrapper">
+                     <span class="nav-link-text-en">Sale Return</span>
+                        <span class="nav-link-text-ur">فروخت واپسی</span>
+                    <span class="nav-link-text-ur"></span>
       </a>
                 <ul class="dropdown-menu dropdown-menu-dark">
                     <li>
@@ -852,6 +848,13 @@
                     @endcan
                 </ul>
             </div>
+                        <a href="{{ route('admin.supplier-payables.index') }}" class="nav-link {{ request()->routeIs('admin.supplier-payables.*') ? 'active' : '' }}">
+                <i class="bi bi-wallet2"></i>
+                <div class="nav-link-wrapper">
+                    <span class="nav-link-text-en">Supplier Payables</span>
+                    <span class="nav-link-text-ur">سپلائر ادائیگیاں</span>
+                </div>
+            </a>
             @endpermission
 
             @permission('udhar.view')

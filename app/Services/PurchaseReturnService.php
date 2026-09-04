@@ -115,21 +115,26 @@ class PurchaseReturnService
                 );
             }
 
-            // Update return status
+            // Create supplier ledger entry for the return (credit the supplier)
+            $this->createReturnLedgerEntry($return, $confirmedBy);
+
+            // Determine refund status based on supplier's outstanding balance
+            $refundStatus = $this->determineRefundStatus($return);
+
+            // Update return status and refund status
             $return->update([
                 'status' => PurchaseReturn::STATUS_CONFIRMED,
+                'refund_status' => $refundStatus,
                 'confirmed_at' => now(),
                 'confirmed_by' => $confirmedBy,
             ]);
-
-            // Create supplier ledger entry for the return (credit the supplier)
-            $this->createReturnLedgerEntry($return, $confirmedBy);
 
             Log::info('Purchase return confirmed', [
                 'return_id' => $return->id,
                 'return_number' => $return->return_number,
                 'supplier_id' => $return->supplier_id,
                 'total_amount' => $return->total_amount,
+                'refund_status' => $refundStatus,
                 'confirmed_by' => $confirmedBy,
             ]);
 
@@ -270,5 +275,35 @@ class PurchaseReturnService
             'previous_balance' => $previousBalance,
             'new_balance' => $newBalance,
         ]);
+    }
+
+    /**
+     * Determine refund status based on supplier's payment balance
+     * 
+     * - If supplier has NO outstanding balance: refund_status = COMPLETED (fully paid)
+     * - If supplier has outstanding balance: refund_status = PARTIAL (unpaid)
+     * 
+     * @param PurchaseReturn $return
+     * @return string
+     */
+    protected function determineRefundStatus(PurchaseReturn $return): string
+    {
+        $supplier = $return->supplier;
+
+        // Get the latest ledger entry for this supplier to check outstanding balance
+        $latestLedgerEntry = SupplierLedger::where('supplier_id', $return->supplier_id)
+            ->orderBy('date', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $outstandingBalance = $latestLedgerEntry ? (float) $latestLedgerEntry->balance : 0.0;
+
+        // If no outstanding balance, refund is completed (fully paid)
+        if ($outstandingBalance <= 0) {
+            return PurchaseReturn::REFUND_STATUS_COMPLETED;
+        }
+
+        // If there is outstanding balance, refund is partial (unpaid)
+        return PurchaseReturn::REFUND_STATUS_PARTIAL;
     }
 }

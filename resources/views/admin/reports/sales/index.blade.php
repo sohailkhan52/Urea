@@ -463,7 +463,6 @@
 <form id="bulkDeleteForm" action="{{ route('admin.reports.sales.bulk-delete') }}" method="POST" style="display: none;">
     @csrf
     @method('DELETE')
-    <input type="hidden" name="sale_ids" id="saleIdsInput">
 </form>
 
 @endsection
@@ -524,11 +523,22 @@
         const checkboxes = document.querySelectorAll('.sale-checkbox:checked');
         const saleIds = Array.from(checkboxes).map(cb => cb.value);
         
-        // Set sale IDs in hidden input
-        document.getElementById('saleIdsInput').value = JSON.stringify(saleIds);
+        // Clear previous inputs
+        const form = document.getElementById('bulkDeleteForm');
+        const oldInputs = form.querySelectorAll('input[name^="sale_ids"]');
+        oldInputs.forEach(input => input.remove());
+        
+        // Add each ID as a separate hidden input
+        saleIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'sale_ids[]';
+            input.value = id;
+            form.appendChild(input);
+        });
         
         // Submit form
-        document.getElementById('bulkDeleteForm').submit();
+        form.submit();
     }
 
     // Update delete button on page load

@@ -326,7 +326,7 @@ class PurchaseService
             if ($amountPaid > 0) {
                 try {
                     PurchasePayment::create([
-                        'payment_number' => 'PP-' . date('YmdHis') . '-' . $purchase->id,
+                        'payment_number' => 'PP-' . date('YmdHis') . '-' . str_pad(round(microtime(true) * 10000) % 10000, 4, '0', STR_PAD_LEFT),
                         'supplier_id' => $purchase->supplier_id,
                         'purchase_id' => $purchase->id,
                         'amount' => $amountPaid,

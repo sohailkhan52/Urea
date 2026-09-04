@@ -367,8 +367,9 @@ class PaymentService
     private function generatePaymentNumber(): string
     {
         $date = now()->format('Ymd');
-        $count = Payment::whereDate('created_at', today())->count() + 1;
-        return "PAY-{$date}-" . str_pad($count, 5, '0', STR_PAD_LEFT);
+        $timestamp = now()->format('His'); // Hour:Minute:Second
+        $microseconds = str_pad(round(microtime(true) * 10000) % 10000, 4, '0', STR_PAD_LEFT);
+        return "PAY-{$date}-{$timestamp}-{$microseconds}";
     }
 
     /**

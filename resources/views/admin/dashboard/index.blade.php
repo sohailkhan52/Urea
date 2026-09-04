@@ -363,22 +363,10 @@
         </div>
     </div>
 
-    {{-- Charts for Sales by Warehouse and Customers --}}
+    {{-- Top Customers Section --}}
     <div class="row mb-4">
-        {{-- Sales by Warehouse --}}
-        <div class="col-lg-6 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="bi bi-building me-2"></i> Sales by Warehouse</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="warehouseSalesChart" height="80"></canvas>
-                </div>
-            </div>
-        </div>
-
         {{-- Top Customers --}}
-        <div class="col-lg-6 mb-4">
+        <div class="col-lg-12 mb-4">
             <div class="card">
                 <div class="card-header bg-light">
                     <h5 class="mb-0"><i class="bi bi-people me-2"></i> Top Customers</h5>
@@ -558,29 +546,6 @@ new Chart(monthlyCtx, {
                 beginAtZero: true,
                 ticks: { callback: function(value) { return '₨' + value.toLocaleString(); } }
             }
-        }
-    }
-});
-
-// Warehouse Sales Chart
-const warehouseCtx = document.getElementById('warehouseSalesChart').getContext('2d');
-const warehouseSalesData = {!! json_encode($salesByWarehouse->pluck('total_sales', 'name')) !!};
-new Chart(warehouseCtx, {
-    type: 'doughnut',
-    data: {
-        labels: Object.keys(warehouseSalesData),
-        datasets: [{
-            data: Object.values(warehouseSalesData),
-            backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#e3165b', '#17a2b8'],
-            borderWidth: 2,
-            borderColor: '#fff',
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { position: 'bottom' }
         }
     }
 });
