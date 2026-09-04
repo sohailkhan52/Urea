@@ -8,26 +8,30 @@ use App\Models\Family;
 use App\Models\Sale;
 use App\Models\Warehouse;
 use App\Services\CustomerPaymentService;
+use App\Services\UdharService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class UdharController extends Controller
 {
     protected CustomerPaymentService $paymentService;
+    protected UdharService $udharService;
 
-    public function __construct(CustomerPaymentService $paymentService)
+    public function __construct(CustomerPaymentService $paymentService, UdharService $udharService)
     {
         $this->paymentService = $paymentService;
+        $this->udharService = $udharService;
     }
 
     /**
-     * Display udhar management page
+     * Display udhar management page with tabs for Customers and Families
      */
     public function index(Request $request): View
     {
         $this->authorize('sales.view');
 
         $user = auth()->user();
+        $activeTab = $request->input('tab', 'customers'); // Default to customers tab
 
         // Build filters
         $filters = [
@@ -35,7 +39,7 @@ class UdharController extends Controller
             'family_id' => $request->input('family_id'),
             'warehouse_id' => $request->input('warehouse_id'),
             'status' => $request->input('status'),
-            'only_outstanding' => $request->boolean('only_outstanding', true), // Default: show only with udhar
+            'only_outstanding' => $request->boolean('only_outstanding', true),
         ];
 
         // Apply warehouse restrictions for non-super-admins
@@ -46,49 +50,89 @@ class UdharController extends Controller
             }
         }
 
-        // Get udhar summary
-        $customersWithUdharCollection = $this->paymentService->getUdharSummary($filters);
+        // Get data based on active tab
+        if ($activeTab === 'families') {
+            // Family accounts view
+            $familiesCollection = $this->udharService->getFamilyUdharSummary($filters);
+            
+            // Paginate families (10 per page)
+            $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+            $perPage = 10;
+            $families = new \Illuminate\Pagination\LengthAwarePaginator(
+                $familiesCollection->forPage($page, $perPage)->values(),
+                $familiesCollection->count(),
+                $perPage,
+                $page,
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+            );
 
-        // Paginate the results (10 per page)
-        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
-        $perPage = 10;
-        $customersWithUdhar = new \Illuminate\Pagination\LengthAwarePaginator(
-            $customersWithUdharCollection->forPage($page, $perPage)->values(),
-            $customersWithUdharCollection->count(),
-            $perPage,
-            $page,
-            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
-        );
+            $totalUdhar = $familiesCollection->sum('outstanding');
+            $totalSales = $familiesCollection->sum('total_sales');
+            $totalPaid = $familiesCollection->sum('total_paid');
+            $accountsCount = $familiesCollection->count();
 
-        // Get filter options
-        $families = Family::active()->orderBy('name')->get();
-        
-        $warehouses = $user->isSuperAdmin()
-            ? Warehouse::active()->orderBy('name')->get()
-            : $user->warehouses()->where('status', 'active')->orderBy('name')->get();
+            // Get filter options
+            $familyOptions = Family::active()->orderBy('name')->get();
+            $warehouses = $user->isSuperAdmin()
+                ? Warehouse::active()->orderBy('name')->get()
+                : $user->warehouses()->where('status', 'active')->orderBy('name')->get();
 
-        // Calculate totals
-        $totalUdhar = $customersWithUdharCollection->sum('current_udhar');
-        $totalSales = $customersWithUdharCollection->sum('total_sales');
-        $totalPaid = $customersWithUdharCollection->sum('total_paid');
-        $customersCount = $customersWithUdharCollection->count();
+            return view('admin.udhar.index', compact(
+                'families',
+                'familyOptions',
+                'warehouses',
+                'filters',
+                'activeTab',
+                'totalUdhar',
+                'totalSales',
+                'totalPaid',
+                'accountsCount'
+            ));
 
-        return view('admin.udhar.index', compact(
-            'customersWithUdhar',
-            'families',
-            'warehouses',
-            'filters',
-            'totalUdhar',
-            'totalSales',
-            'totalPaid',
-            'customersCount'
-        ));
+        } else {
+            // Individual customer accounts view (default)
+            $customersCollection = $this->udharService->getIndividualUdharSummary($filters);
+            
+            // Paginate customers (10 per page)
+            $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+            $perPage = 10;
+            $customers = new \Illuminate\Pagination\LengthAwarePaginator(
+                $customersCollection->forPage($page, $perPage)->values(),
+                $customersCollection->count(),
+                $perPage,
+                $page,
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+            );
+
+            $totalUdhar = $customersCollection->sum('outstanding');
+            $totalSales = $customersCollection->sum('total_sales');
+            $totalPaid = $customersCollection->sum('total_paid');
+            $accountsCount = $customersCollection->count();
+
+            // Get filter options
+            $familyOptions = Family::active()->orderBy('name')->get();
+            $warehouses = $user->isSuperAdmin()
+                ? Warehouse::active()->orderBy('name')->get()
+                : $user->warehouses()->where('status', 'active')->orderBy('name')->get();
+
+            return view('admin.udhar.index', compact(
+                'customers',
+                'familyOptions',
+                'warehouses',
+                'filters',
+                'activeTab',
+                'totalUdhar',
+                'totalSales',
+                'totalPaid',
+                'accountsCount'
+            ));
+        }
     }
 
     /**
-     * Show customer account details
+     * Show individual customer account details
      */
-    public function show(Customer $customer): View
+    public function showCustomer(Customer $customer): View
     {
         $this->authorize('sales.view');
 
@@ -99,69 +143,101 @@ class UdharController extends Controller
 
         $customer->load(['family', 'warehouse']);
 
-        // Get account statement
-        $statement = $this->paymentService->getCustomerAccountStatement($customer);
-
-        // Get all sales with payment status
-        $sales = $customer->sales()
-            ->confirmed()
-            ->with(['customerPayments'])
-            ->orderBy('sale_date', 'desc')
-            ->get()
-            ->map(function ($sale) {
-                return [
-                    'sale' => $sale,
-                    'remaining_udhar' => $sale->current_remaining_udhar,
-                    'payment_status' => $sale->current_payment_status,
-                    'payments_count' => $sale->customerPayments->count(),
-                ];
-            });
-
-        return view('admin.udhar.show', compact('customer', 'statement', 'sales'));
-    }
-
-    /**
-     * Test endpoint to verify controller is reachable
-     */
-    public function testEndpoint()
-    {
-        \Log::debug('Test endpoint hit');
-        return response()->json(['success' => true, 'message' => 'Controller is working', 'timestamp' => now()]);
-    }
-
-    /**
-     * Test payment creation without authorization
-     */
-    public function testPaymentCreation()
-    {
-        \Log::debug('Test payment endpoint hit');
+        // Get individual account balance
+        $individualAccount = $this->udharService->getCustomerIndividualBalance($customer->id);
         
-        try {
-            \Log::debug('Testing database connection');
-            $count = Sale::count();
-            \Log::debug('Sale count: ' . $count);
+        // Get individual account transactions
+        $individualTransactions = $this->udharService->getCustomerIndividualTransactions($customer->id);
+
+        // Get family sales created by this customer (for transparency)
+        $familySales = Sale::where('customer_id', $customer->id)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+            ->confirmed()
+            ->with(['family', 'customerPayments'])
+            ->orderBy('sale_date', 'desc')
+            ->get();
+
+        // Group family sales by family_id
+        $familyAccounts = [];
+        foreach ($familySales as $sale) {
+            $familyId = $sale->family_id;
+            if (!isset($familyAccounts[$familyId])) {
+                $familyAccounts[$familyId] = [
+                    'family' => $sale->family,
+                    'total_sales' => 0,
+                    'total_paid' => 0,
+                    'outstanding' => 0,
+                    'sales' => [],
+                ];
+            }
             
-            return response()->json([
-                'success' => true,
-                'message' => 'Database is working',
-                'sale_count' => $count,
-                'timestamp' => now(),
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Test endpoint error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            $saleOutstanding = $sale->current_remaining_udhar;
+            $salePaid = $sale->paid_amount + $sale->customerPayments->sum('amount');
+            
+            $familyAccounts[$familyId]['total_sales'] += $sale->total_amount;
+            $familyAccounts[$familyId]['total_paid'] += $salePaid;
+            $familyAccounts[$familyId]['outstanding'] += $saleOutstanding;
+            $familyAccounts[$familyId]['sales'][] = $sale;
         }
+
+        return view('admin.udhar.show-customer', compact(
+            'customer',
+            'individualAccount',
+            'individualTransactions',
+            'familyAccounts'
+        ));
     }
 
     /**
-     * Receive payment from customer (AJAX)
+     * Show family account details
      */
+    public function showFamily(Family $family): View
+    {
+        $this->authorize('sales.view');
+
+        // Get family balance
+        $familyAccount = $this->udharService->getFamilyBalance($family->id);
+        
+        // Get outstanding sales for manual allocation
+        $outstandingSales = Sale::where('family_id', $family->id)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+            ->confirmed()
+            ->whereRaw('total_amount - paid_amount > 0')
+            ->with(['customer', 'customerPayments'])
+            ->orderBy('sale_date', 'asc')
+            ->get();
+        
+        $familyAccount['outstanding_sales'] = $outstandingSales;
+        
+        // Get family members
+        $familyAccount['members'] = Customer::where('family_id', $family->id)
+            ->orderBy('name')
+            ->get();
+        
+        // Get family transactions
+        $familyTransactions = $this->udharService->getFamilyTransactions($family->id);
+
+        // Get aging breakdown
+        $agingBreakdown = $this->udharService->getFamilyAgingUdhar($family->id);
+
+        return view('admin.udhar.show-family', compact(
+            'family',
+            'familyAccount',
+            'familyTransactions',
+            'agingBreakdown'
+        ));
+    }
+
+    /**
+     * Legacy show method - redirects to showCustomer for backward compatibility
+     */
+    public function show(Customer $customer): View
+    {
+        return $this->showCustomer($customer);
+    }
+
     /**
      * Receive cash payment (AJAX endpoint)
-     * Simple cash-only payment receiver
      */
     public function receivePayment(Request $request, Sale $sale)
     {
@@ -188,6 +264,10 @@ class UdharController extends Controller
                     'id' => $payment->id,
                     'amount' => (float) $payment->amount,
                     'remaining_udhar' => (float) $sale->refresh()->current_remaining_udhar,
+                ],
+                'account_info' => [
+                    'account_type' => $sale->udhar_account_type,
+                    'account_label' => $sale->isIndividualAccount() ? 'Individual Account' : 'Family Account',
                 ],
             ]);
         } catch (\Exception $e) {
@@ -228,7 +308,114 @@ class UdharController extends Controller
                 'additional_payments' => number_format($sale->total_additional_payments, 2),
                 'remaining_udhar' => number_format($sale->current_remaining_udhar, 2),
                 'payment_status' => $sale->current_payment_status,
+                'account_type' => $sale->udhar_account_type,
+                'account_label' => $sale->udhar_account_type_label,
             ],
+        ]);
+    }
+
+    /**
+     * Receive individual customer payment (AJAX)
+     */
+    public function receiveIndividualPayment(Request $request, Customer $customer)
+    {
+        $this->authorize('sales.create');
+
+        if (!auth()->user()->canAccessWarehouse($customer->warehouse_id)) {
+            return response()->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_date' => 'required|date',
+            'reference' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $payment = $this->paymentService->receiveIndividualCashPayment(
+                $customer,
+                (float) $validated['amount'],
+                $validated['payment_date'],
+                $validated['reference'] ?? null,
+                $validated['notes'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cash payment of Rs. ' . number_format($validated['amount'], 2) . ' received successfully.',
+                'payment' => [
+                    'id' => $payment->id,
+                    'amount' => (float) $payment->amount,
+                    'payment_date' => $payment->payment_date->format('M d, Y'),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Receive family payment (AJAX)
+     */
+    public function receiveFamilyPayment(Request $request, Family $family)
+    {
+        $this->authorize('sales.create');
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_date' => 'required|date',
+            'allocation_type' => 'required|in:auto,manual',
+            'allocation' => 'required_if:allocation_type,manual|array',
+            'allocation.*.sale_id' => 'required_with:allocation|integer|exists:sales,id',
+            'allocation.*.amount' => 'required_with:allocation|numeric|min:0.01',
+            'reference' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $allocation = [];
+            if ($validated['allocation_type'] === 'manual') {
+                $allocation = $validated['allocation'];
+            }
+
+            $payments = $this->paymentService->receiveFamilyCashPayment(
+                $family,
+                (float) $validated['amount'],
+                $validated['payment_date'],
+                $allocation,
+                $validated['reference'] ?? null,
+                $validated['notes'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Family cash payment of Rs. ' . number_format($validated['amount'], 2) . ' received successfully.',
+                'payments_count' => count($payments),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Get Udhar statistics for dashboard (AJAX)
+     */
+    public function getStatistics()
+    {
+        $this->authorize('sales.view');
+
+        $stats = $this->udharService->getUdharStatistics();
+
+        return response()->json([
+            'success' => true,
+            'statistics' => $stats,
         ]);
     }
 }

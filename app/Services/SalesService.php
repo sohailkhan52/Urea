@@ -30,10 +30,16 @@ class SalesService
     public function createSale(array $data): Sale
     {
         return DB::transaction(function () use ($data) {
+            // Determine udhar_account_type based on family_id
+            $udharAccountType = !empty($data['family_id']) 
+                ? Sale::UDHAR_ACCOUNT_TYPE_FAMILY 
+                : Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL;
+
             $sale = Sale::create([
                 'invoice_number' => $this->generateInvoiceNumber(),
                 'customer_id' => $data['customer_id'] ?? null,
                 'family_id' => $data['family_id'] ?? null,
+                'udhar_account_type' => $udharAccountType,
                 'walkin_customer_name' => $data['walkin_customer_name'] ?? null,
                 'walkin_customer_contact' => $data['walkin_customer_contact'] ?? null,
                 'warehouse_id' => $data['warehouse_id'],
@@ -70,11 +76,17 @@ class SalesService
                 $customer->update(['family_id' => $data['family_id']]);
             }
 
+            // Determine udhar_account_type based on family_id
+            $udharAccountType = !empty($data['family_id']) 
+                ? Sale::UDHAR_ACCOUNT_TYPE_FAMILY 
+                : Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL;
+
             // Create the sale
             $sale = Sale::create([
                 'invoice_number' => $this->generateInvoiceNumber(),
                 'customer_id' => $data['customer_id'],
                 'family_id' => $data['family_id'] ?? null,
+                'udhar_account_type' => $udharAccountType,
                 'warehouse_id' => $data['warehouse_id'],
                 'sale_date' => $data['sale_date'] ?? now()->toDateString(),
                 'discount' => $data['discount'] ?? 0,
@@ -82,7 +94,7 @@ class SalesService
                 'status' => Sale::STATUS_DRAFT,
                 'notes' => $data['notes'] ?? null,
                 'created_by' => auth()->id(),
-            ]);
+            ]);;
 
             // Add items if provided
             if (!empty($data['items']) && is_array($data['items'])) {

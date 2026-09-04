@@ -4,79 +4,428 @@ namespace App\Services;
 
 use App\Models\Sale;
 use App\Models\Customer;
-use App\Models\CustomerLedger;
+use App\Models\Family;
+use App\Models\CustomerPayment;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
- * UdharService - Handles credit/Udhar (outstanding balance) tracking and reporting
+ * UdharService - Handles credit/Udhar (outstanding balance) tracking for INDIVIDUAL and FAMILY accounts
  * 
- * Udhar (اُدھار) = Amount owed by customer
- * This service provides comprehensive tools for:
- * - Calculating outstanding amounts
- * - Aging analysis (0-30, 31-60, 61-90, 90+ days)
- * - Customer credit reports
- * - Udhar settlements
+ * CRITICAL: Udhar accounts are separate:
+ * - Individual Account: Sales where udhar_account_type = 'individual'
+ * - Family Account: Sales where udhar_account_type = 'family', grouped by family_id
  */
 class UdharService
 {
     /**
-     * Get complete Udhar summary for a customer
-     * 
-     * @param int $customerId
-     * @return array
-     */
-    public function getCustomerUdharSummary(int $customerId): array
-    {
-        $customer = Customer::findOrFail($customerId);
-        
-        $outstandingSales = Sale::where('customer_id', $customerId)
-            ->where('payment_status', '!=', Sale::PAYMENT_STATUS_PAID)
-            ->where('udhar_amount', '>', 0)
-            ->get();
-
-        $totalUdhar = $outstandingSales->sum('udhar_amount');
-        $oldestSale = $outstandingSales->min('sale_date');
-        $daysOverdue = $oldestSale ? now()->diffInDays($oldestSale) : 0;
-
-        return [
-            'customer_name' => $customer->name,
-            'total_udhar' => $totalUdhar,
-            'sales_count' => $outstandingSales->count(),
-            'oldest_udhar_date' => $oldestSale,
-            'days_overdue' => $daysOverdue,
-            'aging_breakdown' => $this->getAgingUdhar($customerId),
-            'outstanding_sales' => $outstandingSales->count(),
-        ];
-    }
-
-    /**
-     * Get total outstanding Udhar for a customer
+     * Get individual customer Udhar balance (ONLY individual sales)
      * 
      * @param int $customerId
      * @return float
      */
-    public function getOutstandingUdhar(int $customerId): float
+    public function getIndividualCustomerUdhar(int $customerId): float
     {
         return Sale::where('customer_id', $customerId)
-            ->where('payment_status', '!=', Sale::PAYMENT_STATUS_PAID)
-            ->sum('udhar_amount');
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
+            ->confirmed()
+            ->get()
+            ->sum(function ($sale) {
+                return $sale->current_remaining_udhar;
+            });
     }
 
     /**
-     * Get Udhar breakdown by aging buckets
-     * Returns: 0-30 days, 31-60 days, 61-90 days, 90+ days
+     * Get family Udhar balance (ONLY family sales)
+     * 
+     * @param int $familyId
+     * @return float
+     */
+    public function getFamilyUdhar(int $familyId): float
+    {
+        return Sale::where('family_id', $familyId)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+            ->confirmed()
+            ->get()
+            ->sum(function ($sale) {
+                return $sale->current_remaining_udhar;
+            });
+    }
+
+    /**
+     * Get individual customer balance with breakdown
      * 
      * @param int $customerId
      * @return array
      */
-    public function getAgingUdhar(int $customerId): array
+    public function getCustomerIndividualBalance(int $customerId): array
     {
         $sales = Sale::where('customer_id', $customerId)
-            ->where('payment_status', '!=', Sale::PAYMENT_STATUS_PAID)
-            ->where('udhar_amount', '>', 0)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
+            ->confirmed()
+            ->with('customerPayments')
+            ->orderBy('sale_date', 'desc')
             ->get();
 
+        $totalSales = $sales->sum('total_amount');
+        $totalPaid = $sales->sum('paid_amount') + $sales->sum(function ($sale) {
+            return $sale->customerPayments->sum('amount');
+        });
+        $outstanding = $sales->sum(function ($sale) {
+            return $sale->current_remaining_udhar;
+        });
+
+        return [
+            'account_type' => 'individual',
+            'customer_id' => $customerId,
+            'total_sales' => $totalSales,
+            'total_paid' => $totalPaid,
+            'outstanding' => $outstanding,
+            'sales_count' => $sales->count(),
+            'oldest_sale_date' => $sales->min('sale_date'),
+            'sales' => $sales,
+        ];
+    }
+
+    /**
+     * Get family balance with member breakdown
+     * 
+     * @param int $familyId
+     * @return array
+     */
+    public function getFamilyBalance(int $familyId): array
+    {
+        $family = Family::findOrFail($familyId);
+        
+        $sales = Sale::where('family_id', $familyId)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+            ->confirmed()
+            ->with(['customer', 'customerPayments'])
+            ->orderBy('sale_date', 'desc')
+            ->get();
+
+        $totalSales = $sales->sum('total_amount');
+        $totalPaid = $sales->sum('paid_amount') + $sales->sum(function ($sale) {
+            return $sale->customerPayments->sum('amount');
+        });
+        $outstanding = $sales->sum(function ($sale) {
+            return $sale->current_remaining_udhar;
+        });
+
+        // Group by customer who created the sale
+        $byCustomer = [];
+        foreach ($sales as $sale) {
+            $customerId = $sale->customer_id;
+            if (!isset($byCustomer[$customerId])) {
+                $byCustomer[$customerId] = [
+                    'customer' => $sale->customer,
+                    'total_sales' => 0,
+                    'total_paid' => 0,
+                    'outstanding' => 0,
+                    'sales_count' => 0,
+                ];
+            }
+            
+            $saleOutstanding = $sale->current_remaining_udhar;
+            $salePaid = $sale->paid_amount + $sale->customerPayments->sum('amount');
+            
+            $byCustomer[$customerId]['total_sales'] += $sale->total_amount;
+            $byCustomer[$customerId]['total_paid'] += $salePaid;
+            $byCustomer[$customerId]['outstanding'] += $saleOutstanding;
+            $byCustomer[$customerId]['sales_count']++;
+        }
+
+        return [
+            'account_type' => 'family',
+            'family_id' => $familyId,
+            'family_name' => $family->name,
+            'total_sales' => $totalSales,
+            'total_paid' => $totalPaid,
+            'outstanding' => $outstanding,
+            'sales_count' => $sales->count(),
+            'oldest_sale_date' => $sales->min('sale_date'),
+            'members_count' => count($byCustomer),
+            'by_customer' => $byCustomer,
+            'sales' => $sales,
+        ];
+    }
+
+    /**
+     * Get individual customer transactions (ledger)
+     * 
+     * @param int $customerId
+     * @return array
+     */
+    public function getCustomerIndividualTransactions(int $customerId): array
+    {
+        $sales = Sale::where('customer_id', $customerId)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
+            ->confirmed()
+            ->with('customerPayments')
+            ->orderBy('sale_date', 'asc')
+            ->get();
+
+        $transactions = [];
+        $balance = 0;
+
+        foreach ($sales as $sale) {
+            // Sale transaction
+            $balance += $sale->total_amount;
+            $transactions[] = [
+                'date' => $sale->sale_date,
+                'type' => 'sale',
+                'reference' => $sale->invoice_number,
+                'description' => 'Sale Created',
+                'debit' => $sale->total_amount,
+                'credit' => 0,
+                'balance' => $balance,
+                'sale' => $sale,
+            ];
+
+            // Initial payment (if any)
+            if ($sale->paid_amount > 0) {
+                $balance -= $sale->paid_amount;
+                $transactions[] = [
+                    'date' => $sale->sale_date,
+                    'type' => 'payment',
+                    'reference' => $sale->invoice_number,
+                    'description' => 'Initial Payment',
+                    'debit' => 0,
+                    'credit' => $sale->paid_amount,
+                    'balance' => $balance,
+                    'sale' => $sale,
+                ];
+            }
+
+            // Additional payments
+            foreach ($sale->customerPayments as $payment) {
+                $balance -= $payment->amount;
+                $transactions[] = [
+                    'date' => $payment->payment_date,
+                    'type' => 'payment',
+                    'reference' => $payment->reference_number ?? 'PMT-' . $payment->id,
+                    'description' => 'Payment Received',
+                    'debit' => 0,
+                    'credit' => $payment->amount,
+                    'balance' => $balance,
+                    'payment' => $payment,
+                ];
+            }
+        }
+
+        // Sort by date
+        usort($transactions, fn($a, $b) => $a['date'] <=> $b['date']);
+
+        return $transactions;
+    }
+
+    /**
+     * Get family transactions (ledger)
+     * 
+     * @param int $familyId
+     * @return array
+     */
+    public function getFamilyTransactions(int $familyId): array
+    {
+        $sales = Sale::where('family_id', $familyId)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+            ->confirmed()
+            ->with(['customer', 'customerPayments'])
+            ->orderBy('sale_date', 'asc')
+            ->get();
+
+        $transactions = [];
+        $balance = 0;
+
+        foreach ($sales as $sale) {
+            // Sale transaction
+            $balance += $sale->total_amount;
+            $transactions[] = [
+                'date' => $sale->sale_date,
+                'customer' => $sale->customer,
+                'type' => 'sale',
+                'reference' => $sale->invoice_number,
+                'description' => 'Sale Created',
+                'debit' => $sale->total_amount,
+                'credit' => 0,
+                'balance' => $balance,
+                'sale' => $sale,
+            ];
+
+            // Initial payment (if any)
+            if ($sale->paid_amount > 0) {
+                $balance -= $sale->paid_amount;
+                $transactions[] = [
+                    'date' => $sale->sale_date,
+                    'customer' => $sale->customer,
+                    'type' => 'payment',
+                    'reference' => $sale->invoice_number,
+                    'description' => 'Initial Payment',
+                    'debit' => 0,
+                    'credit' => $sale->paid_amount,
+                    'balance' => $balance,
+                    'sale' => $sale,
+                ];
+            }
+
+            // Additional payments
+            foreach ($sale->customerPayments as $payment) {
+                $balance -= $payment->amount;
+                $transactions[] = [
+                    'date' => $payment->payment_date,
+                    'customer' => $sale->customer,
+                    'type' => 'payment',
+                    'reference' => $payment->reference_number ?? 'PMT-' . $payment->id,
+                    'description' => 'Payment Received',
+                    'debit' => 0,
+                    'credit' => $payment->amount,
+                    'balance' => $balance,
+                    'payment' => $payment,
+                ];
+            }
+        }
+
+        // Sort by date
+        usort($transactions, fn($a, $b) => $a['date'] <=> $b['date']);
+
+        return $transactions;
+    }
+
+    /**
+     * Get summary for all customers with INDIVIDUAL outstanding
+     * 
+     * @param array $filters
+     * @return Collection
+     */
+    public function getIndividualUdharSummary(array $filters = []): Collection
+    {
+        $query = Customer::whereHas('sales', function ($q) {
+            $q->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
+              ->where('status', Sale::STATUS_CONFIRMED);
+        });
+
+        // Apply filters
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        if (!empty($filters['warehouse_id'])) {
+            $query->where('warehouse_id', $filters['warehouse_id']);
+        }
+
+        $customers = $query->with(['family', 'warehouse'])->get();
+
+        // Calculate individual udhar for each customer
+        $summary = $customers->map(function ($customer) {
+            $balance = $this->getCustomerIndividualBalance($customer->id);
+            
+            return [
+                'customer' => $customer,
+                'total_sales' => $balance['total_sales'],
+                'total_paid' => $balance['total_paid'],
+                'outstanding' => $balance['outstanding'],
+                'sales_count' => $balance['sales_count'],
+                'oldest_sale_date' => $balance['oldest_sale_date'],
+            ];
+        });
+
+        // Filter only outstanding if requested
+        if (!empty($filters['only_outstanding'])) {
+            $summary = $summary->filter(fn($item) => $item['outstanding'] > 0);
+        }
+
+        return $summary->sortByDesc('outstanding')->values();
+    }
+
+    /**
+     * Get summary for all families with FAMILY outstanding
+     * 
+     * @param array $filters
+     * @return Collection
+     */
+    public function getFamilyUdharSummary(array $filters = []): Collection
+    {
+        $query = Family::whereHas('sales', function ($q) {
+            $q->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+              ->where('status', Sale::STATUS_CONFIRMED);
+        });
+
+        // Apply filters
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        $families = $query->get();
+
+        // Calculate family udhar for each family
+        $summary = $families->map(function ($family) {
+            $balance = $this->getFamilyBalance($family->id);
+            
+            return [
+                'family' => $family,
+                'total_sales' => $balance['total_sales'],
+                'total_paid' => $balance['total_paid'],
+                'outstanding' => $balance['outstanding'],
+                'sales_count' => $balance['sales_count'],
+                'members_count' => $balance['members_count'],
+                'oldest_sale_date' => $balance['oldest_sale_date'],
+            ];
+        });
+
+        // Filter only outstanding if requested
+        if (!empty($filters['only_outstanding'])) {
+            $summary = $summary->filter(fn($item) => $item['outstanding'] > 0);
+        }
+
+        return $summary->sortByDesc('outstanding')->values();
+    }
+
+    /**
+     * Get aging breakdown for individual customer
+     * 
+     * @param int $customerId
+     * @return array
+     */
+    public function getIndividualAgingUdhar(int $customerId): array
+    {
+        $sales = Sale::where('customer_id', $customerId)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
+            ->confirmed()
+            ->get();
+
+        return $this->calculateAgingBreakdown($sales);
+    }
+
+    /**
+     * Get aging breakdown for family
+     * 
+     * @param int $familyId
+     * @return array
+     */
+    public function getFamilyAgingUdhar(int $familyId): array
+    {
+        $sales = Sale::where('family_id', $familyId)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+            ->confirmed()
+            ->get();
+
+        return $this->calculateAgingBreakdown($sales);
+    }
+
+    /**
+     * Calculate aging breakdown for a collection of sales
+     * 
+     * @param Collection $sales
+     * @return array
+     */
+    private function calculateAgingBreakdown(Collection $sales): array
+    {
         $aging = [
             'current' => ['count' => 0, 'amount' => 0, 'label' => '0-30 days'],
             'thirty_to_sixty' => ['count' => 0, 'amount' => 0, 'label' => '31-60 days'],
@@ -85,21 +434,23 @@ class UdharService
         ];
 
         foreach ($sales as $sale) {
+            $outstanding = $sale->current_remaining_udhar;
+            if ($outstanding <= 0) continue;
+
             $daysOld = now()->diffInDays($sale->sale_date);
-            $amount = (float) $sale->udhar_amount;
 
             if ($daysOld <= 30) {
                 $aging['current']['count']++;
-                $aging['current']['amount'] += $amount;
+                $aging['current']['amount'] += $outstanding;
             } elseif ($daysOld <= 60) {
                 $aging['thirty_to_sixty']['count']++;
-                $aging['thirty_to_sixty']['amount'] += $amount;
+                $aging['thirty_to_sixty']['amount'] += $outstanding;
             } elseif ($daysOld <= 90) {
                 $aging['sixty_to_ninety']['count']++;
-                $aging['sixty_to_ninety']['amount'] += $amount;
+                $aging['sixty_to_ninety']['amount'] += $outstanding;
             } else {
                 $aging['over_ninety']['count']++;
-                $aging['over_ninety']['amount'] += $amount;
+                $aging['over_ninety']['amount'] += $outstanding;
             }
         }
 
@@ -107,231 +458,35 @@ class UdharService
     }
 
     /**
-     * Get all sales with outstanding Udhar, with filtering and sorting options
-     * 
-     * @param array $filters = ['customer_id', 'warehouse_id', 'aging_bucket', 'status']
-     * @param string $sortBy = 'udhar_amount' | 'days_overdue' | 'sale_date'
-     * @param string $direction = 'desc' | 'asc'
-     * @return Collection
-     */
-    public function getOutstandingUdharSales(
-        array $filters = [],
-        string $sortBy = 'udhar_amount',
-        string $direction = 'desc'
-    ): Collection {
-        $query = Sale::where('payment_status', '!=', Sale::PAYMENT_STATUS_PAID)
-            ->where('udhar_amount', '>', 0)
-            ->with(['customer', 'warehouse']);
-
-        // Apply filters
-        if (isset($filters['customer_id'])) {
-            $query->where('customer_id', $filters['customer_id']);
-        }
-
-        if (isset($filters['warehouse_id'])) {
-            $query->where('warehouse_id', $filters['warehouse_id']);
-        }
-
-        if (isset($filters['date_from'])) {
-            $query->whereDate('sale_date', '>=', $filters['date_from']);
-        }
-
-        if (isset($filters['date_to'])) {
-            $query->whereDate('sale_date', '<=', $filters['date_to']);
-        }
-
-        // Filter by aging bucket
-        if (isset($filters['aging_bucket'])) {
-            $query = $this->filterByAgingBucket($query, $filters['aging_bucket']);
-        }
-
-        // Sort
-        if ($sortBy === 'days_overdue') {
-            $query->orderBy('sale_date', $direction);
-        } elseif ($sortBy === 'udhar_amount') {
-            $query->orderBy('udhar_amount', $direction);
-        } else {
-            $query->orderBy('sale_date', $direction);
-        }
-
-        return $query->get();
-    }
-
-    /**
-     * Filter sales by aging bucket
-     * 
-     * @param mixed $query
-     * @param string $bucket = 'current' | 'thirty_to_sixty' | 'sixty_to_ninety' | 'over_ninety'
-     * @return mixed
-     */
-    private function filterByAgingBucket($query, string $bucket)
-    {
-        $now = now();
-
-        return match($bucket) {
-            'current' => $query->whereBetween('sale_date', [
-                $now->clone()->subDays(30),
-                $now,
-            ]),
-            'thirty_to_sixty' => $query->whereBetween('sale_date', [
-                $now->clone()->subDays(60),
-                $now->clone()->subDays(31),
-            ]),
-            'sixty_to_ninety' => $query->whereBetween('sale_date', [
-                $now->clone()->subDays(90),
-                $now->clone()->subDays(61),
-            ]),
-            'over_ninety' => $query->whereDate('sale_date', '<', $now->clone()->subDays(90)),
-            default => $query,
-        };
-    }
-
-    /**
-     * Get Udhar statistics for dashboard
+     * Get complete Udhar statistics (individual + family)
      * 
      * @return array
      */
     public function getUdharStatistics(): array
     {
-        $totalUdhar = Sale::where('payment_status', '!=', Sale::PAYMENT_STATUS_PAID)
-            ->sum('udhar_amount');
+        // Individual accounts
+        $individualSales = Sale::where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
+            ->confirmed()
+            ->get();
+        
+        $individualOutstanding = $individualSales->sum(fn($sale) => $sale->current_remaining_udhar);
+        $individualCustomersCount = $individualSales->pluck('customer_id')->unique()->count();
 
-        $overdueUdhar = Sale::where('payment_status', '!=', Sale::PAYMENT_STATUS_PAID)
-            ->where('udhar_amount', '>', 0)
-            ->where('sale_date', '<', now()->subDays(90))
-            ->sum('udhar_amount');
-
-        $customersWithUdhar = Sale::distinct('customer_id')
-            ->where('payment_status', '!=', Sale::PAYMENT_STATUS_PAID)
-            ->where('udhar_amount', '>', 0)
-            ->count();
-
-        return [
-            'total_udhar' => $totalUdhar,
-            'overdue_udhar' => $overdueUdhar,
-            'customers_with_udhar' => $customersWithUdhar,
-            'number_of_outstanding_sales' => Sale::where('payment_status', '!=', Sale::PAYMENT_STATUS_PAID)
-                ->where('udhar_amount', '>', 0)
-                ->count(),
-        ];
-    }
-
-    /**
-     * Generate comprehensive Udhar report
-     * 
-     * @param Carbon|null $fromDate
-     * @param Carbon|null $toDate
-     * @param int|null $warehouseId
-     * @return array
-     */
-    public function generateUdharReport(
-        ?Carbon $fromDate = null,
-        ?Carbon $toDate = null,
-        ?int $warehouseId = null
-    ): array {
-        $query = Sale::where('payment_status', '!=', Sale::PAYMENT_STATUS_PAID)
-            ->where('udhar_amount', '>', 0)
-            ->with(['customer', 'warehouse']);
-
-        if ($fromDate) {
-            $query->whereDate('sale_date', '>=', $fromDate);
-        }
-
-        if ($toDate) {
-            $query->whereDate('sale_date', '<=', $toDate);
-        }
-
-        if ($warehouseId) {
-            $query->where('warehouse_id', $warehouseId);
-        }
-
-        $sales = $query->get();
-
-        // Group by customer
-        $byCustomer = [];
-        foreach ($sales as $sale) {
-            $customerId = $sale->customer_id;
-            if (!isset($byCustomer[$customerId])) {
-                $byCustomer[$customerId] = [
-                    'customer_name' => $sale->customer->name ?? 'Walk-in',
-                    'total_udhar' => 0,
-                    'sales_count' => 0,
-                    'oldest_sale_date' => null,
-                    'sales' => [],
-                ];
-            }
-
-            $byCustomer[$customerId]['total_udhar'] += (float) $sale->udhar_amount;
-            $byCustomer[$customerId]['sales_count']++;
-            $byCustomer[$customerId]['sales'][] = $sale;
-
-            if ($byCustomer[$customerId]['oldest_sale_date'] === null ||
-                $sale->sale_date < $byCustomer[$customerId]['oldest_sale_date']) {
-                $byCustomer[$customerId]['oldest_sale_date'] = $sale->sale_date;
-            }
-        }
-
-        // Calculate aging breakdown
-        $agingBreakdown = [
-            'current' => ['count' => 0, 'amount' => 0],
-            'thirty_to_sixty' => ['count' => 0, 'amount' => 0],
-            'sixty_to_ninety' => ['count' => 0, 'amount' => 0],
-            'over_ninety' => ['count' => 0, 'amount' => 0],
-        ];
-
-        foreach ($sales as $sale) {
-            $daysOld = now()->diffInDays($sale->sale_date);
-            $amount = (float) $sale->udhar_amount;
-
-            if ($daysOld <= 30) {
-                $agingBreakdown['current']['count']++;
-                $agingBreakdown['current']['amount'] += $amount;
-            } elseif ($daysOld <= 60) {
-                $agingBreakdown['thirty_to_sixty']['count']++;
-                $agingBreakdown['thirty_to_sixty']['amount'] += $amount;
-            } elseif ($daysOld <= 90) {
-                $agingBreakdown['sixty_to_ninety']['count']++;
-                $agingBreakdown['sixty_to_ninety']['amount'] += $amount;
-            } else {
-                $agingBreakdown['over_ninety']['count']++;
-                $agingBreakdown['over_ninety']['amount'] += $amount;
-            }
-        }
+        // Family accounts
+        $familySales = Sale::where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+            ->confirmed()
+            ->get();
+        
+        $familyOutstanding = $familySales->sum(fn($sale) => $sale->current_remaining_udhar);
+        $familiesCount = $familySales->pluck('family_id')->unique()->count();
 
         return [
-            'report_date' => now(),
-            'total_udhar' => $sales->sum('udhar_amount'),
-            'total_sales_count' => $sales->count(),
-            'by_customer' => $byCustomer,
-            'aging_breakdown' => $agingBreakdown,
-            'by_warehouse' => $this->groupByWarehouse($sales),
+            'total_outstanding' => $individualOutstanding + $familyOutstanding,
+            'individual_outstanding' => $individualOutstanding,
+            'individual_customers_count' => $individualCustomersCount,
+            'family_outstanding' => $familyOutstanding,
+            'families_count' => $familiesCount,
+            'total_accounts_with_outstanding' => $individualCustomersCount + $familiesCount,
         ];
-    }
-
-    /**
-     * Group report sales by warehouse
-     * 
-     * @param Collection $sales
-     * @return array
-     */
-    private function groupByWarehouse(Collection $sales): array
-    {
-        $byWarehouse = [];
-
-        foreach ($sales as $sale) {
-            $warehouseId = $sale->warehouse_id;
-            if (!isset($byWarehouse[$warehouseId])) {
-                $byWarehouse[$warehouseId] = [
-                    'warehouse_name' => $sale->warehouse->name ?? 'Unknown',
-                    'total_udhar' => 0,
-                    'sales_count' => 0,
-                ];
-            }
-
-            $byWarehouse[$warehouseId]['total_udhar'] += (float) $sale->udhar_amount;
-            $byWarehouse[$warehouseId]['sales_count']++;
-        }
-
-        return $byWarehouse;
     }
 }

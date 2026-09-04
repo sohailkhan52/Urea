@@ -55,6 +55,12 @@ class UdharHistory extends Model
     ];
 
     /**
+     * Account type constants
+     */
+    public const ACCOUNT_TYPE_INDIVIDUAL = 'individual';
+    public const ACCOUNT_TYPE_FAMILY = 'family';
+
+    /**
      * Status constants
      */
     public const STATUS_COMPLETED = 'completed';
@@ -81,6 +87,8 @@ class UdharHistory extends Model
         'customer_id',
         'sale_id',
         'payment_id',
+        'account_type',
+        'account_family_id',
         'transaction_type',
         'previous_total_amount',
         'current_total_amount',
@@ -152,11 +160,52 @@ class UdharHistory extends Model
     }
 
     /**
+     * Get the account family (if family account)
+     */
+    public function accountFamily()
+    {
+        return $this->belongsTo(Family::class, 'account_family_id');
+    }
+
+    /**
      * Scope to filter by transaction type
      */
     public function scopeByType($query, $type)
     {
         return $query->where('transaction_type', $type);
+    }
+
+    /**
+     * Scope to filter by account type
+     */
+    public function scopeByAccountType($query, $accountType)
+    {
+        return $query->where('account_type', $accountType);
+    }
+
+    /**
+     * Scope to filter by family account
+     */
+    public function scopeByFamilyAccount($query, $familyId)
+    {
+        return $query->where('account_type', self::ACCOUNT_TYPE_FAMILY)
+                     ->where('account_family_id', $familyId);
+    }
+
+    /**
+     * Scope for individual account transactions
+     */
+    public function scopeIndividualAccount($query)
+    {
+        return $query->where('account_type', self::ACCOUNT_TYPE_INDIVIDUAL);
+    }
+
+    /**
+     * Scope for family account transactions
+     */
+    public function scopeFamilyAccount($query)
+    {
+        return $query->where('account_type', self::ACCOUNT_TYPE_FAMILY);
     }
 
     /**

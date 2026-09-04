@@ -10,9 +10,17 @@ class CustomerPayment extends Model
 {
     use HasFactory;
 
+    /**
+     * Account type constants
+     */
+    public const ACCOUNT_TYPE_INDIVIDUAL = 'individual';
+    public const ACCOUNT_TYPE_FAMILY = 'family';
+
     protected $fillable = [
         'customer_id',
         'sale_id',
+        'account_type',
+        'account_family_id',
         'amount',
         'payment_date',
         'payment_method',
@@ -48,6 +56,30 @@ class CustomerPayment extends Model
     public function receiver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'received_by');
+    }
+
+    /**
+     * Get the account family (for family payments)
+     */
+    public function accountFamily(): BelongsTo
+    {
+        return $this->belongsTo(Family::class, 'account_family_id');
+    }
+
+    /**
+     * Check if payment is for individual account
+     */
+    public function isIndividualAccount(): bool
+    {
+        return $this->account_type === self::ACCOUNT_TYPE_INDIVIDUAL;
+    }
+
+    /**
+     * Check if payment is for family account
+     */
+    public function isFamilyAccount(): bool
+    {
+        return $this->account_type === self::ACCOUNT_TYPE_FAMILY;
     }
 
     /**

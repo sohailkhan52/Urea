@@ -10,7 +10,92 @@ use Illuminate\Support\Facades\DB;
 class CustomerPaymentService
 {
     /**
-     * Receive cash payment for a sale
+     * Receive cash payment for individual customer account
+     * 
+     * @param Customer $customer
+     * @param float $amount
+     * @param string $paymentDate
+     * @param string|null $reference
+     * @param string|null $notes
+     * @return CustomerPayment
+     * @throws \Exception
+     */
+    public function receiveIndividualCashPayment(
+        Customer $customer,
+        float $amount,
+        string $paymentDate,
+        ?string $reference = null,
+        ?string $notes = null
+    ): CustomerPayment {
+        // Validate amount
+        if ($amount <= 0) {
+            throw new \Exception('Payment amount must be greater than zero.');
+        }
+
+        // Get individual account balance
+        $individualBalance = Sale::where('customer_id', $customer->id)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
+            ->confirmed()
+            ->get()
+            ->sum(fn($sale) => $sale->current_remaining_udhar);
+
+        if ($amount > $individualBalance) {
+            throw new \Exception("Payment amount Rs. " . number_format($amount, 2) . " exceeds outstanding individual balance of Rs. " . number_format($individualBalance, 2));
+        }
+
+        // Find oldest outstanding individual sale
+        $sale = Sale::where('customer_id', $customer->id)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
+            ->confirmed()
+            ->whereRaw('total_amount - paid_amount > 0')
+            ->orderBy('sale_date', 'asc')
+            ->first();
+
+        if (!$sale) {
+            throw new \Exception('No outstanding individual sales found for this customer.');
+        }
+
+        // Apply payment to oldest sale
+        return DB::transaction(function () use ($sale, $amount, $paymentDate, $reference, $notes, $customer) {
+            $remainingAmount = $amount;
+            $payment = null;
+
+            // Get all outstanding individual sales
+            $outstandingSales = Sale::where('customer_id', $customer->id)
+                ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
+                ->confirmed()
+                ->whereRaw('total_amount - paid_amount > 0')
+                ->orderBy('sale_date', 'asc')
+                ->get();
+
+            foreach ($outstandingSales as $outstandingSale) {
+                if ($remainingAmount <= 0) break;
+
+                $saleOutstanding = $outstandingSale->current_remaining_udhar;
+                $paymentForThisSale = min($remainingAmount, $saleOutstanding);
+
+                $payment = CustomerPayment::create([
+                    'customer_id' => $customer->id,
+                    'sale_id' => $outstandingSale->id,
+                    'account_type' => CustomerPayment::ACCOUNT_TYPE_INDIVIDUAL,
+                    'account_family_id' => null,
+                    'amount' => $paymentForThisSale,
+                    'payment_date' => $paymentDate,
+                    'payment_method' => 'cash',
+                    'reference_number' => $reference,
+                    'notes' => $notes,
+                    'received_by' => auth()->id(),
+                ]);
+
+                $remainingAmount -= $paymentForThisSale;
+            }
+
+            return $payment;
+        });
+    }
+
+    /**
+     * Receive cash payment for a specific sale
      * Simple cash-only payment receiver
      *
      * @param Sale $sale
@@ -38,6 +123,8 @@ class CustomerPaymentService
             return CustomerPayment::create([
                 'customer_id' => $sale->customer_id,
                 'sale_id' => $sale->id,
+                'account_type' => $sale->udhar_account_type,
+                'account_family_id' => $sale->family_id,
                 'amount' => $amount,
                 'payment_date' => now()->toDateString(),
                 'payment_method' => 'cash',
@@ -244,6 +331,152 @@ class CustomerPaymentService
             ->with('receiver')
             ->orderBy('payment_date')
             ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * Receive cash payment for family account
+     * 
+     * @param Family $family
+     * @param float $amount
+     * @param string $paymentDate
+     * @param array $allocation [['sale_id' => 1, 'amount' => 1000], ...]
+     * @param string|null $reference
+     * @param string|null $notes
+     * @return array Array of CustomerPayment objects
+     * @throws \Exception
+     */
+    public function receiveFamilyCashPayment(
+        $family,
+        float $amount,
+        string $paymentDate,
+        array $allocation = [],
+        ?string $reference = null,
+        ?string $notes = null
+    ): array {
+        // Validate amount
+        if ($amount <= 0) {
+            throw new \Exception('Payment amount must be greater than zero.');
+        }
+
+        // Get family account balance
+        $familyBalance = Sale::where('family_id', $family->id)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+            ->confirmed()
+            ->get()
+            ->sum(fn($sale) => $sale->current_remaining_udhar);
+
+        if ($amount > $familyBalance) {
+            throw new \Exception("Payment amount Rs. " . number_format($amount, 2) . " exceeds outstanding family balance of Rs. " . number_format($familyBalance, 2));
+        }
+
+        return DB::transaction(function () use ($family, $amount, $paymentDate, $allocation, $reference, $notes) {
+            $payments = [];
+
+            if (empty($allocation)) {
+                // Auto-allocate to oldest outstanding transactions
+                $outstandingSales = Sale::where('family_id', $family->id)
+                    ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+                    ->confirmed()
+                    ->whereRaw('total_amount - paid_amount > 0')
+                    ->orderBy('sale_date', 'asc')
+                    ->get();
+
+                $remainingAmount = $amount;
+
+                foreach ($outstandingSales as $sale) {
+                    if ($remainingAmount <= 0) break;
+
+                    $saleOutstanding = $sale->current_remaining_udhar;
+                    $paymentForThisSale = min($remainingAmount, $saleOutstanding);
+
+                    $payment = CustomerPayment::create([
+                        'customer_id' => $sale->customer_id,
+                        'sale_id' => $sale->id,
+                        'account_type' => CustomerPayment::ACCOUNT_TYPE_FAMILY,
+                        'account_family_id' => $family->id,
+                        'amount' => $paymentForThisSale,
+                        'payment_date' => $paymentDate,
+                        'payment_method' => 'cash',
+                        'reference_number' => $reference,
+                        'notes' => $notes,
+                        'received_by' => auth()->id(),
+                    ]);
+
+                    $payments[] = $payment;
+                    $remainingAmount -= $paymentForThisSale;
+                }
+            } else {
+                // Manual allocation
+                $totalAllocated = array_sum(array_column($allocation, 'amount'));
+                
+                if (abs($totalAllocated - $amount) > 0.01) {
+                    throw new \Exception("Allocated amount Rs. " . number_format($totalAllocated, 2) . " does not match payment amount Rs. " . number_format($amount, 2));
+                }
+
+                foreach ($allocation as $alloc) {
+                    $sale = Sale::findOrFail($alloc['sale_id']);
+                    
+                    // Validate sale belongs to family
+                    if ($sale->family_id != $family->id || $sale->udhar_account_type !== Sale::UDHAR_ACCOUNT_TYPE_FAMILY) {
+                        throw new \Exception("Sale {$sale->invoice_number} does not belong to this family account.");
+                    }
+
+                    $saleOutstanding = $sale->current_remaining_udhar;
+                    if ($alloc['amount'] > $saleOutstanding) {
+                        throw new \Exception("Allocated amount Rs. " . number_format($alloc['amount'], 2) . " exceeds sale {$sale->invoice_number} outstanding of Rs. " . number_format($saleOutstanding, 2));
+                    }
+
+                    $payment = CustomerPayment::create([
+                        'customer_id' => $sale->customer_id,
+                        'sale_id' => $sale->id,
+                        'account_type' => CustomerPayment::ACCOUNT_TYPE_FAMILY,
+                        'account_family_id' => $family->id,
+                        'amount' => $alloc['amount'],
+                        'payment_date' => $paymentDate,
+                        'payment_method' => 'cash',
+                        'reference_number' => $reference,
+                        'notes' => $notes,
+                        'received_by' => auth()->id(),
+                    ]);
+
+                    $payments[] = $payment;
+                }
+            }
+
+            return $payments;
+        });
+    }
+
+    /**
+     * Get individual payment history for customer
+     * 
+     * @param int $customerId
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getIndividualPaymentHistory(int $customerId)
+    {
+        return CustomerPayment::where('customer_id', $customerId)
+            ->where('account_type', CustomerPayment::ACCOUNT_TYPE_INDIVIDUAL)
+            ->with(['sale', 'receiver'])
+            ->orderBy('payment_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
+    /**
+     * Get family payment history
+     * 
+     * @param int $familyId
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getFamilyPaymentHistory(int $familyId)
+    {
+        return CustomerPayment::where('account_family_id', $familyId)
+            ->where('account_type', CustomerPayment::ACCOUNT_TYPE_FAMILY)
+            ->with(['sale', 'customer', 'receiver'])
+            ->orderBy('payment_date', 'desc')
+            ->orderBy('id', 'desc')
             ->get();
     }
 }

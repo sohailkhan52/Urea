@@ -49,6 +49,12 @@ class Sale extends Model
     public const PAYMENT_STATUS_PAID = 'paid';
 
     /**
+     * Udhar Account Type constants
+     */
+    public const UDHAR_ACCOUNT_TYPE_INDIVIDUAL = 'individual';
+    public const UDHAR_ACCOUNT_TYPE_FAMILY = 'family';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -57,6 +63,7 @@ class Sale extends Model
         'invoice_number',
         'customer_id',
         'family_id',
+        'udhar_account_type',
         'walkin_customer_name',
         'walkin_customer_contact',
         'warehouse_id',
@@ -546,5 +553,69 @@ class Sale extends Model
 
         $warehouseIds = $user->warehouses()->pluck('warehouses.id');
         return $query->whereIn('warehouse_id', $warehouseIds);
+    }
+
+    /**
+     * Check if sale belongs to individual account
+     */
+    public function isIndividualAccount(): bool
+    {
+        return $this->udhar_account_type === self::UDHAR_ACCOUNT_TYPE_INDIVIDUAL;
+    }
+
+    /**
+     * Check if sale belongs to family account
+     */
+    public function isFamilyAccount(): bool
+    {
+        return $this->udhar_account_type === self::UDHAR_ACCOUNT_TYPE_FAMILY;
+    }
+
+    /**
+     * Get udhar account type label
+     */
+    public function getUdharAccountTypeLabelAttribute(): string
+    {
+        return match($this->udhar_account_type) {
+            self::UDHAR_ACCOUNT_TYPE_INDIVIDUAL => 'Individual',
+            self::UDHAR_ACCOUNT_TYPE_FAMILY => 'Family',
+            default => 'Unknown',
+        };
+    }
+
+    /**
+     * Get udhar account type badge class
+     */
+    public function getUdharAccountTypeBadgeAttribute(): string
+    {
+        return match($this->udhar_account_type) {
+            self::UDHAR_ACCOUNT_TYPE_INDIVIDUAL => 'info',
+            self::UDHAR_ACCOUNT_TYPE_FAMILY => 'primary',
+            default => 'secondary',
+        };
+    }
+
+    /**
+     * Scope to filter by account type
+     */
+    public function scopeByAccountType($query, string $accountType)
+    {
+        return $query->where('udhar_account_type', $accountType);
+    }
+
+    /**
+     * Scope for individual account sales
+     */
+    public function scopeIndividualAccount($query)
+    {
+        return $query->where('udhar_account_type', self::UDHAR_ACCOUNT_TYPE_INDIVIDUAL);
+    }
+
+    /**
+     * Scope for family account sales
+     */
+    public function scopeFamilyAccount($query)
+    {
+        return $query->where('udhar_account_type', self::UDHAR_ACCOUNT_TYPE_FAMILY);
     }
 }

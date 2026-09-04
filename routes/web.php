@@ -376,21 +376,34 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         Route::get('/', [\App\Http\Controllers\Admin\UdharController::class, 'index'])
             ->name('index');
         
-        Route::get('/customer/{customer}', [\App\Http\Controllers\Admin\UdharController::class, 'show'])
-            ->name('show');
+        Route::get('/customer/{customer}', [\App\Http\Controllers\Admin\UdharController::class, 'showCustomer'])
+            ->name('show-customer');
+        
+        Route::get('/family/{family}', [\App\Http\Controllers\Admin\UdharController::class, 'showFamily'])
+            ->name('show-family');
+        
+        // Legacy route for backward compatibility
+        Route::get('/{customer}', [\App\Http\Controllers\Admin\UdharController::class, 'show'])
+            ->name('show')
+            ->where('customer', '[0-9]+');
         
         // Payment management
-        Route::get('/test-endpoint', [\App\Http\Controllers\Admin\UdharController::class, 'testEndpoint'])
-            ->name('test-endpoint');
+        Route::post('/customer/{customer}/receive-payment', [\App\Http\Controllers\Admin\UdharController::class, 'receiveIndividualPayment'])
+            ->name('receive-individual-payment')
+            ->middleware('permission:sales.create');
         
-        Route::get('/test-payment-creation', [\App\Http\Controllers\Admin\UdharController::class, 'testPaymentCreation'])
-            ->name('test-payment-creation');
+        Route::post('/family/{family}/receive-payment', [\App\Http\Controllers\Admin\UdharController::class, 'receiveFamilyPayment'])
+            ->name('receive-family-payment')
+            ->middleware('permission:sales.create');
         
         Route::post('/sales/{sale}/receive-payment', [\App\Http\Controllers\Admin\UdharController::class, 'receivePayment'])
             ->name('receive-payment');
         
         Route::get('/sales/{sale}/payments', [\App\Http\Controllers\Admin\UdharController::class, 'getSalePayments'])
             ->name('sale-payments');
+        
+        Route::get('/statistics', [\App\Http\Controllers\Admin\UdharController::class, 'getStatistics'])
+            ->name('statistics');
     });
 
     // Customer Account Statements
