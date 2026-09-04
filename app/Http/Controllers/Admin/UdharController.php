@@ -32,6 +32,10 @@ class UdharController extends Controller
 
         $user = auth()->user();
         $activeTab = $request->input('tab', 'customers'); // Default to customers tab
+        
+        // Check if warehouse filter should be shown
+        $multiWarehouseService = app(\App\Services\MultiWarehouseFeatureService::class);
+        $showWarehouseFilter = $multiWarehouseService->shouldShowWarehouseFilter();
 
         // Build filters
         $filters = [
@@ -41,6 +45,14 @@ class UdharController extends Controller
             'status' => $request->input('status'),
             'only_outstanding' => $request->boolean('only_outstanding', true),
         ];
+
+        // If single warehouse, auto-use the default warehouse
+        if (!$showWarehouseFilter && empty($filters['warehouse_id'])) {
+            $defaultWarehouse = $multiWarehouseService->getDefaultActiveWarehouse();
+            if ($defaultWarehouse) {
+                $filters['warehouse_id'] = $defaultWarehouse->id;
+            }
+        }
 
         // Apply warehouse restrictions for non-super-admins
         if (!$user->isSuperAdmin() && empty($filters['warehouse_id'])) {
@@ -71,11 +83,13 @@ class UdharController extends Controller
             $totalPaid = $familiesCollection->sum('total_paid');
             $accountsCount = $familiesCollection->count();
 
-            // Get filter options
+            // Get filter options (only get warehouses if multi-warehouse is enabled)
             $familyOptions = Family::active()->orderBy('name')->get();
-            $warehouses = $user->isSuperAdmin()
-                ? Warehouse::active()->orderBy('name')->get()
-                : $user->warehouses()->where('status', 'active')->orderBy('name')->get();
+            $warehouses = $showWarehouseFilter ? (
+                $user->isSuperAdmin()
+                    ? Warehouse::active()->orderBy('name')->get()
+                    : $user->warehouses()->where('status', 'active')->orderBy('name')->get()
+            ) : collect();
 
             return view('admin.udhar.index', compact(
                 'families',
@@ -83,6 +97,7 @@ class UdharController extends Controller
                 'warehouses',
                 'filters',
                 'activeTab',
+                'showWarehouseFilter',
                 'totalUdhar',
                 'totalSales',
                 'totalPaid',
@@ -109,11 +124,13 @@ class UdharController extends Controller
             $totalPaid = $customersCollection->sum('total_paid');
             $accountsCount = $customersCollection->count();
 
-            // Get filter options
+            // Get filter options (only get warehouses if multi-warehouse is enabled)
             $familyOptions = Family::active()->orderBy('name')->get();
-            $warehouses = $user->isSuperAdmin()
-                ? Warehouse::active()->orderBy('name')->get()
-                : $user->warehouses()->where('status', 'active')->orderBy('name')->get();
+            $warehouses = $showWarehouseFilter ? (
+                $user->isSuperAdmin()
+                    ? Warehouse::active()->orderBy('name')->get()
+                    : $user->warehouses()->where('status', 'active')->orderBy('name')->get()
+            ) : collect();
 
             return view('admin.udhar.index', compact(
                 'customers',
@@ -121,6 +138,7 @@ class UdharController extends Controller
                 'warehouses',
                 'filters',
                 'activeTab',
+                'showWarehouseFilter',
                 'totalUdhar',
                 'totalSales',
                 'totalPaid',

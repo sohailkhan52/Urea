@@ -227,4 +227,39 @@ class MultiWarehouseFeatureService
             ->orderBy('name')
             ->get();
     }
+
+    /**
+     * Check if warehouse filter should be shown in UI
+     * 
+     * Returns true if there are multiple active warehouses.
+     * When there is only one warehouse, the filter is hidden and the default
+     * warehouse is used automatically.
+     * 
+     * This prevents unnecessary UI clutter for single-warehouse systems.
+     * 
+     * @return bool True if warehouse filter should be displayed
+     */
+    public function shouldShowWarehouseFilter(): bool
+    {
+        return $this->getActiveWarehouseCount() > 1;
+    }
+
+    /**
+     * Get the default warehouse for single-warehouse systems
+     * 
+     * When the system has only one active warehouse, this method returns it
+     * so it can be used automatically without user selection.
+     * 
+     * @return \App\Models\Warehouse|null
+     */
+    public function getDefaultActiveWarehouse(): ?Warehouse
+    {
+        if ($this->isEnabled()) {
+            // Multiple warehouses - no single default
+            return null;
+        }
+
+        // Single warehouse - return the only active one
+        return Warehouse::where('status', Warehouse::STATUS_ACTIVE)->first();
+    }
 }

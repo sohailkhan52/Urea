@@ -73,6 +73,8 @@
                                value="{{ $filters['search'] ?? '' }}" 
                                placeholder="{{ $activeTab === 'families' ? 'Family name...' : 'Name or phone...' }}">
                     </div>
+                    {{-- Show warehouse filter only if multiple warehouses exist --}}
+                    @if($showWarehouseFilter)
                     <div class="col-md-2">
                         <label class="form-label small">Warehouse</label>
                         <select class="form-select form-select-sm" name="warehouse_id">
@@ -100,6 +102,25 @@
                             Clear
                         </a>
                     </div>
+                    @else
+                    {{-- Single warehouse - simplified filter --}}
+                    <div class="col-md-2">
+                        <label class="form-label small">Display</label>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="only_outstanding" value="1"
+                                   {{ ($filters['only_outstanding'] ?? true) ? 'checked' : '' }}>
+                            <label class="form-check-label small">Only Outstanding</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-funnel"></i> Filter
+                        </button>
+                        <a href="{{ route('admin.udhar.index', ['tab' => $activeTab]) }}" class="btn btn-outline-secondary btn-sm">
+                            Clear
+                        </a>
+                    </div>
+                    @endif
                 </div>
             </form>
         </div>
@@ -172,7 +193,9 @@
                             <tr>
                                 <th>Customer</th>
                                 <th>Phone</th>
+                                @if($showWarehouseFilter)
                                 <th>Warehouse</th>
+                                @endif
                                 <th class="text-end">Total Sales</th>
                                 <th class="text-end">Total Paid</th>
                                 <th class="text-end">Outstanding</th>
@@ -187,7 +210,9 @@
                                     <br><small class="text-muted">{{ $item['customer']->type_label }}</small>
                                 </td>
                                 <td><small>{{ $item['customer']->phone ?? '—' }}</small></td>
+                                @if($showWarehouseFilter)
                                 <td><small>{{ $item['customer']->warehouse->name ?? 'N/A' }}</small></td>
+                                @endif
                                 <td class="text-end">Rs. {{ number_format($item['total_sales'], 0) }}</td>
                                 <td class="text-end text-success">Rs. {{ number_format($item['total_paid'], 0) }}</td>
                                 <td class="text-end">
