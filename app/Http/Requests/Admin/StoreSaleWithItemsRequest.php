@@ -60,7 +60,7 @@ class StoreSaleWithItemsRequest extends FormRequest
                 'min:0',
             ],
             'paid_amount' => [
-                'nullable',
+                'sometimes',
                 'numeric',
                 'min:0',
             ],
@@ -138,6 +138,12 @@ class StoreSaleWithItemsRequest extends FormRequest
             $this->merge(['discount' => 0]);
         } else {
             $this->merge(['discount' => max(0, (float)$this->discount)]);
+        }
+
+        if (blank($this->paid_amount)) {
+            $this->merge(['paid_amount' => 0]);
+        } else {
+            $this->merge(['paid_amount' => max(0, (float)$this->paid_amount)]);
         }
 
         // Parse items if it's a string

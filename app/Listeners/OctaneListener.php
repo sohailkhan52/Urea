@@ -2,48 +2,107 @@
 
 namespace App\Listeners;
 
-use Laravel\Octane\Events\TickReceived;
-use Laravel\Octane\Events\WorkerErrorOccurred;
 use Laravel\Octane\Events\RequestReceived;
 use Laravel\Octane\Events\RequestHandled;
+use Laravel\Octane\Events\WorkerStarting;
+use Laravel\Octane\Events\WorkerStopping;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
+/**
+ * OctaneListener - Manages Octane worker lifecycle
+ * 
+ * Ensures proper resource cleanup and state management
+ * across long-running worker processes
+ */
 class OctaneListener
 {
     /**
-     * Handle the request received event.
+     * Handle worker starting event
+     * Initialize worker state
+     * 
+     * @param WorkerStarting $event
      */
-    public function onRequestReceived(RequestReceived $event): void
+    public function handleWorkerStarting(WorkerStarting $event): void
     {
-        // Reset any per-request state if needed
-        // This fires before each request is processed
+        Log::info('Octane worker starting');
+        
+        // Verify database connection
+        try {
+            DB::connection()->getPdo();
+            Log::info('Database connection verified');
+        } catch (\Exception $e) {
+            Log::error('Database connection failed', ['error' => $e->getMessage()]);
+        }
+
+        // Verify Redis connection
+        try {
+            Cache::store('redis')->connection()->ping();
+            Log::info('Redis connection verified');
+        } catch (\Exception $e) {
+            Log::error('Redis connection failed', ['error' => $e->getMessage()]);
+        }
     }
 
     /**
-     * Handle the request handled event.
+     * Handle worker stopping event
+     * Cleanup resources
+     * 
+     * @param WorkerStopping $event
      */
-    public function onRequestHandled(RequestHandled $event): void
+    public function handleWorkerStopping(WorkerStopping $event): void
     {
-        // Clean up after each request if needed
-        // This fires after each request has been processed
+        Log::info('Octane worker stopping');
+        
+        // Close database connections
+        DB::disconnect();
+        
+        // Clear any temporary state
+        // Do NOT clear financial caches
     }
 
     /**
-     * Handle the tick received event (runs periodically).
+     * Handle request received event
+     * Initialize request state
+     * 
+     * @param RequestReceived $event
      */
-    public function onTickReceived(TickReceived $event): void
+    public function handleRequestReceived(RequestReceived $event): void
     {
-        // Run periodic tasks (like health checks)
-        // This fires every 5 seconds
+        // Reset any request-specific state
+        // But DO NOT:
+        // - Clear financial caches
+        // - Reset database state
+        // - Clear user auth
     }
 
     /**
-     * Handle worker errors.
+     * Handle request handled event
+     * Cleanup after request
+     * 
+     * @param RequestHandled $event
      */
-    public function onWorkerErrorOccurred(WorkerErrorOccurred $event): void
+    public function handleRequestHandled(RequestHandled $event): void
     {
-        Log::error('Octane Worker Error', [
-            'exception' => $event->exception,
-        ]);
+        // Reconnect to database if needed
+        if (!DB::connection()->getPdo()) {
+            DB::reconnect();
+        }
+
+        // Log slow requests
+        $duration = microtime(true) - LARAVEL_START;
+        if ($duration > 1.0) {
+            Log::warning('Slow request detected', [
+                'duration' => $duration,
+                'path' => $event->request->getPathInfo(),
+            ]);
+        }
+
+        // Optional: Check memory usage
+        $memory = memory_get_usage(true) / 1024 / 1024;
+        if ($memory > 200) { // 200MB threshold
+            Log::warning('High memory usage', ['memory_mb' => $memory]);
+        }
     }
 }

@@ -6,25 +6,23 @@ return [
     | Horizon Domain
     |--------------------------------------------------------------------------
     |
-    | This is the subdomain where Horizon will be accessible from. If this
-    | setting is null, Horizon will reside under the same domain as the
-    | application. Otherwise, this value will be used as the subdomain.
+    | This is the subdomain where Horizon will be accessible from. If the
+    | domain is set to null, Horizon will reside under the same domain
+    | as the application. Otherwise, this value will be used as the domain.
     |
     */
-
-    'domain' => env('HORIZON_DOMAIN', null),
+    'domain' => env('HORIZON_DOMAIN'),
 
     /*
     |--------------------------------------------------------------------------
     | Horizon Path
     |--------------------------------------------------------------------------
     |
-    | This is the path where Horizon will be accessible from. Feel free to
-    | change this path to anything you like. Note that the URI will not
-    | affect the path of the API that are proxied to this back-end.
+    | This is the URI path where Horizon will be accessible from. Feel free
+    | to change this path to anything you like. Note that the URI will not
+    | affect the path of the API that are proxied to this application.
     |
     */
-
     'path' => env('HORIZON_PATH', 'horizon'),
 
     /*
@@ -33,76 +31,52 @@ return [
     |--------------------------------------------------------------------------
     |
     | This is the name of the Redis connection that Horizon will use to
-    | store the data required to run your queues and monitor them. It
-    | includes the processed, failed, and other job information.
-    |
-    | Note: For database queue connection, this still uses Redis for
-    | Horizon's metrics. If Redis is not available, use 'database'.
+    | communicate with Redis. It will retrieve the connection config from
+    | the config/database.php file.
     |
     */
-
-    'use' => env('HORIZON_REDIS_CONNECTION', 'database'),
+    'use' => 'redis',
 
     /*
     |--------------------------------------------------------------------------
     | Horizon Environment
     |--------------------------------------------------------------------------
     |
-    | This controls the "environment" mode that Horizon will run in. The
-    | environment controls the ways in which Horizon displays data in
-    | the UI. When this is set to "production" some visual tweaks will
-    | be made to enhance the experience for larger production setups.
+    | The environment that Horizon is running in can be controlled via the
+    | environment variable HORIZON_ENVIRONMENT. By default, it is set to
+    | production which will hide certain metrics from display.
     |
     */
-
-    'environment' => env('HORIZON_ENVIRONMENT', env('APP_ENV', 'production')),
+    'environment' => env('HORIZON_ENVIRONMENT', 'production'),
 
     /*
     |--------------------------------------------------------------------------
     | Horizon Prefix
     |--------------------------------------------------------------------------
     |
-    | This prefix will be used when storing all Horizon data in Redis. You
-    | may modify the prefix when you have multiple installations to avoid
-    | collisions with other Horizon installations on the same server.
+    | This prefix will be used when storing Horizon data in Redis. You may
+    | modify the prefix when you are hosting multiple Horizon instances
+    | to avoid collisions with other Horizon instances on your server.
     |
     */
-
     'prefix' => env('HORIZON_PREFIX', 'horizon:'),
 
     /*
     |--------------------------------------------------------------------------
-    | Horizon Route Middleware
+    | Horizon Purge
     |--------------------------------------------------------------------------
     |
-    | These middleware will be assigned to every Horizon route, giving you
-    | the chance to add your own middleware to this list or change any of
-    | the existing middleware. Typically, you will want to add your own
-    | middleware that verifies the user is logged-in and has access.
+    | Here you may configure how much data Horizon should retain by default
+    | while it executes. By specifying a lower number, you will require
+    | fewer resources while running the application. By default, retain
+    | the data for 48 hours.
     |
     */
-
-    'middleware' => ['web', 'auth'],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Horizon Job Trim Times
-    |--------------------------------------------------------------------------
-    |
-    | Here you can configure for how long (in hours) Horizon will persist
-    | the historical job data in your Redis instance. By default Horizon
-    | will retain up to 7 days of job data. Any job data older than this
-    | will get pruned from the database.
-    |
-    */
-
     'trim' => [
-        'recent' => 60,
-        'pending' => 60,
-        'completed' => 24 * 7,
-        'recent_failed' => 24,
-        'failed' => 24 * 7,
-        'monitored' => 24 * 7,
+        'realtime' => 120,
+        'recent' => 60 * 60,
+        'failed' => 10080 * 60,
+        'monitored' => 10080 * 60,
     ],
 
     /*
@@ -110,119 +84,88 @@ return [
     | Fast Termination
     |--------------------------------------------------------------------------
     |
-    | When this option is enabled, Horizon's "terminate" command will not
-    | wait on all of the workers to terminate. Instead, it will kill the
-    | master process so it "short cuts" all of this waiting.
+    | When this option is enabled, Horizon will automatically write the
+    | latest data to storage before performing a graceful termination
+    | of the application. This helps prevent data loss on deployments.
     |
     */
-
     'fast_termination' => false,
 
     /*
     |--------------------------------------------------------------------------
-    | Queue Worker Configuration
+    | Supervisors
     |--------------------------------------------------------------------------
     |
-    | Here you may define the queue worker settings used by Horizon. These
-    | workers can have different configurations each. Horizon will boot as
-    | many workers as needed based on these configurations and the scale
-    | factor provided in the environment variables.
+    | The supervisors below "watch" your queues and will restart any new
+    | workers that have died so that workers will always stay running. If
+    | you are self-hosting this application, make sure that this is set
+    | to run as a daemon.
     |
     */
-
-    'workers' => [
+    'supervisors' => [
         [
             'name' => 'default',
-            'connection' => 'database',
-            'queue' => ['default'],
+            'connection' => 'redis',
+            'queue' => ['default', 'payments', 'notifications'],
             'balance' => 'simple',
-            'processes' => env('HORIZON_PROCESSES', 1),
+            'autoScalingStrategy' => 'time',
+            'minProcesses' => env('HORIZON_PROCESSES', 1),
+            'maxProcesses' => env('HORIZON_PROCESSES', 1),
+            'balanceMaxShift' => '1',
+            'balanceCooldown' => 3,
             'tries' => 3,
-            'timeout' => 60,
+            'timeout' => 120,
             'sleep' => 3,
+            'maxSleepSeconds' => 10,
         ],
         [
             'name' => 'notifications',
-            'connection' => 'database',
-            'queue' => ['notifications', 'emails'],
+            'connection' => 'redis',
+            'queue' => ['notifications'],
             'balance' => 'simple',
             'processes' => env('HORIZON_NOTIFICATION_PROCESSES', 2),
             'tries' => 3,
-            'timeout' => 120,
+            'timeout' => 300,
             'sleep' => 3,
         ],
         [
             'name' => 'reports',
-            'connection' => 'database',
+            'connection' => 'redis',
             'queue' => ['reports'],
             'balance' => 'simple',
             'processes' => env('HORIZON_REPORT_PROCESSES', 1),
-            'tries' => 2,
-            'timeout' => 300,
+            'tries' => 1,
+            'timeout' => 600,
             'sleep' => 5,
         ],
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Horizon Metrics
+    | Metrics
     |--------------------------------------------------------------------------
     |
-    | Here you may configure how many snapshots of queue metrics that
-    | Horizon will keep in Redis. By default, it will keep the last
-    | 7 days of metrics. You may change this configuration here.
+    | Horizon exposes various metrics that may be useful for monitoring
+    | the health and performance of the queue system. They may be
+    | viewed within the Horizon dashboard.
     |
     */
-
     'metrics' => [
-        'trim_snapshots' => [
-            'job_10_minutes' => 60 * 24 * 7,
-            'job_60_minutes' => 60 * 24 * 7,
-            'job_all_time' => 0,
-            'wait_15_minutes' => 60 * 24 * 7,
-            'wait_60_minutes' => 60 * 24 * 7,
-            'wait_all_time' => 0,
-            'throughput_15_minutes' => 60 * 24 * 7,
-            'throughput_60_minutes' => 60 * 24 * 7,
-            'throughput_all_time' => 0,
-            'time_on_queue_15_minutes' => 60 * 24 * 7,
-            'time_on_queue_60_minutes' => 60 * 24 * 7,
-            'time_on_queue_all_time' => 0,
+        'redis' => [
+            'connection' => env('HORIZON_REDIS_CONNECTION', 'redis'),
         ],
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Queue Tags
+    | Redis Options
     |--------------------------------------------------------------------------
     |
-    | You may wish to tag your jobs by certain metadata. Horizon allows you
-    | to define any tags that resonate with your application by specifying
-    | these options below. The tags listed here will automatically display
-    | in the Horizon UI and be available for filtering in the monitoring.
+    | The Redis options that should be used when connecting to Redis.
     |
     */
-
-    'tags' => [
-        // 'App\Jobs\ExampleJob@handle',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Auto-scaling
-    |--------------------------------------------------------------------------
-    |
-    | Here you may configure auto-scaling settings for your application. The
-    | auto-scaling workers will scale according to these thresholds.
-    |
-    */
-
-    'auto_scaling' => [
-        'enabled' => env('HORIZON_AUTO_SCALING', false),
-        'min_processes' => 1,
-        'max_processes' => 4,
-        'balancing' => [
-            'auto' => 60,
-        ],
+    'options' => [
+        'retry' => 3,
+        'timeout' => 30,
     ],
 ];

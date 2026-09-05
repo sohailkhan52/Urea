@@ -12,6 +12,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Sale Report</h1>
         <div>
+            <button type="button" class="btn btn-info me-2" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> Print Report
+            </button>
             <button type="button" class="btn btn-danger" id="deleteSelectedBtn" disabled onclick="confirmBulkDelete()">
                 <i class="bi bi-trash me-1"></i> Delete Selected
             </button>

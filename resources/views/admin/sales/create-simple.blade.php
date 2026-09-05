@@ -442,7 +442,7 @@
 
                             <input type="number" id="paid_amount" name="paid_amount" class="form-control form-control-sm" 
 
-                                   placeholder="0" step="0.01" min="0" onchange="calculateRemaining()" required>
+                                   placeholder="0" step="0.01" min="0" onchange="calculateRemaining()">
 
                         </div>
 
