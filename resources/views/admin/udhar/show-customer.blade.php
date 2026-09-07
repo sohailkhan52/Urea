@@ -34,11 +34,15 @@
                     <p class="text-muted mb-1 small">Total Paid</p>
                     <h4 class="mb-0 text-success">Rs. {{ number_format($individualAccount['total_paid'], 0) }}</h4>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <p class="text-muted mb-1 small">Total Returns</p>
+                    <h4 class="mb-0 text-info">Rs. {{ number_format($individualAccount['total_returns'] ?? 0, 0) }}</h4>
+                </div>
+                <div class="col-md-2">
                     <p class="text-muted mb-1 small">Outstanding</p>
                     <h4 class="mb-0 text-danger">Rs. {{ number_format($individualAccount['outstanding'], 0) }}</h4>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <p class="text-muted mb-1 small">Sales Count</p>
                     <h4 class="mb-0">{{ $individualAccount['sales_count'] }}</h4>
                 </div>
@@ -126,6 +130,7 @@
                             <th>Date</th>
                             <th class="text-end">Total</th>
                             <th class="text-end">Paid</th>
+                            <th class="text-end">Returns</th>
                             <th class="text-end">Outstanding</th>
                             <th>Status</th>
                         </tr>
@@ -137,7 +142,8 @@
                             <td><small>{{ $sale->sale_date->format('M d, Y') }}</small></td>
                             <td class="text-end">Rs. {{ number_format($sale->total_amount, 0) }}</td>
                             <td class="text-end text-success">Rs. {{ number_format($sale->paid_amount + $sale->customerPayments->sum('amount'), 0) }}</td>
-                            <td class="text-end text-danger">Rs. {{ number_format($sale->current_remaining_udhar, 0) }}</td>
+                            <td class="text-end">Rs. {{ number_format($sale->total_returned_amount, 0) }}</td>
+                            <td class="text-end text-danger">Rs. {{ number_format($sale->total_amount - ($sale->paid_amount + $sale->customerPayments->sum('amount')) - $sale->total_returned_amount, 0) }}</td>
                             <td><span class="badge bg-{{ $sale->current_payment_status === 'paid' ? 'success' : ($sale->current_payment_status === 'partial' ? 'warning' : 'danger') }}">{{ ucfirst($sale->current_payment_status) }}</span></td>
                         </tr>
                         @endforeach

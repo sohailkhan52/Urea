@@ -72,15 +72,17 @@ class UdharService
         $totalPaid = $sales->sum('paid_amount') + $sales->sum(function ($sale) {
             return $sale->customerPayments->sum('amount');
         });
-        $outstanding = $sales->sum(function ($sale) {
-            return $sale->current_remaining_udhar;
+        $totalReturns = $sales->sum(function ($sale) {
+            return $sale->total_returned_amount;
         });
+        $outstanding = $totalSales - $totalPaid - $totalReturns;
 
         return [
             'account_type' => 'individual',
             'customer_id' => $customerId,
             'total_sales' => $totalSales,
             'total_paid' => $totalPaid,
+            'total_returns' => $totalReturns,
             'outstanding' => $outstanding,
             'sales_count' => $sales->count(),
             'oldest_sale_date' => $sales->min('sale_date'),
@@ -109,9 +111,10 @@ class UdharService
         $totalPaid = $sales->sum('paid_amount') + $sales->sum(function ($sale) {
             return $sale->customerPayments->sum('amount');
         });
-        $outstanding = $sales->sum(function ($sale) {
-            return $sale->current_remaining_udhar;
+        $totalReturns = $sales->sum(function ($sale) {
+            return $sale->total_returned_amount;
         });
+        $outstanding = $totalSales - $totalPaid - $totalReturns;
 
         // Group by customer who created the sale
         $byCustomer = [];
@@ -122,16 +125,19 @@ class UdharService
                     'customer' => $sale->customer,
                     'total_sales' => 0,
                     'total_paid' => 0,
+                    'total_returns' => 0,
                     'outstanding' => 0,
                     'sales_count' => 0,
                 ];
             }
             
-            $saleOutstanding = $sale->current_remaining_udhar;
             $salePaid = $sale->paid_amount + $sale->customerPayments->sum('amount');
+            $saleReturns = $sale->total_returned_amount;
+            $saleOutstanding = $sale->total_amount - $salePaid - $saleReturns;
             
             $byCustomer[$customerId]['total_sales'] += $sale->total_amount;
             $byCustomer[$customerId]['total_paid'] += $salePaid;
+            $byCustomer[$customerId]['total_returns'] += $saleReturns;
             $byCustomer[$customerId]['outstanding'] += $saleOutstanding;
             $byCustomer[$customerId]['sales_count']++;
         }
@@ -142,6 +148,7 @@ class UdharService
             'family_name' => $family->name,
             'total_sales' => $totalSales,
             'total_paid' => $totalPaid,
+            'total_returns' => $totalReturns,
             'outstanding' => $outstanding,
             'sales_count' => $sales->count(),
             'oldest_sale_date' => $sales->min('sale_date'),
@@ -336,7 +343,7 @@ class UdharService
 
         // Filter only outstanding if requested
         if (!empty($filters['only_outstanding'])) {
-            $summary = $summary->filter(fn($item) => $item['outstanding'] > 0);
+            $summary = $summary->filter(fn($item) => $item['outstanding'] != 0);
         }
 
         return $summary->sortByDesc('outstanding')->values();
@@ -380,7 +387,7 @@ class UdharService
 
         // Filter only outstanding if requested
         if (!empty($filters['only_outstanding'])) {
-            $summary = $summary->filter(fn($item) => $item['outstanding'] > 0);
+            $summary = $summary->filter(fn($item) => $item['outstanding'] != 0);
         }
 
         return $summary->sortByDesc('outstanding')->values();

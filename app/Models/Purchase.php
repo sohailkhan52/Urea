@@ -163,6 +163,14 @@ class Purchase extends Model
         return $this->hasMany(PurchasePayment::class);
     }
 
+    /**
+     * Get the purchase returns for this purchase
+     */
+    public function purchaseReturns(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PurchaseReturn::class);
+    }
+
     // ========== STATUS CHECK METHODS ==========
 
     /**
@@ -312,11 +320,25 @@ class Purchase extends Model
     }
 
     /**
-     * Get remaining payable amount (total - paid)
+     * Get total returns amount
+     */
+    public function getTotalReturnsAttribute(): float
+    {
+        return (float)($this->purchaseReturns()
+            ->where('status', PurchaseReturn::STATUS_CONFIRMED)
+            ->sum('total_amount') ?? 0);
+    }
+
+    /**
+     * Get remaining payable amount (total - paid - returns)
      */
     public function getPayableAmountAttribute(): float
     {
-        return max(0, $this->total_amount - $this->paid_amount);
+        $totalReturns = $this->purchaseReturns()
+            ->where('status', PurchaseReturn::STATUS_CONFIRMED)
+            ->sum('total_amount');
+        
+        return max(0, $this->total_amount - $this->paid_amount - $totalReturns);
     }
 
     /**

@@ -68,7 +68,7 @@
                                     </div>
 
                                     <!-- Supplier dropdown list -->
-                                    <div id="supplierDropdown" class="mt-2" style="display: none; max-height: 400px; overflow-y: auto;">
+                                    <div id="supplierDropdown" class="mt-4" style="display: none; max-height: 400px; overflow-y: auto; margin-top: 1.5rem !important;">
                                         <div class="row g-2" id="supplierGrid"></div>
                                     </div>
 
@@ -116,7 +116,7 @@
                                     </div>
 
                                     <!-- Product dropdown grid -->
-                                    <div id="productDropdown" class="mt-2" style="display: none; max-height: 400px; overflow-y: auto;">
+                                    <div id="productDropdown" class="mt-4" style="display: none; max-height: 400px; overflow-y: auto; margin-top: 1.5rem !important;">
                                         <div class="row g-2" id="productGrid"></div>
                                     </div>
                                 </div>
@@ -753,16 +753,15 @@
 
         limited.forEach(supplier => {
             const col = document.createElement('div');
-            col.className = 'col-lg-2 col-md-3 col-sm-4 col-6'; // 5 items per row on large screens
+            col.className = 'col-lg-4 col-md-6 col-sm-12'; // 3 items per row on large screens
             col.innerHTML = `
-                <div class="card h-100 cursor-pointer supplier-card" style="cursor: pointer; border: 1px solid #ddd; transition: all 0.2s;">
-                    <div class="card-body p-3">
-                        <div class="text-center">
-                            <div class="fw-bold small mb-1" style="word-break: break-word;">
+                <div class="card cursor-pointer supplier-card" style="cursor: pointer; border: 2px solid #e0e0e0; transition: all 0.2s; background: #fff; height: auto;">
+                    <div class="card-body p-2" style="min-height: auto;">
+                        <div>
+                            <h6 class="mb-1 fw-bold" style="word-break: break-word; color: #333; font-size: 14px;">
                                 ${supplier.name}
-                            </div>
-                            ${supplier.company_name ? `<small class="text-muted d-block" style="font-size: 11px;">${supplier.company_name}</small>` : ''}
-                            ${supplier.phone ? `<small class="text-primary d-block" style="font-size: 11px;">${supplier.phone}</small>` : ''}
+                            </h6>
+                            ${supplier.company_name ? `<p class="mb-0 text-muted" style="font-size: 12px;"><strong>Company:</strong> ${supplier.company_name}</p>` : ''}
                         </div>
                     </div>
                 </div>
@@ -774,13 +773,15 @@
             });
             
             col.addEventListener('mouseover', function() {
-                this.querySelector('.supplier-card').style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                this.querySelector('.supplier-card').style.boxShadow = '0 4px 12px rgba(0,123,255,0.2)';
                 this.querySelector('.supplier-card').style.borderColor = '#007bff';
+                this.querySelector('.supplier-card').style.transform = 'translateY(-2px)';
             });
             
             col.addEventListener('mouseout', function() {
                 this.querySelector('.supplier-card').style.boxShadow = 'none';
-                this.querySelector('.supplier-card').style.borderColor = '#ddd';
+                this.querySelector('.supplier-card').style.borderColor = '#e0e0e0';
+                this.querySelector('.supplier-card').style.transform = 'translateY(0)';
             });
             
             grid.appendChild(col);
@@ -886,17 +887,15 @@
 
         limited.forEach(product => {
             const col = document.createElement('div');
-            col.className = 'col-lg-2 col-md-3 col-sm-4 col-6'; // 5 items per row on large screens
+            col.className = 'col-lg-4 col-md-6 col-sm-12'; // 3 items per row on large screens
             col.innerHTML = `
-                <div class="card h-100 cursor-pointer product-card" style="cursor: pointer; border: 1px solid #ddd; transition: all 0.2s;">
-                    <div class="card-body p-3">
-                        <div class="text-center">
-                            <div class="fw-bold small mb-1" style="word-break: break-word;">
+                <div class="card cursor-pointer product-card" style="cursor: pointer; border: 2px solid #e0e0e0; transition: all 0.2s; background: #fff; height: auto;">
+                    <div class="card-body p-2" style="min-height: auto;">
+                        <div>
+                            <h6 class="mb-1 fw-bold" style="word-break: break-word; color: #333; font-size: 14px;">
                                 ${product.name}
-                            </div>
-                            <small class="text-success d-block" style="font-size: 11px;">
-                                Rs. ${parseFloat(product.purchase_price).toFixed(0)}
-                            </small>
+                            </h6>
+                            <p class="mb-0 text-success" style="font-size: 12px;"><strong>Price:</strong> Rs. ${parseFloat(product.purchase_price).toFixed(0)}</p>
                         </div>
                     </div>
                 </div>
@@ -908,13 +907,15 @@
             });
             
             col.addEventListener('mouseover', function() {
-                this.querySelector('.product-card').style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                this.querySelector('.product-card').style.boxShadow = '0 4px 12px rgba(0,123,255,0.2)';
                 this.querySelector('.product-card').style.borderColor = '#007bff';
+                this.querySelector('.product-card').style.transform = 'translateY(-2px)';
             });
             
             col.addEventListener('mouseout', function() {
                 this.querySelector('.product-card').style.boxShadow = 'none';
-                this.querySelector('.product-card').style.borderColor = '#ddd';
+                this.querySelector('.product-card').style.borderColor = '#e0e0e0';
+                this.querySelector('.product-card').style.transform = 'translateY(0)';
             });
             
             grid.appendChild(col);

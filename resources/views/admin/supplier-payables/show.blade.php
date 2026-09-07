@@ -96,6 +96,7 @@
                             <th>Warehouse</th>
                             <th class="text-end">Total</th>
                             <th class="text-end">Paid</th>
+                            <th class="text-end">Returns</th>
                             <th class="text-end">Outstanding</th>
                             <th>Status</th>
                         </tr>
@@ -113,7 +114,10 @@
                             <td class="text-end">Rs. {{ number_format($purchase->total_amount, 2) }}</td>
                             <td class="text-end">Rs. {{ number_format($purchase->paid_amount, 2) }}</td>
                             <td class="text-end">
-                                <strong>Rs. {{ number_format(max(0, $purchase->total_amount - $purchase->paid_amount), 2) }}</strong>
+                                Rs. {{ number_format($purchase->total_returns, 2) }}
+                            </td>
+                            <td class="text-end">
+                                <strong>Rs. {{ number_format($purchase->payable_amount, 2) }}</strong>
                             </td>
                             <td>
                                 <span class="badge bg-{{ $purchase->payment_status_badge }}">

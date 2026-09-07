@@ -50,7 +50,7 @@ class SupplierPayableController extends Controller
         }
         $totalReturns = $returnsQuery->sum('total_amount');
         
-        $totalOutstanding = max(0, $totalPurchases - $totalPaid - $totalReturns);
+        $totalOutstanding = $totalPurchases - $totalPaid - $totalReturns;
         
         // Get unique supplier IDs from purchases
         $supplierIds = $allPurchases->pluck('supplier_id')->unique()->toArray();
@@ -78,7 +78,7 @@ class SupplierPayableController extends Controller
                     }
                     
                     $supplierReturnAmount = $supplierReturns->sum('total_amount');
-                    $supplierOutstanding = max(0, $supplierTotal - $supplierPaid - $supplierReturnAmount);
+                    $supplierOutstanding = $supplierTotal - $supplierPaid - $supplierReturnAmount;
                     
                     return (object)[
                         'id' => $supplier->id,
@@ -90,9 +90,6 @@ class SupplierPayableController extends Controller
                         'total_returns' => $supplierReturnAmount,
                         'outstanding_payable' => $supplierOutstanding,
                     ];
-                })
-                ->filter(function ($supplier) {
-                    return $supplier->outstanding_payable > 0;
                 })
                 ->sortByDesc('outstanding_payable')
                 ->values();
@@ -152,7 +149,7 @@ class SupplierPayableController extends Controller
         }
         
         $totalReturns = $returnsQuery->sum('total_amount');
-        $outstanding = max(0, $totalPurchases - $totalPaid - $totalReturns);
+        $outstanding = $totalPurchases - $totalPaid - $totalReturns;
         
         $data = [
             'supplier' => $supplier,

@@ -71,6 +71,8 @@
                             <th>Items</th>
                             <th class="text-end">Total Amount</th>
                             <th class="text-end">Paid</th>
+                            <th class="text-end">Returns</th>
+                            <th class="text-end">Outstanding</th>
                             <th style="width: 100px;">Status</th>
                             <th style="width: 200px;" class="text-end">Actions</th>
                         </tr>
@@ -113,6 +115,24 @@
                                         <span class="text-success">{{ number_format($purchase->paid_amount, 2) }}</span>
                                     @else
                                         <span class="text-muted">—</span>
+                                    @endif
+                                </small>
+                            </td>
+                            <td class="text-end">
+                                <small>
+                                    @if($purchase->total_returns > 0)
+                                        <span class="text-info">{{ number_format($purchase->total_returns, 2) }}</span>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </small>
+                            </td>
+                            <td class="text-end">
+                                <small>
+                                    @if($purchase->payable_amount > 0)
+                                        <span class="text-danger"><strong>{{ number_format($purchase->payable_amount, 2) }}</strong></span>
+                                    @else
+                                        <span class="text-success"><strong>Paid</strong></span>
                                     @endif
                                 </small>
                             </td>

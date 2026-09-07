@@ -34,11 +34,15 @@
                     <p class="text-muted mb-1 small">Total Sales</p>
                     <h4 class="mb-0">Rs. {{ number_format($familyAccount['total_sales'], 0) }}</h4>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <p class="text-muted mb-1 small">Total Returns</p>
+                    <h4 class="mb-0 text-warning">Rs. {{ number_format($familyAccount['total_returns'], 0) }}</h4>
+                </div>
+                <div class="col-md-2">
                     <p class="text-muted mb-1 small">Total Paid</p>
                     <h4 class="mb-0 text-success">Rs. {{ number_format($familyAccount['total_paid'], 0) }}</h4>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <p class="text-muted mb-1 small">Outstanding Family Udhar</p>
                     <h4 class="mb-0 text-danger">Rs. {{ number_format($familyAccount['outstanding'], 0) }}</h4>
                 </div>
@@ -221,14 +225,14 @@
                             <th>Invoice/Reference</th>
                             <th>Transaction Type</th>
                             <th class="text-end">Debit (+)</th>
+                            <th class="text-end">Returns</th>
                             <th class="text-end">Credit (-)</th>
-                            <th class="text-end">Balance</th>
+                            <th class="text-end">Outstanding</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         @php
-                            $runningBalance = 0;
                             $transactions = collect();
                             
                             // Add sales to transactions
@@ -238,22 +242,10 @@
                                     'customer' => $sale->customer->name,
                                     'reference' => $sale->invoice_number,
                                     'type' => 'Sale',
-                                    'debit' => $sale->total_amount,
-                                    'credit' => 0,
+                                    'amount' => $sale->total_amount,
+                                    'returns' => $sale->total_returned_amount,
+                                    'paid' => $sale->paid_amount + $sale->customerPayments->sum('amount'),
                                     'status' => ucfirst($sale->current_payment_status)
-                                ]);
-                            }
-                            
-                            // Add payments to transactions
-                            foreach($paymentHistory as $payment) {
-                                $transactions->push([
-                                    'date' => $payment->payment_date,
-                                    'customer' => $payment->customer->name,
-                                    'reference' => $payment->sale->invoice_number . ' (Payment)',
-                                    'type' => 'Payment',
-                                    'debit' => 0,
-                                    'credit' => $payment->amount,
-                                    'status' => 'Received'
                                 ]);
                             }
                             
@@ -262,7 +254,7 @@
                         
                         @foreach($transactions as $transaction)
                         @php
-                            $runningBalance += $transaction['debit'] - $transaction['credit'];
+                            $outstanding = $transaction['amount'] - $transaction['returns'] - $transaction['paid'];
                         @endphp
                         <tr>
                             <td><small>{{ \Carbon\Carbon::parse($transaction['date'])->format('M d, Y') }}</small></td>
@@ -274,14 +266,17 @@
                                 </span>
                             </td>
                             <td class="text-end text-danger">
-                                {{ $transaction['debit'] > 0 ? 'Rs. ' . number_format($transaction['debit'], 0) : '—' }}
+                                Rs. {{ number_format($transaction['amount'], 0) }}
+                            </td>
+                            <td class="text-end text-warning">
+                                {{ $transaction['returns'] > 0 ? 'Rs. ' . number_format($transaction['returns'], 0) : '—' }}
                             </td>
                             <td class="text-end text-success">
-                                {{ $transaction['credit'] > 0 ? 'Rs. ' . number_format($transaction['credit'], 0) : '—' }}
+                                {{ $transaction['paid'] > 0 ? 'Rs. ' . number_format($transaction['paid'], 0) : '—' }}
                             </td>
                             <td class="text-end">
-                                <strong class="text-{{ $runningBalance > 0 ? 'danger' : 'success' }}">
-                                    Rs. {{ number_format($runningBalance, 0) }}
+                                <strong class="text-{{ $outstanding > 0 ? 'danger' : 'success' }}">
+                                    Rs. {{ number_format($outstanding, 0) }}
                                 </strong>
                             </td>
                             <td><small>{{ $transaction['status'] }}</small></td>
@@ -290,7 +285,10 @@
                     </tbody>
                     <tfoot class="table-light">
                         <tr>
-                            <td colspan="6" class="text-end"><strong>Current Balance:</strong></td>
+                            <td colspan="4" class="text-end"><strong>Totals:</strong></td>
+                            <td class="text-end"><strong class="text-danger">Rs. {{ number_format($familyAccount['total_sales'], 0) }}</strong></td>
+                            <td class="text-end"><strong class="text-warning">Rs. {{ number_format($familyAccount['total_returns'], 0) }}</strong></td>
+                            <td class="text-end"><strong class="text-success">Rs. {{ number_format($familyAccount['total_paid'], 0) }}</strong></td>
                             <td class="text-end">
                                 <strong class="text-danger">Rs. {{ number_format($familyAccount['outstanding'], 0) }}</strong>
                             </td>
