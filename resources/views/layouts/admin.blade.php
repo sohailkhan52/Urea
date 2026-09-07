@@ -920,6 +920,13 @@
                         </a>
                     </li>
                     @endcan
+                    @can('products.view')
+                    <li>
+                        <a href="{{ route('admin.reports.products.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.products.*') ? 'active' : '' }}">
+                            <i class="bi bi-box-seam me-2"></i> Products
+                        </a>
+                    </li>
+                    @endcan
                 </ul>
             </div>
             @endpermission

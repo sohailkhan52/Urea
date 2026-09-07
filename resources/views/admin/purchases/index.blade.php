@@ -100,12 +100,12 @@
                                 <span class="badge bg-info">{{ $purchase->items()->count() }} item(s)</span>
                             </td>
                             <td class="text-end">
-                                <strong>{{ number_format($purchase->total_amount, 2) }}</strong>
+                                <strong>{{ number_format($purchase->total_amount, 0) }}</strong>
                             </td>
                             <td class="text-end">
                                 <small>
                                     @if($purchase->paid_amount > 0)
-                                        <span class="text-success">{{ number_format($purchase->paid_amount, 2) }}</span>
+                                        <span class="text-success">{{ number_format($purchase->paid_amount, 0) }}</span>
                                     @else
                                         <span class="text-muted">—</span>
                                     @endif
@@ -114,7 +114,7 @@
                             <td class="text-end">
                                 <small>
                                     @if($purchase->total_returns > 0)
-                                        <span class="text-info">{{ number_format($purchase->total_returns, 2) }}</span>
+                                        <span class="text-info">{{ number_format($purchase->total_returns, 0) }}</span>
                                     @else
                                         <span class="text-muted">—</span>
                                     @endif
@@ -123,7 +123,7 @@
                             <td class="text-end">
                                 <small>
                                     @if($purchase->payable_amount > 0)
-                                        <span class="text-danger"><strong>{{ number_format($purchase->payable_amount, 2) }}</strong></span>
+                                        <span class="text-danger"><strong>{{ number_format($purchase->payable_amount, 0) }}</strong></span>
                                     @else
                                         <span class="text-success"><strong>Paid</strong></span>
                                     @endif

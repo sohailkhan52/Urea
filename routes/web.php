@@ -239,6 +239,17 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     });
     // ============ END PROFIT & LOSS REPORTS ============
 
+    // ============ PRODUCT REPORTS ============
+    Route::prefix('reports/products')->name('reports.products.')->middleware('permission:products.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ProductReportController::class, 'index'])->name('index');
+        Route::delete('/{product}', [\App\Http\Controllers\Admin\ProductReportController::class, 'destroy'])
+            ->name('destroy')
+            ->middleware('permission:products.delete');
+        Route::get('/export', [\App\Http\Controllers\Admin\ProductReportController::class, 'export'])
+            ->name('export');
+    });
+    // ============ END PRODUCT REPORTS ============
+
     // Sales Management
     // AJAX endpoints for returns (must come before resource route)
     Route::get('/sales/search-for-return', [\App\Http\Controllers\Admin\SaleReturnController::class, 'searchSales'])

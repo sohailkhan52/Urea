@@ -40,7 +40,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Net Revenue</p>
-                            <h4 class="mb-0 text-success">Rs. {{ number_format($totals->total_revenue, 2) }}</h4>
+                            <h4 class="mb-0 text-success">Rs. {{ number_format($totals->total_revenue, 0) }}</h4>
                             <small class="text-muted">After returns & discounts</small>
                         </div>
                         <div class="text-success">
@@ -56,7 +56,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Total COGS</p>
-                            <h4 class="mb-0 text-danger">Rs. {{ number_format($totals->total_cogs, 2) }}</h4>
+                            <h4 class="mb-0 text-danger">Rs. {{ number_format($totals->total_cogs, 0) }}</h4>
                             <small class="text-muted">Cost of goods sold</small>
                         </div>
                         <div class="text-danger">
@@ -73,7 +73,7 @@
                         <div>
                             <p class="text-muted mb-1 small">Net Profit</p>
                             <h4 class="mb-0 text-{{ $totals->net_profit >= 0 ? 'success' : 'danger' }}">
-                                Rs. {{ number_format($totals->net_profit, 2) }}
+                                Rs. {{ number_format($totals->net_profit, 0) }}
                             </h4>
                             <small class="text-muted">Margin: {{ number_format($totals->avg_margin, 1) }}%</small>
                         </div>
@@ -94,7 +94,7 @@
                     <i class="bi bi-arrow-up-circle text-success fs-1"></i>
                     <h5 class="mt-2">Profitable Sales</h5>
                     <h3 class="text-success">{{ $totals->profitable_sales }}</h3>
-                    <p class="text-muted mb-0">Total Profit: Rs. {{ number_format($totals->total_profit, 2) }}</p>
+                    <p class="text-muted mb-0">Total Profit: Rs. {{ number_format($totals->total_profit, 0) }}</p>
                 </div>
             </div>
         </div>
@@ -104,7 +104,7 @@
                     <i class="bi bi-arrow-down-circle text-danger fs-1"></i>
                     <h5 class="mt-2">Loss-Making Sales</h5>
                     <h3 class="text-danger">{{ $totals->loss_sales }}</h3>
-                    <p class="text-muted mb-0">Total Loss: Rs. {{ number_format($totals->total_loss, 2) }}</p>
+                    <p class="text-muted mb-0">Total Loss: Rs. {{ number_format($totals->total_loss, 0) }}</p>
                 </div>
             </div>
         </div>

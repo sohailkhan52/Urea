@@ -257,7 +257,7 @@
                             </div>
                             <div class="d-flex justify-content-between mb-3 pb-2 border-bottom">
                                 <span class="text-muted">+ Other:</span>
-                                <strong>Rs. <span id="display_other">0.00</span></strong>
+                                <strong>Rs. <span id="display_other">0</span></strong>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <strong>Total Payment:</strong>
@@ -1089,7 +1089,7 @@
                 <td>
                     <input type="number" 
                            class="form-control form-control-sm" 
-                           value="${item.unit_price.toFixed(2)}" 
+                           value="${Math.round(item.unit_price)}" 
                            min="0" 
                            step="0.01"
                            data-field="unit_price"
@@ -1100,7 +1100,7 @@
                 <td>
                     <input type="number" 
                            class="form-control form-control-sm" 
-                           value="${item.sale_price.toFixed(2)}" 
+                           value="${Math.round(item.sale_price)}" 
                            min="0" 
                            step="0.01"
                            data-field="sale_price"
@@ -1109,7 +1109,7 @@
                            onblur="updateItemSalePrice(${index}, this.value)">
                 </td>
                 <td>
-                    <strong>Rs. ${(item.quantity * item.unit_price).toFixed(2)}</strong>
+                    <strong>Rs. ${Math.round(item.quantity * item.unit_price)}</strong>
                 </td>
                 <td>
                     <button type="button" 
@@ -1165,7 +1165,7 @@
             const item = purchaseItems[index];
             const totalCell = row.cells[5]; // 6th column (0-indexed) is the Total column
             if (totalCell) {
-                totalCell.innerHTML = `<strong>Rs. ${(item.quantity * item.unit_price).toFixed(2)}</strong>`;
+                totalCell.innerHTML = `<strong>Rs. ${Math.round(item.quantity * item.unit_price)}</strong>`;
             }
         }
     }
@@ -1181,7 +1181,7 @@
     function updateCalculationsOnly() {
         const subtotal = purchaseItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
         
-        document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+        document.getElementById('subtotal').textContent = Math.round(subtotal);
         document.getElementById('itemCount').textContent = purchaseItems.length;
         
         updateDiscount();
@@ -1204,12 +1204,12 @@
         const totalAmount = subtotal - discount + transportCost + otherExpenses;
 
         // Update display
-        document.getElementById('subtotal').textContent = subtotal.toFixed(2);
-        document.getElementById('display_subtotal').textContent = subtotal.toFixed(2);
-        document.getElementById('display_discount').textContent = discount.toFixed(2);
-        document.getElementById('display_transport').textContent = transportCost.toFixed(2);
-        document.getElementById('display_other').textContent = otherExpenses.toFixed(2);
-        document.getElementById('total_amount').textContent = totalAmount.toFixed(2);
+        document.getElementById('subtotal').textContent = Math.round(subtotal);
+        document.getElementById('display_subtotal').textContent = Math.round(subtotal);
+        document.getElementById('display_discount').textContent = Math.round(discount);
+        document.getElementById('display_transport').textContent = Math.round(transportCost);
+        document.getElementById('display_other').textContent = Math.round(otherExpenses);
+        document.getElementById('total_amount').textContent = Math.round(totalAmount);
         document.getElementById('itemCount').textContent = purchaseItems.length;
 
         updatePaymentStatus();
@@ -1224,7 +1224,7 @@
         const paidAmount = parseFloat(document.getElementById('paid_amount').value) || 0;
         const remainingPayable = Math.max(0, totalAmount - paidAmount);
 
-        document.getElementById('remaining_payable').textContent = remainingPayable.toFixed(2);
+        document.getElementById('remaining_payable').textContent = Math.round(remainingPayable);
 
         let status = 'Not Started';
         let statusBadge = 'secondary';

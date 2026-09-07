@@ -135,7 +135,7 @@
                                 </small>
                             </td>
                             <td class="text-end">
-                                <strong>Rs. {{ number_format($return->total_return_amount, 2) }}</strong>
+                                <strong>Rs. {{ number_format($return->total_return_amount, 0) }}</strong>
                             </td>
                             <td>
                                 <span class="badge bg-{{ $return->status_badge }}">

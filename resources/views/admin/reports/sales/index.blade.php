@@ -45,7 +45,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Total Amount</p>
-                            <h4 class="mb-0">Rs. {{ number_format($totals->total_amount_sum, 2) }}</h4>
+                            <h4 class="mb-0">Rs. {{ number_format($totals->total_amount_sum, 0) }}</h4>
                         </div>
                         <div class="text-success">
                             <i class="bi bi-currency-dollar fs-2"></i>
@@ -60,7 +60,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Total Paid</p>
-                            <h4 class="mb-0">Rs. {{ number_format($totals->total_paid_sum, 2) }}</h4>
+                            <h4 class="mb-0">Rs. {{ number_format($totals->total_paid_sum, 0) }}</h4>
                         </div>
                         <div class="text-info">
                             <i class="bi bi-check-circle fs-2"></i>
@@ -75,7 +75,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Total Outstanding</p>
-                            <h4 class="mb-0">Rs. {{ number_format($totals->total_udhar_sum, 2) }}</h4>
+                            <h4 class="mb-0">Rs. {{ number_format($totals->total_udhar_sum, 0) }}</h4>
                         </div>
                         <div class="text-warning">
                             <i class="bi bi-exclamation-triangle fs-2"></i>
@@ -95,7 +95,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Net Revenue</p>
-                            <h5 class="mb-0 text-success">Rs. {{ number_format($totals->total_revenue, 2) }}</h5>
+                            <h5 class="mb-0 text-success">Rs. {{ number_format($totals->total_revenue, 0) }}</h5>
                         </div>
                         <div class="text-success">
                             <i class="bi bi-graph-up fs-3"></i>
@@ -110,7 +110,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Total COGS</p>
-                            <h5 class="mb-0 text-danger">Rs. {{ number_format($totals->total_cogs, 2) }}</h5>
+                            <h5 class="mb-0 text-danger">Rs. {{ number_format($totals->total_cogs, 0) }}</h5>
                         </div>
                         <div class="text-danger">
                             <i class="bi bi-cart-dash fs-3"></i>
@@ -126,11 +126,11 @@
                         <div>
                             <p class="text-muted mb-1 small">Net Profit</p>
                             <h5 class="mb-0 text-{{ $totals->net_profit >= 0 ? 'success' : 'danger' }}">
-                                Rs. {{ number_format($totals->net_profit, 2) }}
+                                Rs. {{ number_format($totals->net_profit, 0) }}
                             </h5>
                             <small class="text-muted">
-                                Profit: Rs. {{ number_format($totals->total_profit, 2) }} | 
-                                Loss: Rs. {{ number_format($totals->total_loss, 2) }}
+                                Profit: Rs. {{ number_format($totals->total_profit, 0) }} | 
+                                Loss: Rs. {{ number_format($totals->total_loss, 0) }}
                             </small>
                         </div>
                         <div class="text-{{ $totals->net_profit >= 0 ? 'success' : 'danger' }}">
@@ -329,12 +329,12 @@
                                 @endif
                             </td>
                             <td>{{ $sale->warehouse->name }}</td>
-                            <td class="text-end">Rs. {{ number_format($sale->total_amount, 2) }}</td>
-                            <td class="text-end">Rs. {{ number_format($sale->paid_amount, 2) }}</td>
-                            <td class="text-end">Rs. {{ number_format($sale->due_amount, 2) }}</td>
+                            <td class="text-end">Rs. {{ number_format($sale->total_amount, 0) }}</td>
+                            <td class="text-end">Rs. {{ number_format($sale->paid_amount, 0) }}</td>
+                            <td class="text-end">Rs. {{ number_format($sale->due_amount, 0) }}</td>
                             <td class="text-end">
                                 @if($sale->has_cost_data)
-                                    Rs. {{ number_format($sale->total_cogs, 2) }}
+                                    Rs. {{ number_format($sale->total_cogs, 0) }}
                                 @else
                                     <span class="text-muted small">N/A</span>
                                 @endif
@@ -343,11 +343,11 @@
                                 @if($sale->has_cost_data)
                                     @if($sale->profit_status === 'profit')
                                         <span class="text-success fw-bold">
-                                            <i class="bi bi-arrow-up-circle me-1"></i>Rs. {{ number_format($sale->gross_profit, 2) }}
+                                            <i class="bi bi-arrow-up-circle me-1"></i>Rs. {{ number_format($sale->gross_profit, 0) }}
                                         </span>
                                     @elseif($sale->profit_status === 'loss')
                                         <span class="text-danger fw-bold">
-                                            <i class="bi bi-arrow-down-circle me-1"></i>Rs. {{ number_format(abs($sale->gross_profit), 2) }}
+                                            <i class="bi bi-arrow-down-circle me-1"></i>Rs. {{ number_format(abs($sale->gross_profit), 0) }}
                                         </span>
                                     @else
                                         <span class="text-secondary fw-bold">

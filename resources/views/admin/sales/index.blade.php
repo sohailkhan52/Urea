@@ -129,21 +129,21 @@
                                 @endif
                             </td>
                             <td class="text-end">
-                                <strong>{{ number_format($sale->total_amount, 2) }}</strong>
+                                <strong>{{ number_format($sale->total_amount, 0) }}</strong>
                             </td>
                             <td class="text-end">
                                 <small>
                                     @if($sale->paid_amount > 0)
-                                        <span class="text-success">{{ number_format($sale->paid_amount, 2) }}</span>
+                                        <span class="text-success">{{ number_format($sale->paid_amount, 0) }}</span>
                                     @else
-                                        <span class="text-muted">0.00</span>
+                                        <span class="text-muted">0</span>
                                     @endif
                                 </small>
                             </td>
                             <td class="text-end">
                                 <small>
                                     @if($sale->total_returned_amount > 0)
-                                        <span class="text-info">{{ number_format($sale->total_returned_amount, 2) }}</span>
+                                        <span class="text-info">{{ number_format($sale->total_returned_amount, 0) }}</span>
                                     @else
                                         <span class="text-muted">—</span>
                                     @endif
@@ -159,7 +159,7 @@
                                     @elseif($udhar < 0)
                                         <span class="text-success fw-bold">{{ number_format($udhar, 0) }}</span>
                                     @else
-                                        <span class="text-muted">0.00</span>
+                                        <span class="text-muted">0</span>
                                     @endif
                                 </small>
                             </td>
