@@ -137,13 +137,18 @@
                     </thead>
                     <tbody>
                         @foreach($individualAccount['sales'] as $sale)
+                        @php
+                            // Use model attribute which correctly excludes return_adjustment and return_credit
+                            $outstanding = $sale->current_remaining_udhar;
+                            $totalPaid = $sale->paid_amount + $sale->total_additional_payments;
+                        @endphp
                         <tr>
                             <td><strong>{{ $sale->invoice_number }}</strong></td>
                             <td><small>{{ $sale->sale_date->format('M d, Y') }}</small></td>
                             <td class="text-end">Rs. {{ number_format($sale->total_amount, 0) }}</td>
-                            <td class="text-end text-success">Rs. {{ number_format($sale->paid_amount + $sale->customerPayments->sum('amount'), 0) }}</td>
+                            <td class="text-end text-success">Rs. {{ number_format($totalPaid, 0) }}</td>
                             <td class="text-end">Rs. {{ number_format($sale->total_returned_amount, 0) }}</td>
-                            <td class="text-end text-danger">Rs. {{ number_format($sale->total_amount - ($sale->paid_amount + $sale->customerPayments->sum('amount')) - $sale->total_returned_amount, 0) }}</td>
+                            <td class="text-end {{ $outstanding < 0 ? 'text-success' : 'text-danger' }}">Rs. {{ number_format($outstanding, 0) }}</td>
                             <td><span class="badge bg-{{ $sale->current_payment_status === 'paid' ? 'success' : ($sale->current_payment_status === 'partial' ? 'warning' : 'danger') }}">{{ ucfirst($sale->current_payment_status) }}</span></td>
                         </tr>
                         @endforeach

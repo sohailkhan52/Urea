@@ -148,14 +148,19 @@ class Sale extends Model
     }
 
     /**
-     * Get total additional payments made after sale creation
+     * Get total additional payments made after sale creation (EXCLUDING return-related transactions)
+     * 
+     * IMPORTANT: This should ONLY include actual cash/real payments from the customer,
+     * NOT return_adjustment or return_credit transactions which are accounting entries, not real payments.
      */
     public function getTotalAdditionalPaymentsAttribute(): float
     {
-        // FIX: Use cached aggregate instead of query to avoid N+1 when accessed in loops
-        // This value should be pre-loaded with ->withSum('customerPayments', 'amount') when querying sales
-        // Fallback to query if not pre-loaded (slower but safe)
-        return (float)($this->attributes['customer_payments_sum_amount'] ?? $this->customerPayments()->sum('amount') ?? 0);
+        // Get all customer payments EXCEPT return-related ones
+        $additionalPayments = $this->customerPayments()
+            ->whereNotIn('payment_method', ['return_adjustment', 'return_credit'])
+            ->sum('amount');
+        
+        return (float)($additionalPayments ?? 0);
     }
 
     /**

@@ -133,53 +133,18 @@
                     <h5 class="mb-0"><i class="bi bi-calculator"></i> Return Summary</h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Subtotal:</span>
-                            <strong>Rs. {{ number_format($purchaseReturn->subtotal, 2) }}</strong>
-                        </div>
-                        @if($purchaseReturn->transport_cost > 0)
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>+ Transport:</span>
-                                <strong>Rs. {{ number_format($purchaseReturn->transport_cost, 2) }}</strong>
-                            </div>
-                        @endif
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Items:</span>
+                        <strong>{{ $purchaseReturn->total_items_count }}</strong>
                     </div>
-
-                    <div class="p-3 bg-danger bg-opacity-10 rounded">
-                        <div class="d-flex justify-content-between">
-                            <strong>Total Return:</strong>
-                            <strong class="h5 text-danger">Rs. {{ number_format($purchaseReturn->total_amount, 2) }}</strong>
-                        </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Total Quantity:</span>
+                        <strong>{{ number_format($purchaseReturn->total_quantity, 2) }}</strong>
                     </div>
-
                     <hr>
-
-                    <!-- Refund Status -->
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Refund Status:</span>
-                            <span class="badge bg-{{ $purchaseReturn->refund_status_badge }}">
-                                {{ $purchaseReturn->refund_status_label }}
-                            </span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Refunded Amount:</span>
-                            <strong>Rs. {{ number_format($purchaseReturn->refund_amount, 2) }}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Remaining:</span>
-                            <strong class="text-warning">Rs. {{ number_format($purchaseReturn->remaining_refund, 2) }}</strong>
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <div class="mb-3">
-                        <small class="text-muted">
-                            <strong>Items:</strong> {{ $purchaseReturn->total_items_count }}<br>
-                            <strong>Total Quantity:</strong> {{ $purchaseReturn->total_quantity }}
-                        </small>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Total Return Amount:</span>
+                        <strong class="text-primary fs-5">Rs. {{ number_format($purchaseReturn->total_amount, 2) }}</strong>
                     </div>
                 </div>
             </div>

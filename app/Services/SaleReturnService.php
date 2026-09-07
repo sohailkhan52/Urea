@@ -313,90 +313,29 @@ class SaleReturnService
      * 
      * This follows the existing payment/udhar pattern:
      * - If sale has outstanding udhar: create payment to reduce debt
-     * - If sale is fully paid: create customer credit (negative payment for future use)
+    /**
+     * Record return in audit history only (do NOT create customer payment records)
      * 
-     * @param Sale $sale
-     * @param SaleReturn $return
-     * @throws \Exception
+     * CRITICAL FIX: Removed return_adjustment and return_credit payment creation
+     * 
+     * Why this was a bug:
+     * - return_adjustment payments were being included in total_additional_payments
+     * - This artificially inflated the "paid" amount
+     * - Example: Sale 65,000 with paid 50,000, return 14,950
+     *   - OLD BUG: total_paid = 50,000 + 14,950 = 64,950 (WRONG!)
+     *   - NEW FIX: total_paid = 50,000 (original), returns = 14,950 (separate)
+     *   - Outstanding = 65,000 - 50,000 - 14,950 = 50 (CORRECT!)
+     * 
+     * The return amount is tracked via SaleReturn records, not fake payments.
+     * Only record in UdharHistory for audit purposes.
      */
     protected function adjustCustomerBalance(Sale $sale, SaleReturn $return): void
     {
-        $returnAmount = $return->total_return_amount;
+        // REMOVED: All CustomerPayment::create() calls for return_adjustment and return_credit
+        // These were causing the calculation bug
         
-        // Calculate current udhar considering additional payments
-        $currentUdhar = $sale->current_remaining_udhar;
-
-        if ($currentUdhar > 0) {
-            // Sale has outstanding udhar: reduce it by creating a payment
-            $paymentAmount = min($returnAmount, $currentUdhar);
-            
-            CustomerPayment::create([
-                'customer_id' => $sale->customer_id,
-                'sale_id' => $sale->id,
-                'account_type' => $sale->udhar_account_type,
-                'account_family_id' => $sale->family_id,
-                'amount' => $paymentAmount,
-                'payment_date' => $return->return_date,
-                'payment_method' => 'return_adjustment',
-                'reference_number' => $return->return_number,
-                'notes' => "Payment adjustment for sale return {$return->return_number}",
-                'received_by' => Auth::id(),
-            ]);
-
-            Log::info('Customer udhar reduced via return', [
-                'customer_id' => $sale->customer_id,
-                'sale_id' => $sale->id,
-                'return_id' => $return->id,
-                'payment_amount' => $paymentAmount,
-                'previous_udhar' => $currentUdhar,
-            ]);
-
-            // If return amount exceeds udhar, create credit for the difference
-            if ($returnAmount > $currentUdhar) {
-                $creditAmount = $returnAmount - $currentUdhar;
-                
-                CustomerPayment::create([
-                    'customer_id' => $sale->customer_id,
-                    'sale_id' => $sale->id, // Keep reference to original sale
-                    'account_type' => $sale->udhar_account_type,
-                    'account_family_id' => $sale->family_id,
-                    'amount' => -$creditAmount, // Negative = customer has credit
-                    'payment_date' => $return->return_date,
-                    'payment_method' => 'return_credit',
-                    'reference_number' => $return->return_number,
-                    'notes' => "Customer credit from return {$return->return_number} (Original Sale: {$sale->invoice_number})",
-                    'received_by' => Auth::id(),
-                ]);
-
-                Log::info('Customer credit created from return', [
-                    'customer_id' => $sale->customer_id,
-                    'return_id' => $return->id,
-                    'credit_amount' => $creditAmount,
-                ]);
-            }
-        } else {
-            // Sale is fully paid: create customer credit for future use
-            CustomerPayment::create([
-                'customer_id' => $sale->customer_id,
-                'sale_id' => $sale->id, // Keep reference to original sale
-                'account_type' => $sale->udhar_account_type,
-                'account_family_id' => $sale->family_id,
-                'amount' => -$returnAmount, // Negative = customer has credit
-                'payment_date' => $return->return_date,
-                'payment_method' => 'return_credit',
-                'reference_number' => $return->return_number,
-                'notes' => "Customer credit from return {$return->return_number} (Original Sale: {$sale->invoice_number})",
-                'received_by' => Auth::id(),
-            ]);
-
-            Log::info('Customer credit created from return', [
-                'customer_id' => $sale->customer_id,
-                'return_id' => $return->id,
-                'credit_amount' => $returnAmount,
-            ]);
-        }
-
-        // Record return in UdharHistory
+        // Record return in UdharHistory for audit trail only
+        $returnAmount = $return->total_return_amount;
         $previousUdhar = $sale->current_remaining_udhar;
         $currentUdhar = $previousUdhar - $returnAmount;
         

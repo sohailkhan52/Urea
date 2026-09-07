@@ -93,7 +93,12 @@ class SaleItem extends Model
      */
     public function getTotalReturnedQuantityAttribute(): float
     {
-        return $this->confirmedReturnItems()->sum('quantity');
+        // Direct query using join to ensure we get all confirmed return items
+        return \App\Models\SaleReturnItem::where('sale_item_id', $this->id)
+            ->whereHas('saleReturn', function ($query) {
+                $query->where('status', 'confirmed');
+            })
+            ->sum('quantity');
     }
 
     /**

@@ -237,6 +237,9 @@
                             
                             // Add sales to transactions
                             foreach($familyAccount['sales'] as $sale) {
+                                // Use model attribute which correctly excludes return_adjustment and return_credit
+                                $salePaid = $sale->paid_amount + $sale->total_additional_payments;
+                                
                                 $transactions->push([
                                     'date' => $sale->sale_date,
                                     'customer' => $sale->customer->name,
@@ -244,7 +247,7 @@
                                     'type' => 'Sale',
                                     'amount' => $sale->total_amount,
                                     'returns' => $sale->total_returned_amount,
-                                    'paid' => $sale->paid_amount + $sale->customerPayments->sum('amount'),
+                                    'paid' => $salePaid,
                                     'status' => ucfirst($sale->current_payment_status)
                                 ]);
                             }

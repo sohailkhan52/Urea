@@ -42,10 +42,10 @@
                 </div>
                 <div class="card-body">
                     <p class="mb-1"><strong>Paid:</strong> Rs. {{ number_format($sale->paid_amount ?? 0, 2) }}</p>
-                    <p class="mb-0"><strong>Outstanding:</strong> Rs. {{ number_format(($sale->total_amount - ($sale->paid_amount ?? 0)), 2) }}</p>
+                    <p class="mb-0"><strong>Outstanding:</strong> Rs. {{ number_format($sale->current_remaining_udhar, 2) }}</p>
                     <hr>
-                    <span class="badge bg-{{ $sale->payment_status === 'Paid' ? 'success' : ($sale->payment_status === 'Partial' ? 'warning' : 'danger') }}">
-                        {{ $sale->payment_status ?? 'Completed' }}
+                    <span class="badge bg-{{ $sale->current_payment_status === 'paid' ? 'success' : ($sale->current_payment_status === 'partial' ? 'warning' : 'danger') }}">
+                        {{ ucfirst($sale->current_payment_status) }}
                     </span>
                 </div>
             </div>
@@ -79,6 +79,15 @@
                         </thead>
                         <tbody id="itemsBody">
                             @forelse($sale->items as $index => $item)
+                                @php
+                                    // Calculate how much can still be returned
+                                    $alreadyReturned = \App\Models\SaleReturnItem::where('sale_item_id', $item->id)
+                                        ->whereHas('saleReturn', function ($q) {
+                                            $q->where('status', 'confirmed');
+                                        })
+                                        ->sum('quantity');
+                                    $canReturn = max(0, $item->quantity - $alreadyReturned);
+                                @endphp
                                 <tr>
                                     <td>
                                         <input type="checkbox" 
@@ -88,7 +97,7 @@
                                     </td>
                                     <td><strong>{{ $item->product->name }}</strong></td>
                                     <td class="text-center">{{ $item->quantity }}</td>
-                                    <td class="text-center">{{ $item->quantity }}</td>
+                                    <td class="text-center">{{ $canReturn }}</td>
                                     <td class="text-end">Rs. {{ number_format($item->unit_price, 2) }}</td>
                                     <td>
                                         <input type="number" 
@@ -96,7 +105,7 @@
                                                name="items[{{ $index }}][quantity]"
                                                data-index="{{ $index }}"
                                                min="0" 
-                                               max="{{ $item->quantity }}" 
+                                               max="{{ $canReturn }}" 
                                                step="0.01"
                                                value="0"
                                                disabled
@@ -195,7 +204,8 @@ function updateItemRow(index) {
     
     if (checkbox.checked) {
         qtyInput.disabled = false;
-        if (qtyInput.value == 0) {
+        // Only set to max if the current value is 0
+        if (qtyInput.value == 0 || qtyInput.value == '') {
             qtyInput.value = qtyInput.max;
         }
     } else {

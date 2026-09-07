@@ -64,17 +64,28 @@ class UdharService
         $sales = Sale::where('customer_id', $customerId)
             ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
             ->confirmed()
-            ->with('customerPayments')
+            ->with(['customerPayments', 'returns'])
             ->orderBy('sale_date', 'desc')
             ->get();
 
         $totalSales = $sales->sum('total_amount');
-        $totalPaid = $sales->sum('paid_amount') + $sales->sum(function ($sale) {
-            return $sale->customerPayments->sum('amount');
-        });
+        
+        // Calculate total paid: base paid amount + ONLY actual customer payments (EXCLUDING return-related transactions)
+        $totalPaid = 0;
+        foreach ($sales as $sale) {
+            // Direct query to get ONLY actual payments (exclude return_adjustment and return_credit)
+            $salePayments = \App\Models\CustomerPayment::where('sale_id', $sale->id)
+                ->whereNotIn('payment_method', ['return_adjustment', 'return_credit'])
+                ->sum('amount');
+            $totalPaid += ($sale->paid_amount + $salePayments);
+        }
+        
+        // Calculate total returns from all confirmed returns
         $totalReturns = $sales->sum(function ($sale) {
             return $sale->total_returned_amount;
         });
+        
+        // Formula: Outstanding = Total Sales - Total Paid - Total Returns
         $outstanding = $totalSales - $totalPaid - $totalReturns;
 
         return [
@@ -103,17 +114,26 @@ class UdharService
         $sales = Sale::where('family_id', $familyId)
             ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
             ->confirmed()
-            ->with(['customer', 'customerPayments'])
+            ->with(['customer', 'customerPayments', 'returns'])
             ->orderBy('sale_date', 'desc')
             ->get();
 
         $totalSales = $sales->sum('total_amount');
-        $totalPaid = $sales->sum('paid_amount') + $sales->sum(function ($sale) {
-            return $sale->customerPayments->sum('amount');
-        });
+        
+        // Calculate total paid: base paid amount + ONLY actual payments (EXCLUDING return-related transactions)
+        $totalPaid = 0;
+        foreach ($sales as $sale) {
+            $salePayments = \App\Models\CustomerPayment::where('sale_id', $sale->id)
+                ->whereNotIn('payment_method', ['return_adjustment', 'return_credit'])
+                ->sum('amount');
+            $totalPaid += ($sale->paid_amount + $salePayments);
+        }
+        
         $totalReturns = $sales->sum(function ($sale) {
             return $sale->total_returned_amount;
         });
+        
+        // Formula: Outstanding = Total Sales - Total Paid - Total Returns
         $outstanding = $totalSales - $totalPaid - $totalReturns;
 
         // Group by customer who created the sale
@@ -131,7 +151,11 @@ class UdharService
                 ];
             }
             
-            $salePaid = $sale->paid_amount + $sale->customerPayments->sum('amount');
+            // Use direct query to get ONLY actual payments (exclude return transactions)
+            $salePayments = \App\Models\CustomerPayment::where('sale_id', $sale->id)
+                ->whereNotIn('payment_method', ['return_adjustment', 'return_credit'])
+                ->sum('amount');
+            $salePaid = $sale->paid_amount + $salePayments;
             $saleReturns = $sale->total_returned_amount;
             $saleOutstanding = $sale->total_amount - $salePaid - $saleReturns;
             

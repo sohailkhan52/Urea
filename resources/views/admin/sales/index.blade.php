@@ -152,12 +152,14 @@
                             <td class="text-end">
                                 <small>
                                     @php
-                                        $udhar = $sale->udhar_amount ?? max(0, $sale->total_amount - $sale->paid_amount - $sale->total_returned_amount);
+                                        $udhar = $sale->current_remaining_udhar;
                                     @endphp
                                     @if($udhar > 0)
                                         <span class="text-danger fw-bold">{{ number_format($udhar, 2) }}</span>
+                                    @elseif($udhar < 0)
+                                        <span class="text-success fw-bold">{{ number_format($udhar, 2) }}</span>
                                     @else
-                                        <span class="text-success">0.00</span>
+                                        <span class="text-muted">0.00</span>
                                     @endif
                                 </small>
                             </td>
