@@ -197,8 +197,36 @@
         {{-- Sidebar Column --}}
         <div class="col-lg-12">
 
-
-            {{-- Financial Summary --}}
+        <div class="row">
+            <div class="col-md-6">    {{-- Top Customers Section --}}
+    <div class="row mb-4">
+        {{-- Top Customers --}}
+        <div class="col-lg-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-people me-2"></i> Top Customers</h5>
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    @forelse($topCustomers as $customer)
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 {{ !$loop->last ? 'border-bottom' : '' }}">
+                        <div>
+                            <small class="fw-bold d-block">{{ $customer->name }}</small>
+                            <small class="text-muted">{{ $customer->customer_type }}</small>
+                        </div>
+                        <div class="text-end">
+                            <small class="d-block fw-bold">{{ number_format($customer->total_sales, 0) }}</small>
+                            <small class="text-muted">Sales</small>
+                        </div>
+                    </div>
+                    @empty
+                    <p class="text-muted small mb-0">No customers yet</p>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div></div>
+            <div class="col-md-6">
+                            {{-- Financial Summary --}}
             <div class="card">
                 <div class="card-header bg-light">
                     <h5 class="mb-0"><i class="bi bi-calculator me-2"></i> Financial Summary</h5>
@@ -222,6 +250,10 @@
                     </div>
                 </div>
             </div>
+            </div>
+        </div>
+
+
         </div>
     </div>
 
@@ -309,33 +341,7 @@
         </div>
     </div>
 
-    {{-- Top Customers Section --}}
-    <div class="row mb-4">
-        {{-- Top Customers --}}
-        <div class="col-lg-12 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="bi bi-people me-2"></i> Top Customers</h5>
-                </div>
-                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                    @forelse($topCustomers as $customer)
-                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 {{ !$loop->last ? 'border-bottom' : '' }}">
-                        <div>
-                            <small class="fw-bold d-block">{{ $customer->name }}</small>
-                            <small class="text-muted">{{ $customer->customer_type }}</small>
-                        </div>
-                        <div class="text-end">
-                            <small class="d-block fw-bold">{{ number_format($customer->total_sales, 0) }}</small>
-                            <small class="text-muted">Sales</small>
-                        </div>
-                    </div>
-                    @empty
-                    <p class="text-muted small mb-0">No customers yet</p>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     {{-- Low Stock Alert --}}
     @if($lowStockItems->count() > 0)
@@ -351,7 +357,6 @@
                             <thead>
                                 <tr>
                                     <th>Product</th>
-                                    <th>Warehouse</th>
                                     <th>Current Stock</th>
                                     <th>Minimum Level</th>
                                 </tr>
@@ -363,7 +368,6 @@
                                         <strong>{{ $item->product->name }}</strong><br>
                                         <small class="text-muted">{{ $item->product->sku }}</small>
                                     </td>
-                                    <td>{{ $item->warehouse->name }}</td>
                                     <td><span class="badge bg-danger">{{ $item->quantity }}</span></td>
                                     <td>10</td> {{-- Fixed threshold since minimum_stock_level was removed --}}
                                 </tr>
@@ -394,7 +398,6 @@
                                 <tr>
                                     <th>Date</th>
                                     <th>Product</th>
-                                    <th>Warehouse</th>
                                     <th>Type</th>
                                     <th class="text-end">Qty In</th>
                                     <th class="text-end">Qty Out</th>
@@ -409,7 +412,6 @@
                                         <strong>{{ $movement->product->name }}</strong><br>
                                         <small class="text-muted">{{ $movement->product->sku }}</small>
                                     </td>
-                                    <td>{{ $movement->warehouse->name }}</td>
                                     <td><span class="badge bg-secondary">{{ str_replace('_', ' ', $movement->type) }}</span></td>
                                     <td class="text-end">{{ $movement->quantity_in > 0 ? '+' . number_format($movement->quantity_in, 2) : '—' }}</td>
                                     <td class="text-end">{{ $movement->quantity_out > 0 ? '-' . number_format($movement->quantity_out, 2) : '—' }}</td>

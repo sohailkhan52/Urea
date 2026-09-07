@@ -67,7 +67,6 @@
                             <th>PO Number</th>
                             <th>Date</th>
                             <th>Supplier</th>
-                            <th>Warehouse</th>
                             <th>Items</th>
                             <th class="text-end">Total Amount</th>
                             <th class="text-end">Paid</th>
@@ -96,12 +95,6 @@
                                 @if($purchase->supplier->company_name)
                                 <small class="text-muted">{{ $purchase->supplier->company_name }}</small>
                                 @endif
-                            </td>
-                            <td>
-                                <small>
-                                    <i class="bi bi-building me-1"></i>
-                                    {{ $purchase->warehouse->name }}
-                                </small>
                             </td>
                             <td>
                                 <span class="badge bg-info">{{ $purchase->items()->count() }} item(s)</span>

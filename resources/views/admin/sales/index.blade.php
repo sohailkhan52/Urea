@@ -84,9 +84,9 @@
                             <th>Date</th>
                             <th>Customer</th>
                             <th>Family</th>
-                            <th>Warehouse</th>
                             <th class="text-end">Total Amount</th>
                             <th class="text-end">Paid</th>
+                            <th class="text-end">Returns</th>
                             <th class="text-end">Udhar</th>
                             <th style="width: 100px;">Payment</th>
                             <th style="width: 100px;">Status</th>
@@ -128,12 +128,6 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
-                            <td>
-                                <small>
-                                    <i class="bi bi-building me-1"></i>
-                                    {{ $sale->warehouse->name }}
-                                </small>
-                            </td>
                             <td class="text-end">
                                 <strong>{{ number_format($sale->total_amount, 2) }}</strong>
                             </td>
@@ -148,8 +142,17 @@
                             </td>
                             <td class="text-end">
                                 <small>
+                                    @if($sale->total_returned_amount > 0)
+                                        <span class="text-info">{{ number_format($sale->total_returned_amount, 2) }}</span>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </small>
+                            </td>
+                            <td class="text-end">
+                                <small>
                                     @php
-                                        $udhar = $sale->udhar_amount ?? max(0, $sale->total_amount - $sale->paid_amount);
+                                        $udhar = $sale->udhar_amount ?? max(0, $sale->total_amount - $sale->paid_amount - $sale->total_returned_amount);
                                     @endphp
                                     @if($udhar > 0)
                                         <span class="text-danger fw-bold">{{ number_format($udhar, 2) }}</span>
