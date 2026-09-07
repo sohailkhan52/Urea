@@ -61,7 +61,7 @@ class StoreSaleWithItemsRequest extends FormRequest
             ],
             'paid_amount' => [
                 'sometimes',
-                'numeric',
+                'integer',
                 'min:0',
             ],
             'items' => [
@@ -112,7 +112,7 @@ class StoreSaleWithItemsRequest extends FormRequest
             'notes.max' => 'Notes cannot exceed 1000 characters.',
             'discount.numeric' => 'Discount must be a valid number.',
             'discount.min' => 'Discount cannot be negative.',
-            'paid_amount.numeric' => 'Paid amount must be a valid number.',
+            'paid_amount.integer' => 'Paid amount must be a whole number (no decimal values).',
             'paid_amount.min' => 'Paid amount cannot be negative.',
             'items.required' => 'At least one product item is required.',
             'items.json' => 'Invalid items data.',
@@ -143,7 +143,7 @@ class StoreSaleWithItemsRequest extends FormRequest
         if (blank($this->paid_amount)) {
             $this->merge(['paid_amount' => 0]);
         } else {
-            $this->merge(['paid_amount' => max(0, (float)$this->paid_amount)]);
+            $this->merge(['paid_amount' => max(0, (int)$this->paid_amount)]);
         }
 
         // Parse items if it's a string

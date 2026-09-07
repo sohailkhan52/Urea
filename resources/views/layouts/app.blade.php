@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Inventory System')</title>
+    <title>@yield('title', \App\Models\Company::first()?->name ?? 'Inventory Management')</title>
 
     <!-- Favicon -->
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    @php
+        $company = \App\Models\Company::first();
+        $favicon = $company && $company->logo ? asset('storage/' . $company->logo) : asset('favicon.ico');
+    @endphp
+    <link rel="icon" href="{{ $favicon }}" type="image/svg+xml">
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon" sizes="any">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <meta name="theme-color" content="#3a4452">
@@ -168,9 +172,18 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light sticky-top">
         <div class="container">
+            @php
+                $company = \App\Models\Company::first();
+                $companyName = $company?->name ?? 'Inventory Management';
+                $companyLogo = $company?->logo ? asset('storage/' . $company->logo) : null;
+            @endphp
             <a class="navbar-brand" href="{{ route('home') }}">
-                <i class="bi bi-box-seam"></i>
-                Inventory Management
+                @if($companyLogo)
+                    <img src="{{ $companyLogo }}" alt="Logo" style="max-height: 30px; width: auto; margin-right: 10px;">
+                @else
+                    <i class="bi bi-box-seam"></i>
+                @endif
+                {{ $companyName }}
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>

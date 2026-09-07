@@ -204,10 +204,10 @@ function updateItemRow(index) {
     
     if (checkbox.checked) {
         qtyInput.disabled = false;
-        // Only set to max if the current value is 0
-        if (qtyInput.value == 0 || qtyInput.value == '') {
-            qtyInput.value = qtyInput.max;
-        }
+        // Do NOT auto-fill with max value - keep it at 0, let user enter manually
+        // if (qtyInput.value == 0 || qtyInput.value == '') {
+        //     qtyInput.value = qtyInput.max;
+        // }
     } else {
         qtyInput.disabled = true;
         qtyInput.value = 0;

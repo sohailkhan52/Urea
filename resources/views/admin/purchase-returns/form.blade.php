@@ -93,22 +93,38 @@
                                         <span class="badge bg-info">{{ $returnedQuantities[$item->id] ?? 0 }}</span>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-warning">{{ $item->quantity - ($returnedQuantities[$item->id] ?? 0) }}</span>
+                                        @php
+                                            // Get current stock in warehouse for this product
+                                            $latestStock = \App\Models\StockMovement::where('product_id', $item->product_id)
+                                                ->where('warehouse_id', $purchase->warehouse_id)
+                                                ->latest('id')
+                                                ->first();
+                                            $currentStock = $latestStock?->balance_after ?? 0;
+                                        @endphp
+                                        <span class="badge bg-success">{{ (int) $currentStock }}</span>
                                     </td>
                                     <td class="text-end">Rs. {{ number_format($item->unit_price, 2) }}</td>
                                     <td>
+                                        @php
+                                            // Get current stock in warehouse for this product
+                                            $latestStock = \App\Models\StockMovement::where('product_id', $item->product_id)
+                                                ->where('warehouse_id', $purchase->warehouse_id)
+                                                ->latest('id')
+                                                ->first();
+                                            $currentStock = (int)($latestStock?->balance_after ?? 0);
+                                        @endphp
                                         <input type="number" 
                                                class="form-control form-control-sm return-qty" 
                                                name="items[{{ $index }}][quantity]"
                                                data-index="{{ $index }}"
                                                min="0" 
-                                               max="{{ $item->quantity - ($returnedQuantities[$item->id] ?? 0) }}" 
-                                               step="0.01"
+                                               max="{{ $currentStock }}" 
+                                               step="1"
                                                value="0"
                                                onchange="updateItemRow({{ $index }})">
                                     </td>
                                     <td class="text-end">
-                                        <strong class="return-amount" data-index="{{ $index }}">Rs. 0.00</strong>
+                                        <strong class="return-amount" data-index="{{ $index }}">Rs. 0</strong>
                                         <input type="hidden" name="items[{{ $index }}][purchase_item_id]" value="{{ $item->id }}">
                                         <input type="hidden" name="items[{{ $index }}][product_id]" value="{{ $item->product_id }}">
                                         <input type="hidden" name="items[{{ $index }}][unit_price]" value="{{ $item->unit_price }}">
@@ -123,7 +139,7 @@
                         <tfoot>
                             <tr class="table-light">
                                 <th colspan="6" class="text-end">Total Return Amount:</th>
-                                <th class="text-end"><strong>Rs. <span id="totalReturnAmount">0.00</span></strong></th>
+                                <th class="text-end"><strong>Rs. <span id="totalReturnAmount">0</span></strong></th>
                             </tr>
                         </tfoot>
                     </table>
@@ -199,9 +215,10 @@ function updateItemRow(index) {
     const qtyInput = document.querySelector(`.return-qty[data-index="${index}"]`);
     const amountSpan = document.querySelector(`.return-amount[data-index="${index}"]`);
     
-    if (checkbox.checked && qtyInput.value == 0) {
-        qtyInput.value = qtyInput.max;
-    }
+    // Do NOT auto-fill the quantity - let user enter it manually
+    // if (checkbox.checked && qtyInput.value == 0) {
+    //     qtyInput.value = qtyInput.max;
+    // }
     
     updateAmount(index);
     updateTotal();
@@ -212,24 +229,24 @@ function updateAmount(index) {
     const priceInput = document.querySelector(`input[name="items[${index}][unit_price]"]`);
     const amountSpan = document.querySelector(`.return-amount[data-index="${index}"]`);
     
-    const qty = parseFloat(qtyInput.value) || 0;
+    const qty = parseInt(qtyInput.value) || 0;
     const price = parseFloat(priceInput.value) || 0;
-    const amount = qty * price;
+    const amount = Math.round(qty * price);
     
-    amountSpan.textContent = 'Rs. ' + amount.toFixed(2);
+    amountSpan.textContent = 'Rs. ' + amount;
 }
 
 function updateTotal() {
     let total = 0;
     document.querySelectorAll('.return-qty').forEach(input => {
-        const qty = parseFloat(input.value) || 0;
+        const qty = parseInt(input.value) || 0;
         const index = input.dataset.index;
         const priceInput = document.querySelector(`input[name="items[${index}][unit_price]"]`);
         const price = parseFloat(priceInput.value) || 0;
-        total += qty * price;
+        total += Math.round(qty * price);
     });
     
-    document.getElementById('totalReturnAmount').textContent = total.toFixed(2);
+    document.getElementById('totalReturnAmount').textContent = total;
 }
 
 // Validate form

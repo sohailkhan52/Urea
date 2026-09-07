@@ -8,10 +8,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'Dashboard') - DeraNexa</title>
+    <title>@yield('title', 'Dashboard') - {{ \App\Models\Company::first()?->name ?? 'DeraNexa' }}</title>
 
     <!-- Favicon -->
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    @php
+        $company = \App\Models\Company::first();
+        $favicon = $company && $company->logo ? asset('storage/' . $company->logo) : asset('favicon.ico');
+    @endphp
+    <link rel="icon" href="{{ $favicon }}" type="image/svg+xml">
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon" sizes="any">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <meta name="theme-color" content="#3a4452">
@@ -723,17 +727,16 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             @php
-                $companyShortName = 'DeraNexa';
-                $companyFullName = 'DeraNexa';
-                $companyLogo = null;
+                $company = \App\Models\Company::first();
+                $companyName = $company?->name ?? 'DeraNex';
+                $companyLogo = $company?->logo ? asset('storage/' . $company->logo) : null;
             @endphp
             @if($companyLogo)
                 <img src="{{ $companyLogo }}" alt="Logo" style="max-height: 40px; width: auto; margin-bottom: 10px;">
             @else
                 <i class="bi bi-box-seam" style="font-size: 2rem; margin-bottom: 10px;"></i>
             @endif
-            <h4>{{ $companyShortName }}</h4>
-            <small>{{ $companyFullName }}</small>
+            <h4>{{ $companyName }}</h4>
         </div>
 
         <nav class="sidebar-nav">

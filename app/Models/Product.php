@@ -28,6 +28,9 @@ class Product extends Model
     public const UNIT_KG = 'KG';
     public const UNIT_MG = 'MG';
     public const UNIT_PIECE = 'Piece';
+    public const UNIT_GRAM = 'Gram';
+    public const UNIT_DOZEN = 'Dozen';
+    public const UNIT_LITRE = 'Litre';
 
     /**
      * The attributes that are mass assignable - modal form fields + system fields
@@ -73,7 +76,10 @@ class Product extends Model
         return [
             self::UNIT_KG => 'Kilogram (KG)',
             self::UNIT_MG => 'Milligram (MG)',
+            self::UNIT_GRAM => 'Gram (G)',
             self::UNIT_PIECE => 'Piece',
+            self::UNIT_DOZEN => 'Dozen',
+            self::UNIT_LITRE => 'Litre (L)',
         ];
     }
 

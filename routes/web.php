@@ -86,6 +86,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/dashboard/update-settings', [DashboardController::class, 'updateSettings'])->name('dashboard.update-settings');
 
     // Setup helper route (creates missing tables)
     Route::get('/setup/create-tables', [\App\Http\Controllers\Admin\SetupController::class, 'createMissingTables'])->name('setup.createTables');

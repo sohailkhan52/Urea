@@ -155,9 +155,9 @@
                                         $udhar = $sale->current_remaining_udhar;
                                     @endphp
                                     @if($udhar > 0)
-                                        <span class="text-danger fw-bold">{{ number_format($udhar, 2) }}</span>
+                                        <span class="text-danger fw-bold">{{ number_format($udhar, 0) }}</span>
                                     @elseif($udhar < 0)
-                                        <span class="text-success fw-bold">{{ number_format($udhar, 2) }}</span>
+                                        <span class="text-success fw-bold">{{ number_format($udhar, 0) }}</span>
                                     @else
                                         <span class="text-muted">0.00</span>
                                     @endif

@@ -370,7 +370,7 @@
 
                             <div class="col-6 text-end">
 
-                                <small><strong>Rs. <span id="subtotal">0.00</span></strong></small>
+                                <small><strong>Rs. <span id="subtotal">0</span></strong></small>
 
                             </div>
 
@@ -398,7 +398,7 @@
 
                                 <div class="col-6"><small>Subtotal:</small></div>
 
-                                <div class="col-6 text-end"><small>Rs. <span id="summary_subtotal">0.00</span></small></div>
+                                <div class="col-6 text-end"><small>Rs. <span id="summary_subtotal">0</span></small></div>
 
                             </div>
 
@@ -406,7 +406,7 @@
 
                                 <div class="col-6"><small>Discount:</small></div>
 
-                                <div class="col-6 text-end"><small>-Rs. <span id="summary_discount">0.00</span></small></div>
+                                <div class="col-6 text-end"><small>-Rs. <span id="summary_discount">0</span></small></div>
 
                             </div>
 
@@ -426,7 +426,7 @@
 
                             <div class="col-6 text-end">
 
-                                <strong>Rs. <span id="total">0.00</span></strong>
+                                <strong>Rs. <span id="total">0</span></strong>
 
                             </div>
 
@@ -440,9 +440,9 @@
 
                             <label class="form-label small mb-1">Paid Amount</label>
 
-                            <input type="number" id="paid_amount" name="paid_amount" class="form-control form-control-sm" 
+                            <input type="text" id="paid_amount" name="paid_amount" class="form-control form-control-sm integer-paid-amount" 
 
-                                   placeholder="0" step="0.01" min="0" onchange="calculateRemaining()">
+                                   placeholder="0" onchange="calculateRemaining()" onwheel="event.preventDefault()">
 
                         </div>
 
@@ -454,7 +454,7 @@
 
                             <input type="text" id="remaining_udhar" class="form-control form-control-sm text-end" 
 
-                                   value="0.00" readonly style="background-color: #f8f9fa; font-weight: bold;">
+                                   value="0" readonly style="background-color: #f8f9fa; font-weight: bold;">
 
                         </div>
 
@@ -561,6 +561,12 @@ let allCustomers = [];
 document.addEventListener('DOMContentLoaded', function() {
 
     loadAllCustomers();
+    
+    // Initialize paid amount handler for integer-only input
+    const paidAmountInput = document.getElementById('paid_amount');
+    if (paidAmountInput) {
+        integerPaidAmountHandler(paidAmountInput);
+    }
 
 });
 
@@ -835,7 +841,7 @@ function renderSaleItems() {
 
             </td>
 
-            <td class="text-end"><strong>Rs. ${(item.quantity * item.price).toLocaleString('en-PK', {minimumFractionDigits: 2})}</strong></td>
+            <td class="text-end"><strong>Rs. ${Math.round(item.quantity * item.price).toLocaleString('en-PK')}</strong></td>
 
             <td class="text-center">
 
@@ -897,18 +903,55 @@ function calculateTotal() {
 
     
 
-    document.getElementById('subtotal').textContent = subtotal.toLocaleString('en-PK', {minimumFractionDigits: 2});
+    document.getElementById('subtotal').textContent = Math.round(subtotal).toLocaleString('en-PK');
 
-    document.getElementById('summary_subtotal').textContent = subtotal.toLocaleString('en-PK', {minimumFractionDigits: 2});
+    document.getElementById('summary_subtotal').textContent = Math.round(subtotal).toLocaleString('en-PK');
 
-    document.getElementById('summary_discount').textContent = discount.toLocaleString('en-PK', {minimumFractionDigits: 2});
+    document.getElementById('summary_discount').textContent = Math.round(discount).toLocaleString('en-PK');
 
-    document.getElementById('total').textContent = total.toLocaleString('en-PK', {minimumFractionDigits: 2});
+    document.getElementById('total').textContent = Math.round(total).toLocaleString('en-PK');
 
     
 
     calculateRemaining();
 
+}
+
+// Integer Paid Amount Handler - Prevents decimals, strips non-numeric, prevents mouse wheel
+function integerPaidAmountHandler(inputElement) {
+    // Prevent mouse wheel scrolling
+    inputElement.addEventListener('wheel', function(e) {
+        e.preventDefault();
+    });
+    
+    // On keypress, prevent decimal point from being entered
+    inputElement.addEventListener('keypress', function(e) {
+        // Allow only digits and minus sign
+        if (!/[\d-]/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
+    
+    // On input, allow only digits and minus sign
+    inputElement.addEventListener('input', function(e) {
+        const cursorPos = this.selectionStart;
+        this.value = this.value.replace(/[^\d-]/g, '');
+        // Restore cursor position
+        this.setSelectionRange(cursorPos, cursorPos);
+    });
+    
+    // On blur, strip any decimal values and ensure integer
+    inputElement.addEventListener('blur', function(e) {
+        const value = this.value.replace(/[^\d-]/g, '');
+        this.value = value || '0';
+    });
+    
+    // Prevent keyboard-based increment/decrement (arrow keys in number input)
+    inputElement.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
+        }
+    });
 }
 
 // Calculate remaining
@@ -917,17 +960,17 @@ function calculateRemaining() {
 
     const subtotal = Object.values(saleItems).reduce((sum, item) => sum + (item.quantity * item.price), 0);
 
-    const discount = parseFloat(document.getElementById('discount').value) || 0;
+    const discount = parseInt(document.getElementById('discount').value) || 0;
 
     const total = subtotal - discount;
 
-    const paidAmount = parseFloat(document.getElementById('paid_amount').value) || 0;
+    const paidAmount = parseInt(document.getElementById('paid_amount').value) || 0;
 
     const remaining = total - paidAmount;
 
     
 
-    document.getElementById('remaining_udhar').value = remaining.toLocaleString('en-PK', {minimumFractionDigits: 2});
+    document.getElementById('remaining_udhar').value = remaining;
 
     
 

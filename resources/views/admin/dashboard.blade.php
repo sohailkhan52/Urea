@@ -85,9 +85,9 @@
                             <div class="text-muted small mb-2">Udhar (Credit)</div>
                             <div class="h4 mb-0 fw-bold text-warning">
                                 @if(isset($totalUdhar))
-                                    PKR {{ number_format($totalUdhar, 2) }}
+                                    PKR {{ number_format($totalUdhar, 0) }}
                                 @else
-                                    PKR 0.00
+                                    PKR 0
                                 @endif
                             </div>
                         </div>
@@ -115,9 +115,9 @@
                             <div class="text-muted small mb-2">Payables</div>
                             <div class="h4 mb-0 fw-bold text-danger">
                                 @if(isset($totalPayables))
-                                    PKR {{ number_format($totalPayables, 2) }}
+                                    PKR {{ number_format($totalPayables, 0) }}
                                 @else
-                                    PKR 0.00
+                                    PKR 0
                                 @endif
                             </div>
                         </div>

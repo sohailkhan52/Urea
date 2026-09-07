@@ -43,9 +43,9 @@
                             <label for="unit" class="form-label">Unit <span class="text-danger">*</span></label>
                             <select class="form-select @error('unit') is-invalid @enderror" id="unit" name="unit" required>
                                 <option value="">-- Select Unit --</option>
-                                <option value="KG" {{ old('unit', $product->unit) === 'KG' ? 'selected' : '' }}>Kilogram (KG)</option>
-                                <option value="MG" {{ old('unit', $product->unit) === 'MG' ? 'selected' : '' }}>Milligram (MG)</option>
-                                <option value="Piece" {{ old('unit', $product->unit) === 'Piece' ? 'selected' : '' }}>Piece</option>
+                                @foreach(\App\Models\Product::getUnits() as $value => $label)
+                                    <option value="{{ $value }}" {{ old('unit', $product->unit) === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
                             </select>
                             @error('unit')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>

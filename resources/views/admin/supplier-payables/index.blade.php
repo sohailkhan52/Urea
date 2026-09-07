@@ -187,8 +187,8 @@
 function setSupplierPayment(supplierId, supplierName, outstanding) {
     document.getElementById('supplierId').value = supplierId;
     document.getElementById('supplierName').value = supplierName;
-    document.getElementById('outstandingAmount').value = 'Rs. ' + outstanding.toLocaleString('en-PK', {minimumFractionDigits: 2});
-    document.getElementById('maxAmount').textContent = 'Rs. ' + outstanding.toLocaleString('en-PK', {minimumFractionDigits: 2});
+    document.getElementById('outstandingAmount').value = 'Rs. ' + Math.round(outstanding).toLocaleString('en-PK');
+    document.getElementById('maxAmount').textContent = 'Rs. ' + Math.round(outstanding).toLocaleString('en-PK');
     document.getElementById('paymentAmount').max = outstanding;
     document.getElementById('paymentAmount').value = '';
 }

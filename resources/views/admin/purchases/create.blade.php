@@ -180,7 +180,7 @@
                         <div class="row mb-3">
                             <div class="col-6">
                                 <label class="form-label text-muted small">Subtotal</label>
-                                <div class="h5 mb-0">Rs. <span id="subtotal">0.00</span></div>
+                                <div class="h5 mb-0">Rs. <span id="subtotal">0</span></div>
                             </div>
                             <div class="col-6 text-end">
                                 <label class="form-label text-muted small">Items</label>
@@ -245,15 +245,15 @@
                         <div class="mb-3 p-3 bg-light rounded">
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Subtotal:</span>
-                                <strong>Rs. <span id="display_subtotal">0.00</span></strong>
+                                <strong>Rs. <span id="display_subtotal">0</span></strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">- Discount:</span>
-                                <strong class="text-danger">Rs. <span id="display_discount">0.00</span></strong>
+                                <strong class="text-danger">Rs. <span id="display_discount">0</span></strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">+ Transport:</span>
-                                <strong>Rs. <span id="display_transport">0.00</span></strong>
+                                <strong>Rs. <span id="display_transport">0</span></strong>
                             </div>
                             <div class="d-flex justify-content-between mb-3 pb-2 border-bottom">
                                 <span class="text-muted">+ Other:</span>
@@ -261,7 +261,7 @@
                             </div>
                             <div class="d-flex justify-content-between">
                                 <strong>Total Payment:</strong>
-                                <strong class="h5 text-success">Rs. <span id="total_amount">0.00</span></strong>
+                                <strong class="h5 text-success">Rs. <span id="total_amount">0</span></strong>
                             </div>
                         </div>
 
@@ -285,7 +285,7 @@
                         <div class="mb-3 p-3 bg-warning bg-opacity-10 rounded">
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Remaining Payable:</span>
-                                <strong class="text-warning">Rs. <span id="remaining_payable">0.00</span></strong>
+                                <strong class="text-warning">Rs. <span id="remaining_payable">0</span></strong>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <span>Payment Status:</span>
@@ -390,9 +390,9 @@
                                 <label for="product_unit" class="form-label">Unit <span class="text-danger">*</span></label>
                                 <select class="form-select" id="product_unit" name="unit" required>
                                     <option value="">-- Select Unit --</option>
-                                    <option value="KG">Kilogram (KG)</option>
-                                    <option value="MG">Milligram (MG)</option>
-                                    <option value="Piece">Piece</option>
+                                    @foreach(\App\Models\Product::getUnits() as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>

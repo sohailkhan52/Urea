@@ -295,16 +295,16 @@
                         <label for="paid_amount_input" class="form-label"><strong>Amount Paid</strong> <span class="text-muted">(Optional)</span></label>
                         <div class="input-group input-group-lg">
                             <span class="input-group-text"><strong>Rs.</strong></span>
-                            <input type="number" 
-                                   class="form-control form-control-lg" 
+                            <input type="text" 
+                                   class="form-control form-control-lg integer-paid-amount" 
                                    id="paid_amount_input" 
                                    name="paid_amount"
-                                   step="0.01" 
                                    min="0" 
                                    value="0" 
-                                   placeholder="0.00"
+                                   placeholder="0"
                                    onkeyup="calculatePaymentDue()"
-                                   oninput="calculatePaymentDue()">
+                                   oninput="calculatePaymentDue()"
+                                   onwheel="event.preventDefault()">
                         </div>
                         <small class="text-muted d-block mt-2">Enter amount received from customer (leave 0 if to be collected later)</small>
                     </div>
@@ -875,8 +875,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============ Payment Calculation ============
 function calculatePaymentDue() {
     const paidAmountInput = document.getElementById('paid_amount_input');
-    const paidAmount = parseFloat(paidAmountInput.value) || 0;
-    const totalAmount = parseFloat(document.getElementById('confirm-total-amount').textContent.replace('Rs. ', '')) || 0;
+    const paidAmount = parseInt(paidAmountInput.value) || 0;
+    const totalAmount = parseInt(document.getElementById('confirm-total-amount').textContent.replace('Rs. ', '').replace(/,/g, '')) || 0;
     const dueAmount = totalAmount - paidAmount;
     
     // Validate paid amount does not exceed total
@@ -887,8 +887,8 @@ function calculatePaymentDue() {
         return;
     }
     
-    // Update due amount display
-    document.getElementById('due_amount_display').textContent = 'Rs. ' + dueAmount.toFixed(2);
+    // Update due amount display (as integer, no decimals)
+    document.getElementById('due_amount_display').textContent = 'Rs. ' + dueAmount;
     
     // Update payment status
     let statusText = 'Unpaid';
@@ -919,14 +919,61 @@ function calculatePaymentDue() {
     }
 }
 
+// Integer Paid Amount Handler - Prevents decimals, strips non-numeric, prevents mouse wheel
+function integerPaidAmountHandler(inputElement) {
+    // Prevent mouse wheel scrolling
+    inputElement.addEventListener('wheel', function(e) {
+        e.preventDefault();
+    });
+    
+    // On keypress, prevent decimal point from being entered
+    inputElement.addEventListener('keypress', function(e) {
+        // Allow only digits and minus sign
+        if (!/[\d-]/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
+    
+    // On input, allow only digits and minus sign
+    inputElement.addEventListener('input', function(e) {
+        const cursorPos = this.selectionStart;
+        this.value = this.value.replace(/[^\d-]/g, '');
+        // Restore cursor position
+        this.setSelectionRange(cursorPos, cursorPos);
+    });
+    
+    // On blur, strip any decimal values and ensure integer
+    inputElement.addEventListener('blur', function(e) {
+        const value = this.value.replace(/[^\d-]/g, '');
+        this.value = value || '0';
+    });
+    
+    // Prevent keyboard-based increment/decrement (arrow keys in number input)
+    inputElement.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
+        }
+    });
+}
+
 // Initialize when confirm modal opens
 document.addEventListener('show.bs.modal', function(event) {
     if (event.target.id === 'confirmWithPaymentModal') {
-        document.getElementById('paid_amount_input').value = '0';
+        const paidAmountInput = document.getElementById('paid_amount_input');
+        paidAmountInput.value = '0';
+        integerPaidAmountHandler(paidAmountInput);
         document.getElementById('payment_method').value = 'cash';
         document.getElementById('reference_number').value = '';
         document.getElementById('payment_notes').value = '';
         calculatePaymentDue();
+    }
+});
+
+// Initialize paid amount handler when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const paidAmountInput = document.getElementById('paid_amount_input');
+    if (paidAmountInput) {
+        integerPaidAmountHandler(paidAmountInput);
     }
 });
 </script>

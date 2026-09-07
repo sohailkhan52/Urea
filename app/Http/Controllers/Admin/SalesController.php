@@ -357,7 +357,7 @@ class SalesController extends Controller
         }
 
         $request->validate([
-            'paid_amount' => 'nullable|numeric|min:0|max:' . $sale->total_amount,
+            'paid_amount' => 'nullable|integer|min:0|max:' . $sale->total_amount,
             'payment_method' => 'nullable|in:' . implode(',', array_keys(\App\Models\Payment::$methods)),
             'reference_number' => 'nullable|string|max:100',
             'payment_notes' => 'nullable|string|max:500',
@@ -368,7 +368,7 @@ class SalesController extends Controller
         }
 
         try {
-            $paidAmount = (float) ($request->paid_amount ?? 0);
+            $paidAmount = (int) ($request->paid_amount ?? 0);
             
             // Step 1: Confirm sale (creates stock movements, sets payment status to unpaid)
             $this->salesService->confirmSale($sale);

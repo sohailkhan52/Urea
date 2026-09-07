@@ -197,151 +197,6 @@
         {{-- Sidebar Column --}}
         <div class="col-lg-12">
 
-        <div class="row">
-            <div class="col-md-6">    {{-- Top Customers Section --}}
-    <div class="row mb-4">
-        {{-- Top Customers --}}
-        <div class="col-lg-12 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="bi bi-people me-2"></i> Top Customers</h5>
-                </div>
-                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                    @forelse($topCustomers as $customer)
-                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3 {{ !$loop->last ? 'border-bottom' : '' }}">
-                        <div>
-                            <small class="fw-bold d-block">{{ $customer->name }}</small>
-                            <small class="text-muted">{{ $customer->customer_type }}</small>
-                        </div>
-                        <div class="text-end">
-                            <small class="d-block fw-bold">{{ number_format($customer->total_sales, 0) }}</small>
-                            <small class="text-muted">Sales</small>
-                        </div>
-                    </div>
-                    @empty
-                    <p class="text-muted small mb-0">No customers yet</p>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-    </div></div>
-            <div class="col-md-6">
-                            {{-- Financial Summary --}}
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="bi bi-calculator me-2"></i> Financial Summary</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted d-block">Outstanding Receivables</small>
-                        <h6 class="mb-0 text-danger">{{ number_format($financialSummary['total_receivables'], 2) }}</h6>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted d-block">Outstanding Payables</small>
-                        <h6 class="mb-0 text-warning">{{ number_format($financialSummary['total_payables'], 2) }}</h6>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted d-block">Inventory Value</small>
-                        <h6 class="mb-0 text-success">{{ number_format($financialSummary['inventory_value'], 2) }}</h6>
-                    </div>
-                    <div>
-                        <small class="text-muted d-block">Unpaid Invoices</small>
-                        <h6 class="mb-0">{{ $financialSummary['total_unpaid_sales'] }}</h6>
-                    </div>
-                </div>
-            </div>
-            </div>
-        </div>
-
-
-        </div>
-    </div>
-
-    {{-- Detailed Statistics Row --}}
-    <div class="row mb-4">
-        {{-- Sales Summary --}}
-        <div class="col-lg-4 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i> Sales Summary</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted d-block">Total Sales</small>
-                        <h6 class="mb-0">{{ number_format($salesSummary['total_sales'], 2) }}</h6>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted d-block">Total Paid</small>
-                        <h6 class="mb-0 text-success">{{ number_format($salesSummary['total_paid'], 2) }}</h6>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted d-block">Outstanding</small>
-                        <h6 class="mb-0 text-danger">{{ number_format($salesSummary['total_outstanding'], 2) }}</h6>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted d-block">Total Invoices</small>
-                        <h6 class="mb-0">{{ $salesSummary['sale_count'] }}</h6>
-                    </div>
-                    <div>
-                        <small class="text-muted d-block">Unique Customers</small>
-                        <h6 class="mb-0">{{ $salesSummary['unique_customers'] }}</h6>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Purchase Summary --}}
-        <div class="col-lg-4 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="bi bi-graph-down me-2"></i> Purchase Summary</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted d-block">Total Purchases</small>
-                        <h6 class="mb-0">{{ number_format($purchaseSummary['total_purchases'], 2) }}</h6>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted d-block">Total Paid</small>
-                        <h6 class="mb-0 text-success">{{ number_format($purchaseSummary['total_paid'], 2) }}</h6>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted d-block">Outstanding</small>
-                        <h6 class="mb-0 text-danger">{{ number_format($purchaseSummary['total_outstanding'], 2) }}</h6>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted d-block">Total Purchase Orders</small>
-                        <h6 class="mb-0">{{ $purchaseSummary['purchase_count'] }}</h6>
-                    </div>
-                    <div>
-                        <small class="text-muted d-block">Active Suppliers</small>
-                        <h6 class="mb-0">{{ $purchaseSummary['unique_suppliers'] }}</h6>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Top Products --}}
-        <div class="col-lg-4 mb-4">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="bi bi-star me-2"></i> Top 5 Products</h5>
-                </div>
-                <div class="card-body">
-                    @forelse($topProducts->take(5) as $product)
-                    <div class="mb-3 pb-3 {{ !$loop->last ? 'border-bottom' : '' }}">
-                        <small class="text-muted d-block">{{ $product->name }}</small>
-                        <small class="text-muted">{{ number_format($product->total_revenue, 2) }} PKR</small>
-                    </div>
-                    @empty
-                    <p class="text-muted small mb-0">No sales yet</p>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-    </div>
-
-
 
     {{-- Low Stock Alert --}}
     @if($lowStockItems->count() > 0)
@@ -381,59 +236,163 @@
     </div>
     @endif
 
-    {{-- Recent Stock Movements --}}
-    <div class="row">
+    {{-- Project Settings --}}
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i> Recent Stock Movements</h5>
-                        {{-- Report routes not yet implemented --}}
-                    </div>
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-gear me-2"></i> Project Settings</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Product</th>
-                                    <th>Type</th>
-                                    <th class="text-end">Qty In</th>
-                                    <th class="text-end">Qty Out</th>
-                                    <th>By</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($recentMovements as $movement)
-                                <tr>
-                                    <td><small>{{ $movement->created_at->format('M d, Y') }}</small></td>
-                                    <td>
-                                        <strong>{{ $movement->product->name }}</strong><br>
-                                        <small class="text-muted">{{ $movement->product->sku }}</small>
-                                    </td>
-                                    <td><span class="badge bg-secondary">{{ str_replace('_', ' ', $movement->type) }}</span></td>
-                                    <td class="text-end">{{ $movement->quantity_in > 0 ? '+' . number_format($movement->quantity_in, 2) : '—' }}</td>
-                                    <td class="text-end">{{ $movement->quantity_out > 0 ? '-' . number_format($movement->quantity_out, 2) : '—' }}</td>
-                                    <td><small>{{ $movement->creator->name }}</small></td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="7" class="text-center py-4">
-                                        <span class="text-muted">No stock movements yet</span>
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                    <form id="projectSettingsForm" method="POST" action="{{ route('admin.dashboard.update-settings') }}" enctype="multipart/form-data">
+                        @csrf
+                        
+                        <div class="row">
+                            {{-- Project Name Input --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="project_name" class="form-label">
+                                    <i class="bi bi-text-left me-2"></i> Project Name
+                                </label>
+                                <input type="text" 
+                                       class="form-control @error('project_name') is-invalid @enderror" 
+                                       id="project_name" 
+                                       name="project_name" 
+                                       value="{{ $company->name ?? config('app.name') }}"
+                                       placeholder="Enter project name"
+                                       required>
+                                @error('project_name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Logo Upload --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="logo" class="form-label">
+                                    <i class="bi bi-image me-2"></i> Logo & Favicon
+                                </label>
+                                <input type="file" 
+                                       class="form-control @error('logo') is-invalid @enderror" 
+                                       id="logo" 
+                                       name="logo" 
+                                       accept="image/*"
+                                       onchange="previewLogo(event)">
+                                <small class="text-muted d-block mt-2">
+                                    Supported formats: JPG, PNG, GIF, SVG. Max size: 2MB
+                                </small>
+                                @error('logo')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        {{-- Logo Preview --}}
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label">Current Logo Preview</label>
+                                <div class="d-flex gap-3 align-items-center">
+                                    <div>
+                                        <small class="text-muted d-block mb-2">Logo</small>
+                                        <div style="width: 120px; height: 120px; border: 1px solid #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; overflow: hidden;">
+                                            @if($company && $company->logo)
+                                                <img id="logoPreview" src="{{ asset('storage/' . $company->logo) }}" alt="Logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                            @else
+                                                <img id="logoPreview" src="https://ui-avatars.com/api/?name={{ urlencode(config('app.name')) }}&color=fff&background=6c757d&size=200" alt="Default Logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <small class="text-muted d-block mb-2">Favicon Preview</small>
+                                        <div style="width: 120px; height: 120px; border: 1px solid #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; padding: 20px;">
+                                            <img id="faviconPreview" src="{{ asset('favicon.ico') }}" alt="Favicon" style="width: 32px; height: 32px;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-info">
+                                <i class="bi bi-save me-2"></i> Save Settings
+                            </button>
+                            <button type="reset" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise me-2"></i> Reset
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+
+
 </div>
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+function previewLogo(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('logoPreview').src = e.target.result;
+            document.getElementById('faviconPreview').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Handle form submission
+document.getElementById('projectSettingsForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Saving...';
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': formData.get('_token')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+            alert.innerHTML = `
+                <i class="bi bi-check-circle me-2"></i> ${data.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.card-body').prepend(alert);
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => alert.remove(), 3000);
+            
+            // Update window title if project name changed
+            if (data.new_name) {
+                document.title = data.new_name + ' - Dashboard';
+            }
+        } else {
+            alert('Error: ' + (data.message || 'Failed to save settings'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving settings. Please try again.');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+});
+</script>
 @endpush
 @endsection
