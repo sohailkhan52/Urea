@@ -93,7 +93,6 @@
                         <tr>
                             <th>PO Number</th>
                             <th>Date</th>
-                            <th>Warehouse</th>
                             <th class="text-end">Total</th>
                             <th class="text-end">Paid</th>
                             <th class="text-end">Returns</th>
@@ -110,7 +109,6 @@
                                 </a>
                             </td>
                             <td>{{ $purchase->purchase_date->format('d M Y') }}</td>
-                            <td>{{ $purchase->warehouse->name ?? '-' }}</td>
                             <td class="text-end">Rs. {{ number_format($purchase->total_amount, 2) }}</td>
                             <td class="text-end">Rs. {{ number_format($purchase->paid_amount, 2) }}</td>
                             <td class="text-end">

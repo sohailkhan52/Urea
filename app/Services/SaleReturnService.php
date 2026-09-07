@@ -333,6 +333,8 @@ class SaleReturnService
             CustomerPayment::create([
                 'customer_id' => $sale->customer_id,
                 'sale_id' => $sale->id,
+                'account_type' => $sale->udhar_account_type,
+                'account_family_id' => $sale->family_id,
                 'amount' => $paymentAmount,
                 'payment_date' => $return->return_date,
                 'payment_method' => 'return_adjustment',
@@ -356,6 +358,8 @@ class SaleReturnService
                 CustomerPayment::create([
                     'customer_id' => $sale->customer_id,
                     'sale_id' => $sale->id, // Keep reference to original sale
+                    'account_type' => $sale->udhar_account_type,
+                    'account_family_id' => $sale->family_id,
                     'amount' => -$creditAmount, // Negative = customer has credit
                     'payment_date' => $return->return_date,
                     'payment_method' => 'return_credit',
@@ -375,6 +379,8 @@ class SaleReturnService
             CustomerPayment::create([
                 'customer_id' => $sale->customer_id,
                 'sale_id' => $sale->id, // Keep reference to original sale
+                'account_type' => $sale->udhar_account_type,
+                'account_family_id' => $sale->family_id,
                 'amount' => -$returnAmount, // Negative = customer has credit
                 'payment_date' => $return->return_date,
                 'payment_method' => 'return_credit',
@@ -392,7 +398,7 @@ class SaleReturnService
 
         // Record return in UdharHistory
         $previousUdhar = $sale->current_remaining_udhar;
-        $currentUdhar = max(0, $previousUdhar - $returnAmount);
+        $currentUdhar = $previousUdhar - $returnAmount;
         
         $this->udharHistoryService->recordReturnCreated(
             $sale,

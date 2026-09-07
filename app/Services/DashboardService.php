@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Models\Customer;
 use App\Models\CustomerLedger;
+use App\Models\Family;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Purchase;
+use App\Models\PurchaseReturn;
 use App\Models\Sale;
 use App\Models\StockMovement;
 use App\Models\WarehouseInventory;
@@ -424,9 +426,38 @@ class DashboardService
      */
     public function getTotalUdharAmount(): float
     {
-        return (float) DB::table('sales')
-            ->where('status', Sale::STATUS_CONFIRMED)
-            ->sum('due_amount');
+        // Get individual customer udhar
+        $udharService = app(UdharService::class);
+        
+        $individualSummary = collect();
+        $customers = Customer::whereHas('sales', function ($q) {
+            $q->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
+              ->where('status', Sale::STATUS_CONFIRMED);
+        })->get();
+        
+        foreach ($customers as $customer) {
+            $balance = $udharService->getCustomerIndividualBalance($customer->id);
+            $individualSummary->push($balance);
+        }
+        
+        $individualUdhar = $individualSummary->sum('outstanding');
+        
+        // Get family udhar
+        $familySummary = collect();
+        $families = Family::whereHas('sales', function ($q) {
+            $q->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+              ->where('status', Sale::STATUS_CONFIRMED);
+        })->get();
+        
+        foreach ($families as $family) {
+            $balance = $udharService->getFamilyBalance($family->id);
+            $familySummary->push($balance);
+        }
+        
+        $familyUdhar = $familySummary->sum('outstanding');
+        
+        // Total udhar = individual + family
+        return (float) ($individualUdhar + $familyUdhar);
     }
 
     /**
@@ -434,9 +465,17 @@ class DashboardService
      */
     public function getTotalPayablesAmount(): float
     {
-        return (float) DB::table('purchases')
-            ->where('status', Purchase::STATUS_CONFIRMED)
-            ->sum(DB::raw('total_amount - paid_amount'));
+        // Get all confirmed purchases
+        $purchases = Purchase::where('status', Purchase::STATUS_CONFIRMED)->get();
+        
+        $totalPurchases = $purchases->sum('total_amount');
+        $totalPaid = $purchases->sum('paid_amount');
+        
+        // Get all confirmed purchase returns
+        $totalReturns = \App\Models\PurchaseReturn::where('status', \App\Models\PurchaseReturn::STATUS_CONFIRMED)->sum('total_amount');
+        
+        // Outstanding Payable = Total Purchases - Paid - Returns
+        return (float) ($totalPurchases - $totalPaid - $totalReturns);
     }
 }
 

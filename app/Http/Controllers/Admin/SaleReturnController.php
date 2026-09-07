@@ -217,7 +217,8 @@ class SaleReturnController extends Controller
 
             // Calculate payment info
             $totalPaid = $sale->paid_amount + $sale->total_additional_payments;
-            $outstanding = max(0, $sale->total_amount - $totalPaid);
+            $totalReturned = $sale->total_returned_amount;
+            $outstanding = $sale->total_amount - $totalPaid - $totalReturned;
 
             $paymentStatus = 'Paid';
             if ($totalPaid == 0) {
@@ -324,7 +325,8 @@ class SaleReturnController extends Controller
         // Calculate payment info for original sale
         $sale = $return->sale;
         $totalPaid = $sale->paid_amount + $sale->total_additional_payments;
-        $outstanding = max(0, $sale->total_amount - $totalPaid);
+        $totalReturned = $sale->total_returned_amount;
+        $outstanding = $sale->total_amount - $totalPaid - $totalReturned;
 
         $paymentStatus = 'Paid';
         if ($totalPaid == 0) {

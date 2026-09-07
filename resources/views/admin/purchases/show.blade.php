@@ -172,19 +172,19 @@
                                     <td class="text-center">
                                         @if($isFullyReturned)
                                             <span class="badge bg-success">
-                                                <i class="bi bi-check-circle me-1"></i> Fully Returned
+                                                <i class="bi bi-check-lg me-1"></i> Fully Returned
                                             </span>
                                             <br>
                                             <small class="text-muted">{{ number_format($returnedQty, 2) }} / {{ number_format($item->quantity, 2) }}</small>
                                         @elseif($isPartiallyReturned)
                                             <span class="badge bg-warning">
-                                                <i class="bi bi-exclamation-circle me-1"></i> Partially Returned
+                                                <i class="bi bi-arrow-left-right me-1"></i> Partially Returned
                                             </span>
                                             <br>
                                             <small class="text-muted">{{ number_format($returnedQty, 2) }} / {{ number_format($item->quantity, 2) }}</small>
                                         @else
                                             <span class="badge bg-secondary">
-                                                <i class="bi bi-dash-circle me-1"></i> Not Returned
+                                                <i class="bi bi-arrow-left me-1"></i> Not Returned
                                             </span>
                                         @endif
                                     </td>
@@ -263,13 +263,17 @@
                             <small class="text-muted">Paid Amount</small>
                             <strong>{{ number_format($purchase->paid_amount, 2) }}</strong>
                         </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <small class="text-muted">Returns Amount</small>
+                            <strong class="text-info">{{ number_format($purchase->total_returns, 2) }}</strong>
+                        </div>
                         <div class="d-flex justify-content-between">
                             <small class="text-muted">Balance Due</small>
                             <strong class="text-warning">{{ number_format($purchase->payable_amount, 2) }}</strong>
                         </div>
                     </div>
 
-                    <div class="alert alert-{{ $purchase->paid_amount == 0 ? 'warning' : ($purchase->paid_amount >= $purchase->total_amount ? 'success' : 'info') }}">
+                    <div class="alert alert-{{ $purchase->paid_amount == 0 ? 'warning' : ($purchase->paid_amount >= $purchase->total_amount ? 'success' : 'info') }}" style="display: none;">
                         <small>
                             <strong>Payment Status:</strong><br>
                             {{ $purchase->payment_status }}
@@ -293,7 +297,7 @@
                 @endcan
             </div>
             @elseif($purchase->isConfirmed())
-            <div class="alert alert-success mt-3">
+            <div class="alert alert-success mt-3" style="display: none;">
                 <strong>
                     <i class="bi bi-check-circle me-1"></i>
                     Confirmed
@@ -326,6 +330,14 @@
                                 <i class="bi bi-check-circle me-1"></i> Confirm Purchase
                             </button>
                         </form>
+                        @endcan
+                    @endif
+
+                    @if($purchase->isConfirmed())
+                        @can('purchase-returns.create')
+                        <a href="{{ route('admin.purchase-returns.create', ['purchase_id' => $purchase->id]) }}" class="btn btn-info w-100">
+                            <i class="bi bi-arrow-left me-1"></i> Return Purchase
+                        </a>
                         @endcan
                     @endif
 

@@ -159,12 +159,15 @@ class Sale extends Model
     }
 
     /**
-     * Get current remaining udhar considering additional payments
+     * Get current remaining udhar considering additional payments and returns
      */
     public function getCurrentRemainingUdharAttribute(): float
     {
         $totalPaid = $this->paid_amount + $this->total_additional_payments;
-        return max(0, $this->total_amount - $totalPaid);
+        $totalReturned = $this->total_returned_amount;
+        // Formula: Outstanding = Total Amount - Paid Amount - Returned Amount
+        // Allows negative balances (customer credit) to display correctly
+        return $this->total_amount - $totalPaid - $totalReturned;
     }
 
     /**

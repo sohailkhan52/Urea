@@ -191,19 +191,19 @@
                                     <td class="text-center">
                                         @if($isFullyReturned)
                                             <span class="badge bg-success">
-                                                <i class="bi bi-check-circle me-1"></i> Fully Returned
+                                                <i class="bi bi-check-lg me-1"></i> Fully Returned
                                             </span>
                                             <br>
                                             <small class="text-muted">{{ number_format($returnedQty, 2) }} / {{ number_format($item->quantity, 2) }}</small>
                                         @elseif($isPartiallyReturned)
                                             <span class="badge bg-warning">
-                                                <i class="bi bi-exclamation-circle me-1"></i> Partially Returned
+                                                <i class="bi bi-arrow-left-right me-1"></i> Partially Returned
                                             </span>
                                             <br>
                                             <small class="text-muted">{{ number_format($returnedQty, 2) }} / {{ number_format($item->quantity, 2) }}</small>
                                         @else
                                             <span class="badge bg-secondary">
-                                                <i class="bi bi-dash-circle me-1"></i> Not Returned
+                                                <i class="bi bi-arrow-left me-1"></i> Not Returned
                                             </span>
                                         @endif
                                     </td>
@@ -274,13 +274,17 @@
                             <small class="text-muted">Paid Amount</small>
                             <strong>{{ number_format($sale->paid_amount, 2) }}</strong>
                         </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <small class="text-muted">Balance Returned</small>
+                            <strong class="text-info">{{ number_format($sale->total_returned_amount, 2) }}</strong>
+                        </div>
                         <div class="d-flex justify-content-between">
                             <small class="text-muted">Balance Due</small>
                             <strong class="text-warning">{{ number_format($sale->due_amount, 2) }}</strong>
                         </div>
                     </div>
 
-                    <div class="alert alert-{{ $sale->paid_amount == 0 ? 'warning' : ($sale->paid_amount >= $sale->total_amount ? 'success' : 'info') }}">
+                    <div class="alert alert-{{ $sale->paid_amount == 0 ? 'warning' : ($sale->paid_amount >= $sale->total_amount ? 'success' : 'info') }}" style="display: none;">
                         <small>
                             <strong>Payment Status:</strong><br>
                             @if($sale->paid_amount == 0)
@@ -310,7 +314,7 @@
                 @endcan
             </div>
             @elseif($sale->isConfirmed())
-            <div class="alert alert-success mt-3">
+            <div class="alert alert-success mt-3" style="display: none;">
                 <strong>
                     <i class="bi bi-check-circle me-1"></i>
                     Confirmed
