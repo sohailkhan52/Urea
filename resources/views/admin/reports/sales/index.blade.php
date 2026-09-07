@@ -227,18 +227,6 @@
                         </select>
                     </div>
 
-                    {{-- Warehouse --}}
-                    <div class="col-md-2">
-                        <label for="warehouse_id" class="form-label">Warehouse</label>
-                        <select class="form-select" id="warehouse_id" name="warehouse_id">
-                            <option value="">All Warehouses</option>
-                            @foreach($warehouses as $warehouse)
-                            <option value="{{ $warehouse->id }}" {{ request('warehouse_id') == $warehouse->id ? 'selected' : '' }}>
-                                {{ $warehouse->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
 
                     {{-- Payment Status --}}
                     <div class="col-md-2">

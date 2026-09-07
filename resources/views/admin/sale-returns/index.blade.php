@@ -27,17 +27,7 @@
                                value="{{ request('search') }}"
                                placeholder="Search by return #, customer, or sale invoice">
                     </div>
-                    <div class="col-md-2">
-                        <label for="warehouse_id" class="form-label">Warehouse</label>
-                        <select class="form-select" id="warehouse_id" name="warehouse_id">
-                            <option value="">All Warehouses</option>
-                            @foreach($warehouses as $warehouse)
-                            <option value="{{ $warehouse->id }}" {{ request('warehouse_id') == $warehouse->id ? 'selected' : '' }}>
-                                {{ $warehouse->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
+
                     <div class="col-md-2">
                         <label for="status" class="form-label">Status</label>
                         <select class="form-select" id="status" name="status">
