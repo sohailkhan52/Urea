@@ -76,7 +76,7 @@
                             <div class="col-md-3">
                                 <label class="form-label small">Payment Amount <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" name="amount" id="paymentAmount" step="0.01" min="0.01" max="{{ $familyAccount['outstanding'] }}" required>
-                                <small class="text-muted">Max: Rs. {{ number_format($familyAccount['outstanding'], 2) }}</small>
+                                <small class="text-muted">Max: Rs. {{ number_format($familyAccount['outstanding'], 0) }}</small>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small">Payment Date <span class="text-danger">*</span></label>
@@ -131,7 +131,7 @@
                                                     <td><strong>{{ $sale->customer->name }}</strong></td>
                                                     <td>{{ $sale->invoice_number }}</td>
                                                     <td><small>{{ $sale->sale_date->format('M d, Y') }}</small></td>
-                                                    <td class="text-end text-danger">Rs. {{ number_format($sale->current_remaining_udhar, 2) }}</td>
+                                                    <td class="text-end text-danger">Rs. {{ number_format($sale->current_remaining_udhar, 0) }}</td>
                                                     <td>
                                                         <input type="number" 
                                                                class="form-control form-control-sm allocation-input" 

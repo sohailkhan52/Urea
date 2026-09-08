@@ -39,10 +39,10 @@
                                     <strong>{{ $product->name }}</strong>
                                 </td>
                                 <td>{{ $product->unit }}</td>
-                                <td>Rs. {{ number_format($product->purchase_price, 2) }}</td>
-                                <td>Rs. {{ number_format($product->sale_price, 2) }}</td>
+                                <td>Rs. {{ number_format($product->purchase_price, 0) }}</td>
+                                <td>Rs. {{ number_format($product->sale_price, 0) }}</td>
                                 <td>
-                                    {{ number_format($product->profit_margin, 2) }}%
+                                    {{ number_format($product->profit_margin, 0) }}%
                                 </td>
                                 <td>{{ $product->created_at->format('Y-m-d H:i') }}</td>
                                 <td class="text-end">

@@ -36,17 +36,17 @@
 
                     <div class="mb-3">
                         <label class="form-label">Purchase Price</label>
-                        <p class="form-control-plaintext">Rs. {{ number_format($product->purchase_price, 2) }}</p>
+                        <p class="form-control-plaintext">Rs. {{ number_format($product->purchase_price, 0) }}</p>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Sale Price</label>
-                        <p class="form-control-plaintext">Rs. {{ number_format($product->sale_price, 2) }}</p>
+                        <p class="form-control-plaintext">Rs. {{ number_format($product->sale_price, 0) }}</p>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Profit Margin</label>
-                        <p class="form-control-plaintext">{{ number_format($product->profit_margin, 2) }}%</p>
+                        <p class="form-control-plaintext">{{ number_format($product->profit_margin, 0) }}%</p>
                     </div>
 
                     <div class="mb-3">

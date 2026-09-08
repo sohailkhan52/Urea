@@ -45,13 +45,13 @@
                 <div class="col-md-3">
                     <div class="text-center p-3 bg-light rounded">
                         <small class="text-muted d-block mb-1">Net Revenue</small>
-                        <h4 class="mb-0 text-success">Rs. {{ number_format($sale->net_revenue, 2) }}</h4>
+                        <h4 class="mb-0 text-success">Rs. {{ number_format($sale->net_revenue, 0) }}</h4>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="text-center p-3 bg-light rounded">
                         <small class="text-muted d-block mb-1">Cost of Goods</small>
-                        <h4 class="mb-0 text-danger">Rs. {{ number_format($sale->total_cogs, 2) }}</h4>
+                        <h4 class="mb-0 text-danger">Rs. {{ number_format($sale->total_cogs, 0) }}</h4>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -65,7 +65,7 @@
                 <div class="col-md-3">
                     <div class="text-center p-3 bg-light rounded">
                         <small class="text-muted d-block mb-1">Profit Margin</small>
-                        <h4 class="mb-0 text-info">{{ number_format($sale->profit_margin_percentage, 2) }}%</h4>
+                        <h4 class="mb-0 text-info">{{ number_format($sale->profit_margin_percentage, 0) }}%</h4>
                     </div>
                 </div>
             </div>
@@ -188,7 +188,7 @@
                                                 </span>
                                             @else
                                                 <span class="text-danger fw-bold">
-                                                    <i class="bi bi-arrow-down-circle me-1"></i>Rs. {{ number_format(abs($item->gross_profit), 2) }}
+                                                    <i class="bi bi-arrow-down-circle me-1"></i>Rs. {{ number_format(abs($item->gross_profit), 0) }}
                                                 </span>
                                             @endif
                                         @else

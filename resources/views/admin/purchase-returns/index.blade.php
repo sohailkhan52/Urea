@@ -86,7 +86,7 @@
                                 </td>
                                 <td>{{ $return->supplier->name }}</td>
                                 <td>{{ $return->return_date->format('d M Y') }}</td>
-                                <td>Rs. {{ number_format($return->total_amount, 2) }}</td>
+                                <td>Rs. {{ number_format($return->total_amount, 0) }}</td>
                                 <td>
                                     <span class="badge bg-{{ $return->status_badge }}">
                                         {{ $return->status_label }}

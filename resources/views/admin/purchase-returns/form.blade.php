@@ -29,7 +29,7 @@
                         </div>
                         <div class="col-md-6 text-end">
                             <p class="mb-2"><strong>Total Amount:</strong></p>
-                            <h4 class="text-primary">Rs. {{ number_format($purchase->total_amount, 2) }}</h4>
+                            <h4 class="text-primary">Rs. {{ number_format($purchase->total_amount, 0) }}</h4>
                         </div>
                     </div>
                 </div>
@@ -41,8 +41,8 @@
                     <h5 class="mb-0">Payment Status</h5>
                 </div>
                 <div class="card-body">
-                    <p class="mb-1"><strong>Paid:</strong> Rs. {{ number_format($purchase->paid_amount ?? 0, 2) }}</p>
-                    <p class="mb-0"><strong>Outstanding:</strong> Rs. {{ number_format(($purchase->total_amount - ($purchase->paid_amount ?? 0)), 2) }}</p>
+                    <p class="mb-1"><strong>Paid:</strong> Rs. {{ number_format($purchase->paid_amount ?? 0, 0) }}</p>
+                    <p class="mb-0"><strong>Outstanding:</strong> Rs. {{ number_format(($purchase->total_amount - ($purchase->paid_amount ?? 0)), 0) }}</p>
                     <hr>
                     <span class="badge bg-{{ $purchase->payment_status === 'Paid' ? 'success' : ($purchase->payment_status === 'Partial' ? 'warning' : 'danger') }}">
                         {{ $purchase->payment_status ?? 'Completed' }}
@@ -103,7 +103,7 @@
                                         @endphp
                                         <span class="badge bg-success">{{ (int) $currentStock }}</span>
                                     </td>
-                                    <td class="text-end">Rs. {{ number_format($item->unit_price, 2) }}</td>
+                                    <td class="text-end">Rs. {{ number_format($item->unit_price, 0) }}</td>
                                     <td>
                                         @php
                                             // Get current stock in warehouse for this product

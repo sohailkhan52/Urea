@@ -309,7 +309,7 @@
 
         <div class="balance-summary">
             <h3>Current Outstanding Balance</h3>
-            <div class="balance-amount">Rs. {{ number_format($currentBalance, 2) }}</div>
+            <div class="balance-amount">Rs. {{ number_format($currentBalance, 0) }}</div>
         </div>
 
         <table class="ledger-table">
@@ -346,20 +346,20 @@
                     <td>{{ $entry['description'] }}</td>
                     <td class="text-right debit">
                         @if($entry['debit'] > 0)
-                            Rs. {{ number_format($entry['debit'], 2) }}
+                            Rs. {{ number_format($entry['debit'], 0) }}
                         @else
                             -
                         @endif
                     </td>
                     <td class="text-right credit">
                         @if($entry['credit'] > 0)
-                            Rs. {{ number_format($entry['credit'], 2) }}
+                            Rs. {{ number_format($entry['credit'], 0) }}
                         @else
                             -
                         @endif
                     </td>
                     <td class="text-right balance">
-                        Rs. {{ number_format($entry['balance'], 2) }}
+                        Rs. {{ number_format($entry['balance'], 0) }}
                     </td>
                 </tr>
                 @empty

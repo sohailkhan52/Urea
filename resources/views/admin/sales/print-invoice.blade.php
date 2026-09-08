@@ -378,10 +378,10 @@
                         <strong>{{ $item->product->name }}</strong><br>
                         <small>SKU: {{ $item->product->sku }}</small>
                     </td>
-                    <td class="text-end">{{ number_format($item->quantity, 2) }}</td>
-                    <td class="text-end">{{ number_format($item->unit_price, 2) }}</td>
-                    <td class="text-end">{{ number_format($item->discount, 2) }}</td>
-                    <td class="text-end"><strong>{{ number_format($item->total, 2) }}</strong></td>
+                    <td class="text-end">{{ number_format($item->quantity, 0) }}</td>
+                    <td class="text-end">{{ number_format($item->unit_price, 0) }}</td>
+                    <td class="text-end">{{ number_format($item->discount, 0) }}</td>
+                    <td class="text-end"><strong>{{ number_format($item->total, 0) }}</strong></td>
                 </tr>
                 @endforeach
             </tbody>
@@ -391,23 +391,23 @@
         <table class="summary-table">
             <tr>
                 <td class="summary-label">Subtotal:</td>
-                <td class="summary-value">{{ number_format($sale->subtotal, 2) }}</td>
+                <td class="summary-value">{{ number_format($sale->subtotal, 0) }}</td>
             </tr>
             <tr>
                 <td class="summary-label">Sale Discount:</td>
-                <td class="summary-value text-danger">- {{ number_format($sale->discount, 2) }}</td>
+                <td class="summary-value text-danger">- {{ number_format($sale->discount, 0) }}</td>
             </tr>
             <tr class="total-row">
                 <td class="summary-label">Total Amount:</td>
-                <td class="summary-value">{{ number_format($sale->total_amount, 2) }}</td>
+                <td class="summary-value">{{ number_format($sale->total_amount, 0) }}</td>
             </tr>
             <tr>
                 <td class="summary-label">Paid Amount:</td>
-                <td class="summary-value">{{ number_format($sale->paid_amount, 2) }}</td>
+                <td class="summary-value">{{ number_format($sale->paid_amount, 0) }}</td>
             </tr>
             <tr>
                 <td class="summary-label">Amount Due:</td>
-                <td class="summary-value text-danger">{{ number_format($sale->due_amount, 2) }}</td>
+                <td class="summary-value text-danger">{{ number_format($sale->due_amount, 0) }}</td>
             </tr>
             <tr>
                 <td class="summary-label">Payment Status:</td>

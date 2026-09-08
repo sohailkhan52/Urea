@@ -56,7 +56,7 @@
                                 <td><strong>{{ $sale->invoice_number }}</strong></td>
                                 <td>{{ $sale->customer ? $sale->customer->name : ($sale->walkin_customer_name ?? 'Walk-in Customer') }}</td>
                                 <td>{{ $sale->sale_date->format('M d, Y') }}</td>
-                                <td class="text-end">Rs. {{ number_format($sale->total_amount, 2) }}</td>
+                                <td class="text-end">Rs. {{ number_format($sale->total_amount, 0) }}</td>
                                 <td>
                                     <span class="badge bg-{{ $sale->payment_status === 'Paid' ? 'success' : ($sale->payment_status === 'Partial' ? 'warning' : 'danger') }}">
                                         {{ $sale->payment_status ?? 'Completed' }}

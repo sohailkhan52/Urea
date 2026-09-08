@@ -183,10 +183,10 @@
                                         <span class="badge bg-light text-dark">{{ $item->quantity }}</span>
                                     </td>
                                     <td class="text-end">
-                                        {{ number_format($item->unit_price, 2) }}
+                                        {{ number_format($item->unit_price, 0) }}
                                     </td>
                                     <td class="text-end">
-                                        <strong>{{ number_format($item->total, 2) }}</strong>
+                                        <strong>{{ number_format($item->total, 0) }}</strong>
                                     </td>
                                     <td class="text-center">
                                         @if($isFullyReturned)
@@ -194,13 +194,13 @@
                                                 <i class="bi bi-check-lg me-1"></i> Fully Returned
                                             </span>
                                             <br>
-                                            <small class="text-muted">{{ number_format($returnedQty, 2) }} / {{ number_format($item->quantity, 2) }}</small>
+                                            <small class="text-muted">{{ number_format($returnedQty, 0) }} / {{ number_format($item->quantity, 0) }}</small>
                                         @elseif($isPartiallyReturned)
                                             <span class="badge bg-warning">
                                                 <i class="bi bi-arrow-left-right me-1"></i> Partially Returned
                                             </span>
                                             <br>
-                                            <small class="text-muted">{{ number_format($returnedQty, 2) }} / {{ number_format($item->quantity, 2) }}</small>
+                                            <small class="text-muted">{{ number_format($returnedQty, 0) }} / {{ number_format($item->quantity, 0) }}</small>
                                         @else
                                             <span class="badge bg-secondary">
                                                 <i class="bi bi-arrow-left me-1"></i> Not Returned
@@ -250,11 +250,11 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-2">
                             <small class="text-muted">Items Subtotal</small>
-                            <strong>{{ number_format($sale->subtotal, 2) }}</strong>
+                            <strong>{{ number_format($sale->subtotal, 0) }}</strong>
                         </div>
                         <div class="d-flex justify-content-between">
                             <small class="text-muted">Discount</small>
-                            <small class="text-danger">- {{ number_format($sale->discount, 2) }}</small>
+                            <small class="text-danger">- {{ number_format($sale->discount, 0) }}</small>
                         </div>
                     </div>
 
@@ -263,7 +263,7 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between">
                             <h6 class="mb-0">Total Amount</h6>
-                            <h5 class="mb-0 text-primary">{{ number_format($sale->total_amount, 2) }}</h5>
+                            <h5 class="mb-0 text-primary">{{ number_format($sale->total_amount, 0) }}</h5>
                         </div>
                     </div>
 
@@ -272,15 +272,15 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-2">
                             <small class="text-muted">Paid Amount</small>
-                            <strong>{{ number_format($sale->paid_amount, 2) }}</strong>
+                            <strong>{{ number_format($sale->paid_amount, 0) }}</strong>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <small class="text-muted">Balance Returned</small>
-                            <strong class="text-info">{{ number_format($sale->total_returned_amount, 2) }}</strong>
+                            <strong class="text-info">{{ number_format($sale->total_returned_amount, 0) }}</strong>
                         </div>
                         <div class="d-flex justify-content-between">
                             <small class="text-muted">Balance Due</small>
-                            <strong class="text-warning">{{ number_format($sale->due_amount, 2) }}</strong>
+                            <strong class="text-warning">{{ number_format($sale->due_amount, 0) }}</strong>
                         </div>
                     </div>
 

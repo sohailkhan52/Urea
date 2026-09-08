@@ -141,7 +141,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <small class="text-muted d-block">Today's Sales</small>
-                            <h5 class="mb-0">{{ number_format($todayStats['total_sales'], 2) }}</h5>
+                            <h5 class="mb-0">{{ number_format($todayStats['total_sales'], 0) }}</h5>
                         </div>
                         <i class="bi bi-cart-check" style="font-size: 2rem; color: #e3165b;"></i>
                     </div>
@@ -155,7 +155,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <small class="text-muted d-block">Today's Purchases</small>
-                            <h5 class="mb-0">{{ number_format($todayStats['total_purchases'], 2) }}</h5>
+                            <h5 class="mb-0">{{ number_format($todayStats['total_purchases'], 0) }}</h5>
                         </div>
                         <i class="bi bi-bag-check" style="font-size: 2rem; color: #198754;"></i>
                     </div>
@@ -169,7 +169,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <small class="text-muted d-block">Payments Received</small>
-                            <h5 class="mb-0">{{ number_format($todayStats['payments_received'], 2) }}</h5>
+                            <h5 class="mb-0">{{ number_format($todayStats['payments_received'], 0) }}</h5>
                         </div>
                         <i class="bi bi-cash-coin" style="font-size: 2rem; color: #0d6efd;"></i>
                     </div>

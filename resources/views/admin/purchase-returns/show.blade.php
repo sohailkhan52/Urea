@@ -111,10 +111,10 @@
                                             <span class="badge bg-light text-dark">{{ $item->quantity }}</span>
                                         </td>
                                         <td class="text-end">
-                                            Rs. {{ number_format($item->unit_price, 2) }}
+                                            Rs. {{ number_format($item->unit_price, 0) }}
                                         </td>
                                         <td class="text-end">
-                                            <strong>Rs. {{ number_format($item->total, 2) }}</strong>
+                                            <strong>Rs. {{ number_format($item->total, 0) }}</strong>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -139,12 +139,12 @@
                     </div>
                     <div class="d-flex justify-content-between mb-3">
                         <span class="text-muted">Total Quantity:</span>
-                        <strong>{{ number_format($purchaseReturn->total_quantity, 2) }}</strong>
+                        <strong>{{ number_format($purchaseReturn->total_quantity, 0) }}</strong>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between">
                         <span class="text-muted">Total Return Amount:</span>
-                        <strong class="text-primary fs-5">Rs. {{ number_format($purchaseReturn->total_amount, 2) }}</strong>
+                        <strong class="text-primary fs-5">Rs. {{ number_format($purchaseReturn->total_amount, 0) }}</strong>
                     </div>
                 </div>
             </div>

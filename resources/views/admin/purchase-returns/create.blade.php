@@ -56,7 +56,7 @@
                                 <td><strong>{{ $purchase->purchase_number }}</strong></td>
                                 <td>{{ $purchase->supplier->name ?? 'Unknown Supplier' }}</td>
                                 <td>{{ $purchase->purchase_date->format('M d, Y') }}</td>
-                                <td class="text-end">Rs. {{ number_format($purchase->total_amount, 2) }}</td>
+                                <td class="text-end">Rs. {{ number_format($purchase->total_amount, 0) }}</td>
                                 <td>
                                     <span class="badge bg-{{ $purchase->payment_status === 'Paid' ? 'success' : ($purchase->payment_status === 'Partial' ? 'warning' : 'danger') }}">
                                         {{ $purchase->payment_status ?? 'Completed' }}

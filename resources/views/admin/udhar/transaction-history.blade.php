@@ -169,26 +169,26 @@
                             <small>{{ $transaction->reference_number ?? '-' }}</small>
                         </td>
                         <td class="text-end">
-                            <small>Rs. {{ number_format($transaction->current_total_amount, 2) }}</small>
+                            <small>Rs. {{ number_format($transaction->current_total_amount, 0) }}</small>
                         </td>
                         <td class="text-end">
-                            <small>Rs. {{ number_format($transaction->current_paid_amount, 2) }}</small>
+                            <small>Rs. {{ number_format($transaction->current_paid_amount, 0) }}</small>
                         </td>
                         <td class="text-end">
                             <small class="text-danger">
-                                Rs. {{ number_format($transaction->previous_udhar_amount, 2) }}
+                                Rs. {{ number_format($transaction->previous_udhar_amount, 0) }}
                             </small>
                         </td>
                         <td class="text-end">
                             <small class="text-danger">
-                                <strong>Rs. {{ number_format($transaction->current_udhar_amount, 2) }}</strong>
+                                <strong>Rs. {{ number_format($transaction->current_udhar_amount, 0) }}</strong>
                             </small>
                         </td>
                         <td class="text-end">
                             @if($transaction->amount_changed > 0)
-                                <span class="text-danger">+Rs. {{ number_format($transaction->amount_changed, 2) }}</span>
+                                <span class="text-danger">+Rs. {{ number_format($transaction->amount_changed, 0) }}</span>
                             @elseif($transaction->amount_changed < 0)
-                                <span class="text-success">Rs. {{ number_format($transaction->amount_changed, 2) }}</span>
+                                <span class="text-success">Rs. {{ number_format($transaction->amount_changed, 0) }}</span>
                             @else
                                 <span class="text-muted">-</span>
                             @endif
@@ -303,12 +303,12 @@
                             <div class="mb-3">
                                 @if($transaction->amount_changed > 0)
                                     <span class="text-danger" style="font-size: 16px;">
-                                        <strong>+Rs. {{ number_format($transaction->amount_changed, 2) }}</strong>
+                                        <strong>+Rs. {{ number_format($transaction->amount_changed, 0) }}</strong>
                                     </span>
                                     <span class="badge bg-danger ms-2">Increased</span>
                                 @elseif($transaction->amount_changed < 0)
                                     <span class="text-success" style="font-size: 16px;">
-                                        <strong>Rs. {{ number_format($transaction->amount_changed, 2) }}</strong>
+                                        <strong>Rs. {{ number_format($transaction->amount_changed, 0) }}</strong>
                                     </span>
                                     <span class="badge bg-success ms-2">Decreased</span>
                                 @else
@@ -326,30 +326,30 @@
                             <strong class="text-muted d-block mb-2">Before:</strong>
                             <div class="mb-2">
                                 <span class="text-muted">Sale Amount:</span> 
-                                <strong>Rs. {{ number_format($transaction->previous_total_amount, 2) }}</strong>
+                                <strong>Rs. {{ number_format($transaction->previous_total_amount, 0) }}</strong>
                             </div>
                             <div class="mb-2">
                                 <span class="text-muted">Paid:</span> 
-                                <strong>Rs. {{ number_format($transaction->previous_paid_amount, 2) }}</strong>
+                                <strong>Rs. {{ number_format($transaction->previous_paid_amount, 0) }}</strong>
                             </div>
                             <div>
                                 <span class="text-muted">Outstanding (Udhar):</span> 
-                                <strong class="text-danger">Rs. {{ number_format($transaction->previous_udhar_amount, 2) }}</strong>
+                                <strong class="text-danger">Rs. {{ number_format($transaction->previous_udhar_amount, 0) }}</strong>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <strong class="text-muted d-block mb-2">After:</strong>
                             <div class="mb-2">
                                 <span class="text-muted">Sale Amount:</span> 
-                                <strong>Rs. {{ number_format($transaction->current_total_amount, 2) }}</strong>
+                                <strong>Rs. {{ number_format($transaction->current_total_amount, 0) }}</strong>
                             </div>
                             <div class="mb-2">
                                 <span class="text-muted">Paid:</span> 
-                                <strong>Rs. {{ number_format($transaction->current_paid_amount, 2) }}</strong>
+                                <strong>Rs. {{ number_format($transaction->current_paid_amount, 0) }}</strong>
                             </div>
                             <div>
                                 <span class="text-muted">Outstanding (Udhar):</span> 
-                                <strong class="text-danger">Rs. {{ number_format($transaction->current_udhar_amount, 2) }}</strong>
+                                <strong class="text-danger">Rs. {{ number_format($transaction->current_udhar_amount, 0) }}</strong>
                             </div>
                         </div>
                     </div>
@@ -397,11 +397,11 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <span class="text-muted">Total Amount Increased (Sales):</span>
-                        <h5 class="text-danger">Rs. {{ number_format($summary['total_amount_increased'] ?? 0, 2) }}</h5>
+                        <h5 class="text-danger">Rs. {{ number_format($summary['total_amount_increased'] ?? 0, 0) }}</h5>
                     </div>
                     <div>
                         <span class="text-muted">Total Amount Decreased (Payments):</span>
-                        <h5 class="text-success">Rs. {{ number_format($summary['total_amount_decreased'] ?? 0, 2) }}</h5>
+                        <h5 class="text-success">Rs. {{ number_format($summary['total_amount_decreased'] ?? 0, 0) }}</h5>
                     </div>
                 </div>
             </div>

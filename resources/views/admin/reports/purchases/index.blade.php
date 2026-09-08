@@ -45,7 +45,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Total Amount</p>
-                            <h4 class="mb-0">Rs. {{ number_format($totals->total_amount_sum, 2) }}</h4>
+                            <h4 class="mb-0">Rs. {{ number_format($totals->total_amount_sum, 0) }}</h4>
                         </div>
                         <div class="text-success">
                             <i class="bi bi-currency-dollar fs-2"></i>
@@ -60,7 +60,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Total Payable</p>
-                            <h4 class="mb-0">Rs. {{ number_format($totals->total_payable_sum, 2) }}</h4>
+                            <h4 class="mb-0">Rs. {{ number_format($totals->total_payable_sum, 0) }}</h4>
                         </div>
                         <div class="text-warning">
                             <i class="bi bi-wallet2 fs-2"></i>
@@ -211,9 +211,9 @@
                                 @endif
                             </td>
                             <td>{{ $purchase->warehouse->name }}</td>
-                            <td class="text-end">Rs. {{ number_format($purchase->total_amount, 2) }}</td>
-                            <td class="text-end">Rs. {{ number_format($purchase->paid_amount, 2) }}</td>
-                            <td class="text-end">Rs. {{ number_format($purchase->total_amount - $purchase->paid_amount, 2) }}</td>
+                            <td class="text-end">Rs. {{ number_format($purchase->total_amount, 0) }}</td>
+                            <td class="text-end">Rs. {{ number_format($purchase->paid_amount, 0) }}</td>
+                            <td class="text-end">Rs. {{ number_format($purchase->total_amount - $purchase->paid_amount, 0) }}</td>
                             <td>
                                 @if($purchase->payment_status === 'paid')
                                     <span class="badge bg-success">Paid</span>

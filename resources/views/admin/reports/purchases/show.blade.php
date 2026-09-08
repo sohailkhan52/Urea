@@ -132,9 +132,9 @@
                                             <br><small class="text-muted">SKU: {{ $item->product->sku }}</small>
                                         @endif
                                     </td>
-                                    <td class="text-center">{{ number_format($item->quantity, 2) }}</td>
-                                    <td class="text-end">Rs. {{ number_format($item->unit_price, 2) }}</td>
-                                    <td class="text-end fw-bold">Rs. {{ number_format($item->total, 2) }}</td>
+                                    <td class="text-center">{{ number_format($item->quantity, 0) }}</td>
+                                    <td class="text-end">Rs. {{ number_format($item->unit_price, 0) }}</td>
+                                    <td class="text-end fw-bold">Rs. {{ number_format($item->total, 0) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -173,7 +173,7 @@
                                 <tr>
                                     <td>{{ $return->return_number }}</td>
                                     <td>{{ $return->return_date->format('d M Y') }}</td>
-                                    <td class="text-end">Rs. {{ number_format($return->total_amount, 2) }}</td>
+                                    <td class="text-end">Rs. {{ number_format($return->total_amount, 0) }}</td>
                                     <td>
                                         <span class="badge bg-{{ $return->status === 'confirmed' ? 'success' : 'warning' }}">
                                             {{ ucfirst($return->status) }}
@@ -202,7 +202,7 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Subtotal:</span>
-                            <strong>Rs. {{ number_format($purchase->subtotal, 2) }}</strong>
+                            <strong>Rs. {{ number_format($purchase->subtotal, 0) }}</strong>
                         </div>
                         @if($purchase->discount > 0)
                         <div class="d-flex justify-content-between mb-2 text-danger">
@@ -213,36 +213,36 @@
                                     :
                                 @endif
                             </span>
-                            <strong>- Rs. {{ number_format($purchase->discount_amount, 2) }}</strong>
+                            <strong>- Rs. {{ number_format($purchase->discount_amount, 0) }}</strong>
                         </div>
                         @endif
                         @if($purchase->transport_cost > 0)
                         <div class="d-flex justify-content-between mb-2 text-primary">
                             <span>Transport Cost:</span>
-                            <strong>+ Rs. {{ number_format($purchase->transport_cost, 2) }}</strong>
+                            <strong>+ Rs. {{ number_format($purchase->transport_cost, 0) }}</strong>
                         </div>
                         @endif
                         @if($purchase->other_expenses > 0)
                         <div class="d-flex justify-content-between mb-2 text-primary">
                             <span>Other Expenses:</span>
-                            <strong>+ Rs. {{ number_format($purchase->other_expenses, 2) }}</strong>
+                            <strong>+ Rs. {{ number_format($purchase->other_expenses, 0) }}</strong>
                         </div>
                         @endif
                         <hr>
                         <div class="d-flex justify-content-between mb-3">
                             <span class="fw-bold">Total Amount:</span>
-                            <strong class="fs-5">Rs. {{ number_format($purchase->total_amount, 2) }}</strong>
+                            <strong class="fs-5">Rs. {{ number_format($purchase->total_amount, 0) }}</strong>
                         </div>
                     </div>
 
                     <div class="border-top pt-3">
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-success">Paid Amount:</span>
-                            <strong class="text-success">Rs. {{ number_format($purchase->paid_amount, 2) }}</strong>
+                            <strong class="text-success">Rs. {{ number_format($purchase->paid_amount, 0) }}</strong>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-danger">Payable:</span>
-                            <strong class="text-danger">Rs. {{ number_format($purchase->total_amount - $purchase->paid_amount, 2) }}</strong>
+                            <strong class="text-danger">Rs. {{ number_format($purchase->total_amount - $purchase->paid_amount, 0) }}</strong>
                         </div>
                     </div>
 
@@ -279,7 +279,7 @@
                                     @endif
                                 </div>
                                 <div>
-                                    <strong class="text-success">Rs. {{ number_format($payment->amount, 2) }}</strong>
+                                    <strong class="text-success">Rs. {{ number_format($payment->amount, 0) }}</strong>
                                 </div>
                             </div>
                             @if($payment->notes)
@@ -306,7 +306,7 @@
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Total Quantity:</span>
-                        <strong>{{ number_format($purchase->items->sum('quantity'), 2) }}</strong>
+                        <strong>{{ number_format($purchase->items->sum('quantity'), 0) }}</strong>
                     </div>
                 </div>
             </div>

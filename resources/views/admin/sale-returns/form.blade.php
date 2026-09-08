@@ -29,7 +29,7 @@
                         </div>
                         <div class="col-md-6 text-end">
                             <p class="mb-2"><strong>Total Amount:</strong></p>
-                            <h4 class="text-primary">Rs. {{ number_format($sale->total_amount, 2) }}</h4>
+                            <h4 class="text-primary">Rs. {{ number_format($sale->total_amount, 0) }}</h4>
                         </div>
                     </div>
                 </div>
@@ -41,8 +41,8 @@
                     <h5 class="mb-0">Payment Status</h5>
                 </div>
                 <div class="card-body">
-                    <p class="mb-1"><strong>Paid:</strong> Rs. {{ number_format($sale->paid_amount ?? 0, 2) }}</p>
-                    <p class="mb-0"><strong>Outstanding:</strong> Rs. {{ number_format($sale->current_remaining_udhar, 2) }}</p>
+                    <p class="mb-1"><strong>Paid:</strong> Rs. {{ number_format($sale->paid_amount ?? 0, 0) }}</p>
+                    <p class="mb-0"><strong>Outstanding:</strong> Rs. {{ number_format($sale->current_remaining_udhar, 0) }}</p>
                     <hr>
                     <span class="badge bg-{{ $sale->current_payment_status === 'paid' ? 'success' : ($sale->current_payment_status === 'partial' ? 'warning' : 'danger') }}">
                         {{ ucfirst($sale->current_payment_status) }}
@@ -98,7 +98,7 @@
                                     <td><strong>{{ $item->product->name }}</strong></td>
                                     <td class="text-center">{{ $item->quantity }}</td>
                                     <td class="text-center">{{ $canReturn }}</td>
-                                    <td class="text-end">Rs. {{ number_format($item->unit_price, 2) }}</td>
+                                    <td class="text-end">Rs. {{ number_format($item->unit_price, 0) }}</td>
                                     <td>
                                         <input type="number" 
                                                class="form-control form-control-sm return-qty" 
@@ -112,7 +112,7 @@
                                                onchange="updateItemRow({{ $index }})">
                                     </td>
                                     <td class="text-end">
-                                        <strong class="return-amount" data-index="{{ $index }}">Rs. 0.00</strong>
+                                        <strong class="return-amount" data-index="{{ $index }}">Rs. 0</strong>
                                         <input type="hidden" name="items[{{ $index }}][sale_item_id]" value="{{ $item->id }}">
                                         <input type="hidden" name="items[{{ $index }}][unit_price]" value="{{ $item->unit_price }}">
                                     </td>
@@ -126,7 +126,7 @@
                         <tfoot>
                             <tr class="table-light">
                                 <th colspan="6" class="text-end">Total Return Amount:</th>
-                                <th class="text-end"><strong>Rs. <span id="totalReturnAmount">0.00</span></strong></th>
+                                <th class="text-end"><strong>Rs. <span id="totalReturnAmount">0</span></strong></th>
                             </tr>
                         </tfoot>
                     </table>
@@ -226,7 +226,7 @@ function updateAmount(index) {
     const price = parseFloat(priceInput.value) || 0;
     const amount = qty * price;
     
-    amountSpan.textContent = 'Rs. ' + amount.toFixed(2);
+    amountSpan.textContent = 'Rs. ' + Math.round(amount);
 }
 
 function updateTotal() {
@@ -239,7 +239,7 @@ function updateTotal() {
         total += qty * price;
     });
     
-    document.getElementById('totalReturnAmount').textContent = total.toFixed(2);
+    document.getElementById('totalReturnAmount').textContent = Math.round(total);
 }
 
 // Validate form

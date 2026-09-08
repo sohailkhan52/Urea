@@ -110,19 +110,19 @@
                         <div class="col-md-3">
                             <div class="border rounded p-3 text-center">
                                 <small class="text-muted d-block mb-1">Sale Total</small>
-                                <h5 class="mb-0 text-primary">Rs. {{ number_format($paymentInfo['total_amount'], 2) }}</h5>
+                                <h5 class="mb-0 text-primary">Rs. {{ number_format($paymentInfo['total_amount'], 0) }}</h5>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="border rounded p-3 text-center">
                                 <small class="text-muted d-block mb-1">Paid Amount</small>
-                                <h5 class="mb-0 text-success">Rs. {{ number_format($paymentInfo['paid_amount'], 2) }}</h5>
+                                <h5 class="mb-0 text-success">Rs. {{ number_format($paymentInfo['paid_amount'], 0) }}</h5>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="border rounded p-3 text-center">
                                 <small class="text-muted d-block mb-1">Outstanding</small>
-                                <h5 class="mb-0 text-danger">Rs. {{ number_format($paymentInfo['outstanding'], 2) }}</h5>
+                                <h5 class="mb-0 text-danger">Rs. {{ number_format($paymentInfo['outstanding'], 0) }}</h5>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -166,16 +166,16 @@
                                         @endif
                                     </td>
                                     <td class="text-center">
-                                        {{ number_format($item->saleItem->quantity, 2) }}
+                                        {{ number_format($item->saleItem->quantity, 0) }}
                                     </td>
                                     <td class="text-center">
-                                        <strong class="text-primary">{{ number_format($item->quantity, 2) }}</strong>
+                                        <strong class="text-primary">{{ number_format($item->quantity, 0) }}</strong>
                                     </td>
                                     <td class="text-end">
-                                        Rs. {{ number_format($item->unit_price, 2) }}
+                                        Rs. {{ number_format($item->unit_price, 0) }}
                                     </td>
                                     <td class="text-end">
-                                        <strong>Rs. {{ number_format($item->total, 2) }}</strong>
+                                        <strong>Rs. {{ number_format($item->total, 0) }}</strong>
                                     </td>
                                 </tr>
                                 @endforeach
@@ -185,7 +185,7 @@
                                     <th colspan="4" class="text-end">Total Return Amount:</th>
                                     <th class="text-end">
                                         <strong class="text-primary fs-5">
-                                            Rs. {{ number_format($return->total_return_amount, 2) }}
+                                            Rs. {{ number_format($return->total_return_amount, 0) }}
                                         </strong>
                                     </th>
                                 </tr>
@@ -247,12 +247,12 @@
                     </div>
                     <div class="d-flex justify-content-between mb-3">
                         <span class="text-muted">Total Quantity:</span>
-                        <strong>{{ number_format($return->total_quantity, 2) }}</strong>
+                        <strong>{{ number_format($return->total_quantity, 0) }}</strong>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between">
                         <span class="text-muted">Total Return Amount:</span>
-                        <strong class="text-primary fs-5">Rs. {{ number_format($return->total_return_amount, 2) }}</strong>
+                        <strong class="text-primary fs-5">Rs. {{ number_format($return->total_return_amount, 0) }}</strong>
                     </div>
                 </div>
             </div>

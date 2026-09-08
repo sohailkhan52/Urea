@@ -91,16 +91,16 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label class="text-muted small d-block">Total Sales</label>
-                        <h4 class="mb-0">{{ number_format($statement['summary']['total_sales'], 2) }}</h4>
+                        <h4 class="mb-0">{{ number_format($statement['summary']['total_sales'], 0) }}</h4>
                     </div>
                     <div class="mb-3">
                         <label class="text-muted small d-block">Total Paid</label>
-                        <h4 class="mb-0 text-success">{{ number_format($statement['summary']['total_payments'], 2) }}</h4>
+                        <h4 class="mb-0 text-success">{{ number_format($statement['summary']['total_payments'], 0) }}</h4>
                     </div>
                     <hr>
                     <div>
                         <label class="text-muted small d-block">Current Udhar</label>
-                        <h3 class="mb-0 text-danger">{{ number_format($statement['summary']['current_balance'], 2) }}</h3>
+                        <h3 class="mb-0 text-danger">{{ number_format($statement['summary']['current_balance'], 0) }}</h3>
                     </div>
                 </div>
             </div>
@@ -160,30 +160,30 @@
                                 <small>{{ $sale->sale_date->format('M d, Y') }}</small>
                             </td>
                             <td class="text-end">
-                                <strong>{{ number_format($sale->total_amount, 2) }}</strong>
+                                <strong>{{ number_format($sale->total_amount, 0) }}</strong>
                             </td>
                             <td class="text-end">
                                 @if($sale->paid_amount > 0)
-                                    <span class="text-success">{{ number_format($sale->paid_amount, 2) }}</span>
+                                    <span class="text-success">{{ number_format($sale->paid_amount, 0) }}</span>
                                 @else
-                                    <span class="text-muted">0.00</span>
+                                    <span class="text-muted">0</span>
                                 @endif
                             </td>
                             <td class="text-end">
                                 @if($sale->total_additional_payments > 0)
                                     <span class="text-info">
-                                        {{ number_format($sale->total_additional_payments, 2) }}
+                                        {{ number_format($sale->total_additional_payments, 0) }}
                                         <small>({{ $paymentsCount }})</small>
                                     </span>
                                 @else
-                                    <span class="text-muted">0.00</span>
+                                    <span class="text-muted">0</span>
                                 @endif
                             </td>
                             <td class="text-end">
                                 @if($remainingUdhar > 0)
-                                    <strong class="text-danger">{{ number_format($remainingUdhar, 2) }}</strong>
+                                    <strong class="text-danger">{{ number_format($remainingUdhar, 0) }}</strong>
                                 @else
-                                    <span class="text-success">0.00</span>
+                                    <span class="text-success">0</span>
                                 @endif
                             </td>
                             <td>
@@ -217,10 +217,10 @@
                     <tfoot class="table-light">
                         <tr>
                             <th colspan="2" class="text-end">Totals:</th>
-                            <th class="text-end">{{ number_format($sales->sum(fn($s) => $s['sale']->total_amount), 2) }}</th>
-                            <th class="text-end">{{ number_format($sales->sum(fn($s) => $s['sale']->paid_amount), 2) }}</th>
-                            <th class="text-end">{{ number_format($sales->sum(fn($s) => $s['sale']->total_additional_payments), 2) }}</th>
-                            <th class="text-end text-danger">{{ number_format($sales->sum('remaining_udhar'), 2) }}</th>
+                            <th class="text-end">{{ number_format($sales->sum(fn($s) => $s['sale']->total_amount), 0) }}</th>
+                            <th class="text-end">{{ number_format($sales->sum(fn($s) => $s['sale']->paid_amount), 0) }}</th>
+                            <th class="text-end">{{ number_format($sales->sum(fn($s) => $s['sale']->total_additional_payments), 0) }}</th>
+                            <th class="text-end text-danger">{{ number_format($sales->sum('remaining_udhar'), 0) }}</th>
                             <th colspan="2"></th>
                         </tr>
                     </tfoot>
@@ -276,21 +276,21 @@
                             </td>
                             <td class="text-end">
                                 @if($transaction['debit'] > 0)
-                                    <span class="text-danger">{{ number_format($transaction['debit'], 2) }}</span>
+                                    <span class="text-danger">{{ number_format($transaction['debit'], 0) }}</span>
                                 @else
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
                             <td class="text-end">
                                 @if($transaction['credit'] > 0)
-                                    <span class="text-success">{{ number_format($transaction['credit'], 2) }}</span>
+                                    <span class="text-success">{{ number_format($transaction['credit'], 0) }}</span>
                                 @else
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
                             <td class="text-end">
                                 <strong class="{{ $transaction['balance'] > 0 ? 'text-danger' : 'text-success' }}">
-                                    {{ number_format($transaction['balance'], 2) }}
+                                    {{ number_format($transaction['balance'], 0) }}
                                 </strong>
                             </td>
                         </tr>

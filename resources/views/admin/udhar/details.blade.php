@@ -92,12 +92,12 @@
                         <td><strong>{{ $sale['invoice_number'] }}</strong></td>
                         <td>{{ $sale['sale_date'] }}</td>
                         <td>{{ $sale['warehouse'] }}</td>
-                        <td class="text-end">Rs. {{ number_format($sale['total_amount'], 2) }}</td>
+                        <td class="text-end">Rs. {{ number_format($sale['total_amount'], 0) }}</td>
                         <td class="text-end">
-                            <span class="text-success">Rs. {{ number_format($sale['paid_amount'], 2) }}</span>
+                            <span class="text-success">Rs. {{ number_format($sale['paid_amount'], 0) }}</span>
                         </td>
                         <td class="text-end">
-                            <strong class="text-danger">Rs. {{ number_format($sale['due_amount'], 2) }}</strong>
+                            <strong class="text-danger">Rs. {{ number_format($sale['due_amount'], 0) }}</strong>
                         </td>
                         <td>
                             @if($sale['payment_status'] == 'unpaid')
@@ -144,7 +144,7 @@
                     <small class="text-muted">Manage payments for all outstanding amounts</small>
                 </div>
                 <div class="text-end">
-                    <h4 class="mb-0 text-danger">Rs. {{ number_format($customerTotals['total_udhar'], 2) }}</h4>
+                    <h4 class="mb-0 text-danger">Rs. {{ number_format($customerTotals['total_udhar'], 0) }}</h4>
                     <small class="text-muted">Total Outstanding</small>
                 </div>
             </div>
@@ -156,19 +156,19 @@
                         <div class="col-md-4">
                             <div class="text-center">
                                 <h6 class="text-muted mb-1">Total Amount</h6>
-                                <p class="mb-0 fw-bold">Rs. {{ number_format($customerTotals['total_amount'], 2) }}</p>
+                                <p class="mb-0 fw-bold">Rs. {{ number_format($customerTotals['total_amount'], 0) }}</p>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="text-center">
                                 <h6 class="text-muted mb-1">Paid Amount</h6>
-                                <p class="mb-0 fw-bold text-success">Rs. {{ number_format($customerTotals['total_paid'], 2) }}</p>
+                                <p class="mb-0 fw-bold text-success">Rs. {{ number_format($customerTotals['total_paid'], 0) }}</p>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="text-center">
                                 <h6 class="text-muted mb-1">Outstanding</h6>
-                                <p class="mb-0 fw-bold text-danger">Rs. {{ number_format($customerTotals['total_udhar'], 2) }}</p>
+                                <p class="mb-0 fw-bold text-danger">Rs. {{ number_format($customerTotals['total_udhar'], 0) }}</p>
                             </div>
                         </div>
                     </div>
@@ -214,7 +214,7 @@
                         <label for="totalOutstandingDisplay" class="form-label">Total Outstanding Amount</label>
                         <div class="input-group">
                             <span class="input-group-text">Rs.</span>
-                            <input type="text" class="form-control" id="totalOutstandingDisplay" value="{{ number_format($customerTotals['total_udhar'], 2) }}" disabled>
+                            <input type="text" class="form-control" id="totalOutstandingDisplay" value="{{ number_format($customerTotals['total_udhar'], 0) }}" disabled>
                         </div>
                     </div>
 
@@ -234,7 +234,7 @@
                                    placeholder="0.00"
                                    required>
                         </div>
-                        <small class="text-muted">Maximum: Rs. {{ number_format($customerTotals['total_udhar'], 2) }}</small>
+                        <small class="text-muted">Maximum: Rs. {{ number_format($customerTotals['total_udhar'], 0) }}</small>
                     </div>
 
                     <div class="mb-3">

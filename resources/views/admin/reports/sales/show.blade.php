@@ -158,31 +158,31 @@
                                         @endif
                                     </td>
                                     <td class="text-center">
-                                        {{ number_format($item->quantity, 2) }}
+                                        {{ number_format($item->quantity, 0) }}
                                         @if($item->returned_qty > 0)
-                                            <br><small class="text-warning">Returned: {{ number_format($item->returned_qty, 2) }}</small>
+                                            <br><small class="text-warning">Returned: {{ number_format($item->returned_qty, 0) }}</small>
                                         @endif
                                     </td>
-                                    <td class="text-end">Rs. {{ number_format($item->unit_price, 2) }}</td>
+                                    <td class="text-end">Rs. {{ number_format($item->unit_price, 0) }}</td>
                                     <td class="text-end">
                                         @if($item->cost_price)
-                                            Rs. {{ number_format($item->cost_price, 2) }}
+                                            Rs. {{ number_format($item->cost_price, 0) }}
                                         @else
                                             <span class="text-muted small">N/A</span>
                                         @endif
                                     </td>
-                                    <td class="text-end">Rs. {{ number_format($item->discount, 2) }}</td>
-                                    <td class="text-end fw-bold">Rs. {{ number_format($item->total, 2) }}</td>
+                                    <td class="text-end">Rs. {{ number_format($item->discount, 0) }}</td>
+                                    <td class="text-end fw-bold">Rs. {{ number_format($item->total, 0) }}</td>
                                     <td class="text-end">
                                         @if($item->cost_price)
                                             @if($item->gross_profit >= 0)
                                                 <span class="text-success fw-bold">
-                                                    <i class="bi bi-arrow-up-circle me-1"></i>Rs. {{ number_format($item->gross_profit, 2) }}
+                                                    <i class="bi bi-arrow-up-circle me-1"></i>Rs. {{ number_format($item->gross_profit, 0) }}
                                                 </span>
                                                 <br><small class="text-muted">{{ number_format($item->profit_margin, 1) }}%</small>
                                             @else
                                                 <span class="text-danger fw-bold">
-                                                    <i class="bi bi-arrow-down-circle me-1"></i>Rs. {{ number_format(abs($item->gross_profit), 2) }}
+                                                    <i class="bi bi-arrow-down-circle me-1"></i>Rs. {{ number_format(abs($item->gross_profit), 0) }}
                                                 </span>
                                                 <br><small class="text-muted">{{ number_format($item->profit_margin, 1) }}%</small>
                                             @endif
@@ -217,13 +217,13 @@
                         <div class="col-md-3">
                             <div class="text-center p-3 bg-light rounded">
                                 <small class="text-muted d-block mb-1">Net Revenue</small>
-                                <h5 class="mb-0 text-success">Rs. {{ number_format($sale->net_revenue, 2) }}</h5>
+                                <h5 class="mb-0 text-success">Rs. {{ number_format($sale->net_revenue, 0) }}</h5>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-3 bg-light rounded">
                                 <small class="text-muted d-block mb-1">Cost of Goods</small>
-                                <h5 class="mb-0 text-danger">Rs. {{ number_format($sale->total_cogs, 2) }}</h5>
+                                <h5 class="mb-0 text-danger">Rs. {{ number_format($sale->total_cogs, 0) }}</h5>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -237,14 +237,14 @@
                                     @else
                                         <i class="bi bi-dash-circle me-1"></i>
                                     @endif
-                                    Rs. {{ number_format(abs($sale->gross_profit), 2) }}
+                                    Rs. {{ number_format(abs($sale->gross_profit), 0) }}
                                 </h5>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center p-3 bg-light rounded">
                                 <small class="text-muted d-block mb-1">Profit Margin</small>
-                                <h5 class="mb-0 text-info">{{ number_format($sale->profit_margin_percentage, 2) }}%</h5>
+                                <h5 class="mb-0 text-info">{{ number_format($sale->profit_margin_percentage, 0) }}%</h5>
                             </div>
                         </div>
                     </div>
@@ -290,7 +290,7 @@
                                 <tr>
                                     <td>{{ $return->return_number }}</td>
                                     <td>{{ $return->return_date->format('d M Y') }}</td>
-                                    <td class="text-end">Rs. {{ number_format($return->total_return_amount, 2) }}</td>
+                                    <td class="text-end">Rs. {{ number_format($return->total_return_amount, 0) }}</td>
                                     <td>
                                         <span class="badge bg-{{ $return->status === 'confirmed' ? 'success' : 'warning' }}">
                                             {{ ucfirst($return->status) }}
@@ -319,29 +319,29 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Subtotal:</span>
-                            <strong>Rs. {{ number_format($sale->subtotal, 2) }}</strong>
+                            <strong>Rs. {{ number_format($sale->subtotal, 0) }}</strong>
                         </div>
                         @if($sale->discount > 0)
                         <div class="d-flex justify-content-between mb-2 text-danger">
                             <span>Discount:</span>
-                            <strong>- Rs. {{ number_format($sale->discount, 2) }}</strong>
+                            <strong>- Rs. {{ number_format($sale->discount, 0) }}</strong>
                         </div>
                         @endif
                         <hr>
                         <div class="d-flex justify-content-between mb-3">
                             <span class="fw-bold">Total Amount:</span>
-                            <strong class="fs-5">Rs. {{ number_format($sale->total_amount, 2) }}</strong>
+                            <strong class="fs-5">Rs. {{ number_format($sale->total_amount, 0) }}</strong>
                         </div>
                     </div>
 
                     <div class="border-top pt-3">
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-success">Paid Amount:</span>
-                            <strong class="text-success">Rs. {{ number_format($sale->paid_amount, 2) }}</strong>
+                            <strong class="text-success">Rs. {{ number_format($sale->paid_amount, 0) }}</strong>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-danger">Outstanding (Udhar):</span>
-                            <strong class="text-danger">Rs. {{ number_format($sale->due_amount, 2) }}</strong>
+                            <strong class="text-danger">Rs. {{ number_format($sale->due_amount, 0) }}</strong>
                         </div>
                     </div>
 
@@ -376,7 +376,7 @@
                                     <br><small>By: {{ $payment->receiver->name ?? 'System' }}</small>
                                 </div>
                                 <div>
-                                    <strong class="text-success">Rs. {{ number_format($payment->amount, 2) }}</strong>
+                                    <strong class="text-success">Rs. {{ number_format($payment->amount, 0) }}</strong>
                                 </div>
                             </div>
                             @if($payment->notes)
@@ -403,7 +403,7 @@
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Total Quantity:</span>
-                        <strong>{{ number_format($sale->items->sum('quantity'), 2) }}</strong>
+                        <strong>{{ number_format($sale->items->sum('quantity'), 0) }}</strong>
                     </div>
                     @if($sale->returns->count() > 0)
                     <div class="d-flex justify-content-between mb-2 text-warning">
@@ -412,7 +412,7 @@
                     </div>
                     <div class="d-flex justify-content-between text-warning">
                         <span>Returned Amount:</span>
-                        <strong>Rs. {{ number_format($sale->returns->sum('total_return_amount'), 2) }}</strong>
+                        <strong>Rs. {{ number_format($sale->returns->sum('total_return_amount'), 0) }}</strong>
                     </div>
                     @endif
                 </div>

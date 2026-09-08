@@ -81,7 +81,6 @@
                             <th>Original Sale</th>
                             <th>Customer</th>
                             <th>Family</th>
-                            <th>Warehouse</th>
                             <th class="text-end">Return Amount</th>
                             <th>Status</th>
                             <th class="text-end">Actions</th>
@@ -128,12 +127,7 @@
                                     <span class="text-muted">—</span>
                                 @endif
                             </td>
-                            <td>
-                                <small>
-                                    <i class="bi bi-building me-1"></i>
-                                    {{ $return->warehouse->name }}
-                                </small>
-                            </td>
+
                             <td class="text-end">
                                 <strong>Rs. {{ number_format($return->total_return_amount, 0) }}</strong>
                             </td>

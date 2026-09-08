@@ -59,7 +59,7 @@
                             <div class="col-md-4">
                                 <label class="form-label small">Payment Amount <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" name="amount" step="0.01" min="0.01" max="{{ $individualAccount['outstanding'] }}" required>
-                                <small class="text-muted">Max: Rs. {{ number_format($individualAccount['outstanding'], 2) }}</small>
+                                <small class="text-muted">Max: Rs. {{ number_format($individualAccount['outstanding'], 0) }}</small>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small">Payment Date <span class="text-danger">*</span></label>

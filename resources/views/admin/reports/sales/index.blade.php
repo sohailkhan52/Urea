@@ -146,7 +146,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Avg. Margin</p>
-                            <h5 class="mb-0 text-info">{{ number_format($totals->avg_margin, 2) }}%</h5>
+                            <h5 class="mb-0 text-info">{{ number_format($totals->avg_margin, 0) }}%</h5>
                             <small class="text-muted">{{ $totals->sales_with_cost_data }} sales with cost data</small>
                         </div>
                         <div class="text-info">

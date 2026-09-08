@@ -15,7 +15,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1">Total Outstanding</p>
-                            <h3 class="mb-0">Rs. {{ number_format($summary['total_outstanding'], 2) }}</h3>
+                            <h3 class="mb-0">Rs. {{ number_format($summary['total_outstanding'], 0) }}</h3>
                         </div>
                         <div class="text-primary" style="font-size: 2rem;">
                             <i class="bi bi-wallet2"></i>
@@ -47,7 +47,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1">Total Paid</p>
-                            <h3 class="mb-0">Rs. {{ number_format($summary['total_paid'], 2) }}</h3>
+                            <h3 class="mb-0">Rs. {{ number_format($summary['total_paid'], 0) }}</h3>
                         </div>
                         <div class="text-success" style="font-size: 2rem;">
                             <i class="bi bi-check-circle"></i>
@@ -63,7 +63,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1">Total Purchases</p>
-                            <h3 class="mb-0">Rs. {{ number_format($summary['total_purchases'], 2) }}</h3>
+                            <h3 class="mb-0">Rs. {{ number_format($summary['total_purchases'], 0) }}</h3>
                         </div>
                         <div class="text-info" style="font-size: 2rem;">
                             <i class="bi bi-cart"></i>
@@ -102,11 +102,11 @@
                                     <small class="text-muted">{{ $supplier->phone }}</small>
                                 </td>
                                 <td>{{ $supplier->company_name ?? '-' }}</td>
-                                <td class="text-end">Rs. {{ number_format($supplier->total_purchases, 2) }}</td>
-                                <td class="text-end">Rs. {{ number_format($supplier->total_paid, 2) }}</td>
-                                <td class="text-end">Rs. {{ number_format($supplier->total_returns, 2) }}</td>
+                                <td class="text-end">Rs. {{ number_format($supplier->total_purchases, 0) }}</td>
+                                <td class="text-end">Rs. {{ number_format($supplier->total_paid, 0) }}</td>
+                                <td class="text-end">Rs. {{ number_format($supplier->total_returns, 0) }}</td>
                                 <td class="text-end">
-                                    <strong class="text-danger">Rs. {{ number_format($supplier->outstanding_payable, 2) }}</strong>
+                                    <strong class="text-danger">Rs. {{ number_format($supplier->outstanding_payable, 0) }}</strong>
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm" role="group">

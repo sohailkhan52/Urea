@@ -699,6 +699,16 @@ document.getElementById('productSearch').addEventListener('input', function(e) {
 
     }
 
+    // Check if customer is selected
+    const customerId = document.getElementById('customer_id').value.trim();
+    const walkinName = document.getElementById('walkin_name').value.trim();
+    
+    if (!customerId && !walkinName) {
+        alert('Please select a customer first (either an existing customer or enter a walk-in customer name)');
+        document.getElementById('productSearch').value = '';
+        return;
+    }
+
     
 
     const warehouseId = document.querySelector('input[name="warehouse_id"]').value;
@@ -750,6 +760,15 @@ document.getElementById('productSearch').addEventListener('input', function(e) {
 // Add product
 
 function addProduct(productId, productName, stock = 0, salePrice = 0, unit = 'Piece') {
+
+    // Check if customer is selected
+    const customerId = document.getElementById('customer_id').value.trim();
+    const walkinName = document.getElementById('walkin_name').value.trim();
+    
+    if (!customerId && !walkinName) {
+        alert('Please select a customer first (either an existing customer or enter a walk-in customer name)');
+        return;
+    }
 
     if (!saleItems[productId]) {
 

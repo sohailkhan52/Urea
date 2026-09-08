@@ -27,7 +27,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-1">Current Outstanding Balance</h6>
-                            <h3 class="mb-0 text-danger">Rs. {{ number_format($currentBalance, 2) }}</h3>
+                            <h3 class="mb-0 text-danger">Rs. {{ number_format($currentBalance, 0) }}</h3>
                         </div>
                         <div class="text-end">
                             <p class="text-muted mb-1">Last Transaction</p>
@@ -110,16 +110,16 @@
                         <td>{{ $entry['description'] }}</td>
                         <td class="text-end">
                             @if($entry['debit'] > 0)
-                                <span class="text-danger">Rs. {{ number_format($entry['debit'], 2) }}</span>
+                                <span class="text-danger">Rs. {{ number_format($entry['debit'], 0) }}</span>
                             @endif
                         </td>
                         <td class="text-end">
                             @if($entry['credit'] > 0)
-                                <span class="text-success">Rs. {{ number_format($entry['credit'], 2) }}</span>
+                                <span class="text-success">Rs. {{ number_format($entry['credit'], 0) }}</span>
                             @endif
                         </td>
                         <td class="text-end">
-                            <strong>Rs. {{ number_format($entry['balance'], 2) }}</strong>
+                            <strong>Rs. {{ number_format($entry['balance'], 0) }}</strong>
                         </td>
                     </tr>
                     @empty

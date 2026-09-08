@@ -41,7 +41,7 @@
             <div class="card stat-card">
                 <div class="card-body">
                     <p class="text-muted mb-1">Total Purchases</p>
-                    <h4 class="mb-0">Rs. {{ number_format($total_purchases, 2) }}</h4>
+                    <h4 class="mb-0">Rs. {{ number_format($total_purchases, 0) }}</h4>
                 </div>
             </div>
         </div>
@@ -49,7 +49,7 @@
             <div class="card stat-card success">
                 <div class="card-body">
                     <p class="text-muted mb-1">Total Paid</p>
-                    <h4 class="mb-0">Rs. {{ number_format($total_paid, 2) }}</h4>
+                    <h4 class="mb-0">Rs. {{ number_format($total_paid, 0) }}</h4>
                 </div>
             </div>
         </div>
@@ -57,7 +57,7 @@
             <div class="card stat-card warning">
                 <div class="card-body">
                     <p class="text-muted mb-1">Total Returns</p>
-                    <h4 class="mb-0">Rs. {{ number_format($total_returns, 2) }}</h4>
+                    <h4 class="mb-0">Rs. {{ number_format($total_returns, 0) }}</h4>
                 </div>
             </div>
         </div>
@@ -65,7 +65,7 @@
             <div class="card stat-card danger">
                 <div class="card-body">
                     <p class="text-muted mb-1">Outstanding Payable</p>
-                    <h4 class="mb-0">Rs. {{ number_format($outstanding, 2) }}</h4>
+                    <h4 class="mb-0">Rs. {{ number_format($outstanding, 0) }}</h4>
                 </div>
             </div>
         </div>
@@ -109,13 +109,13 @@
                                 </a>
                             </td>
                             <td>{{ $purchase->purchase_date->format('d M Y') }}</td>
-                            <td class="text-end">Rs. {{ number_format($purchase->total_amount, 2) }}</td>
-                            <td class="text-end">Rs. {{ number_format($purchase->paid_amount, 2) }}</td>
+                            <td class="text-end">Rs. {{ number_format($purchase->total_amount, 0) }}</td>
+                            <td class="text-end">Rs. {{ number_format($purchase->paid_amount, 0) }}</td>
                             <td class="text-end">
-                                Rs. {{ number_format($purchase->total_returns, 2) }}
+                                Rs. {{ number_format($purchase->total_returns, 0) }}
                             </td>
                             <td class="text-end">
-                                <strong>Rs. {{ number_format($purchase->payable_amount, 2) }}</strong>
+                                <strong>Rs. {{ number_format($purchase->payable_amount, 0) }}</strong>
                             </td>
                             <td>
                                 <span class="badge bg-{{ $purchase->payment_status_badge }}">

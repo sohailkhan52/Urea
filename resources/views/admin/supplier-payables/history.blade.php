@@ -30,7 +30,7 @@
             <div class="card stat-card success">
                 <div class="card-body">
                     <p class="text-muted mb-1">Total Amount Paid</p>
-                    <h4 class="mb-0">Rs. {{ number_format($payments->sum('amount') ?? 0, 2) }}</h4>
+                    <h4 class="mb-0">Rs. {{ number_format($payments->sum('amount') ?? 0, 0) }}</h4>
                 </div>
             </div>
         </div>
@@ -96,7 +96,7 @@
                                     @endif
                                 </td>
                                 <td class="text-end">
-                                    <strong>Rs. {{ number_format($payment->amount, 2) }}</strong>
+                                    <strong>Rs. {{ number_format($payment->amount, 0) }}</strong>
                                 </td>
                                 <td>
                                     <span class="badge bg-info">{{ ucfirst($payment->payment_method) }}</span>
