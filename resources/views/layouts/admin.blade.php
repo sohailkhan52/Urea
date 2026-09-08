@@ -865,16 +865,16 @@
                     @endcan
                 </ul>
             </div>
-                        <a href="{{ route('admin.supplier-payables.index') }}" class="nav-link {{ request()->routeIs('admin.supplier-payables.*') ? 'active' : '' }}">
+            @endpermission
+
+            <a href="{{ route('admin.supplier-payables.index') }}" class="nav-link {{ request()->routeIs('admin.supplier-payables.*') ? 'active' : '' }}">
                 <i class="bi bi-wallet2"></i>
                 <div class="nav-link-wrapper">
                     <span class="nav-link-text-en">Supplier Payables</span>
                     <span class="nav-link-text-ur">سپلائر ادائیگیاں</span>
                 </div>
             </a>
-            @endpermission
 
-            @permission('udhar.view')
             <a href="{{ route('admin.udhar.index') }}" class="nav-link {{ request()->routeIs('admin.udhar.*') ? 'active' : '' }}">
                 <i class="bi bi-credit-card"></i>
                 <div class="nav-link-wrapper">
@@ -882,7 +882,6 @@
                     <span class="nav-link-text-ur">اُدھار</span>
                 </div>
             </a>
-            @endpermission
             @endanypermission
 
             {{-- Reports Section --}}
@@ -927,16 +926,17 @@
                         </a>
                     </li>
                     @endcan
+                    @if(auth()->user()->isSuperAdmin())
+                    <li>
+                        <a href="{{ route('admin.families.index') }}" class="dropdown-item {{ request()->routeIs('admin.families.*') ? 'active' : '' }}">
+                            <i class="bi bi-people me-2"></i> Families
+                        </a>
+                    </li>
+                    @endif
                 </ul>
             </div>
             @endpermission
             @endanypermission
-
-            {{-- PHASE 1a REMOVED: Stock Transfers, Welcome Page Settings, and Expense Management --}}
-
-                <ul class="dropdown-menu dropdown-menu-dark">
-                </ul>
-            </div>
         </nav>
     </aside>
 
@@ -1218,6 +1218,7 @@
 
     </script>
 
+    @stack('modals')
     @stack('scripts')
 </body>
 </html>

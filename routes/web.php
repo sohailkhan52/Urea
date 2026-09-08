@@ -332,6 +332,10 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->middleware('permission:sales.create');
 
     // Family Management (AJAX endpoints for sales)
+    Route::get('/families', [\App\Http\Controllers\Admin\FamilyController::class, 'index'])
+        ->name('families.index')
+        ->middleware('permission:admin');
+
     Route::post('/families', [\App\Http\Controllers\Admin\FamilyController::class, 'store'])
         ->name('families.store')
         ->middleware('permission:sales.create');
@@ -343,6 +347,14 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     Route::get('/families/all', [\App\Http\Controllers\Admin\FamilyController::class, 'getAll'])
         ->name('families.getAll')
         ->middleware('permission:sales.create');
+    
+    Route::put('/families/{family}', [\App\Http\Controllers\Admin\FamilyController::class, 'update'])
+        ->name('families.update')
+        ->middleware('permission:admin');
+    
+    Route::delete('/families/{family}', [\App\Http\Controllers\Admin\FamilyController::class, 'destroy'])
+        ->name('families.destroy')
+        ->middleware('permission:admin');
 
     // AJAX: Get warehouse products (for single-page create form)
     Route::get('/sales/warehouse/{warehouse}/products', [\App\Http\Controllers\Admin\SalesController::class, 'getWarehouseProducts'])

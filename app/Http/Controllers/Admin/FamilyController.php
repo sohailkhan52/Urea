@@ -6,10 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Models\Family;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
 
 class FamilyController extends Controller
 {
+    /**
+     * Display all families
+     */
+    public function index(): View
+    {
+        $families = Family::orderBy('name')->paginate(20);
+        
+        return view('admin.families.index', [
+            'families' => $families,
+        ]);
+    }
+
     /**
      * Store a newly created family (AJAX endpoint for inline creation)
      */
@@ -107,5 +120,68 @@ class FamilyController extends Controller
             });
 
         return response()->json($families);
+    }
+
+    /**
+     * Update a family
+     */
+    public function update(Request $request, Family $family): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:50',
+            'village' => 'nullable|string|max:50',
+            'notes' => 'nullable|string|max:500',
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        try {
+            $family->update($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Family updated successfully',
+                'family' => [
+                    'id' => $family->id,
+                    'family_code' => $family->family_code,
+                    'name' => $family->name,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating family: ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Delete a family
+     */
+    public function destroy(Family $family): JsonResponse
+    {
+        try {
+            // Check if family has customers
+            if ($family->customers()->count() > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete family with associated customers. Please reassign or delete customers first.',
+                ], 422);
+            }
+
+            $familyName = $family->name;
+            $family->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Family '{$familyName}' deleted successfully",
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error deleting family: ' . $e->getMessage(),
+            ], 422);
+        }
     }
 }
