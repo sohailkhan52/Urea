@@ -14,7 +14,7 @@
         <div class="col-md-3">
             <div class="card border-primary">
                 <div class="card-body">
-                    <p class="text-muted mb-1 small">Total Accounts</p>
+                    <p class="text-muted mb-1 small">Total Accounts with Udhar</p>
                     <h3 class="mb-0">{{ $accountsCount }}</h3>
                 </div>
             </div>

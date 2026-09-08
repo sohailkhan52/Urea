@@ -10,22 +10,6 @@
     <!-- Summary Cards -->
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card stat-card primary">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-1">Total Outstanding</p>
-                            <h3 class="mb-0">Rs. {{ number_format($summary['total_outstanding'], 0) }}</h3>
-                        </div>
-                        <div class="text-primary" style="font-size: 2rem;">
-                            <i class="bi bi-wallet2"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-xl-3 col-md-6 mb-3">
             <div class="card stat-card warning">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -40,23 +24,8 @@
                 </div>
             </div>
         </div>
-        
-        <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card stat-card success">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-muted mb-1">Total Paid</p>
-                            <h3 class="mb-0">Rs. {{ number_format($summary['total_paid'], 0) }}</h3>
-                        </div>
-                        <div class="text-success" style="font-size: 2rem;">
-                            <i class="bi bi-check-circle"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
+
+                
         <div class="col-xl-3 col-md-6 mb-3">
             <div class="card stat-card">
                 <div class="card-body">
@@ -72,6 +41,40 @@
                 </div>
             </div>
         </div>
+        
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card stat-card success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Total Paid</p>
+                            <h3 class="mb-0">Rs. {{ number_format($summary['total_paid'], 0) }}</h3>
+                        </div>
+                        <div class="text-success" style="font-size: 2rem;">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+                
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card stat-card primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Total Outstanding</p>
+                            <h3 class="mb-0">Rs. {{ number_format($summary['total_outstanding'], 0) }}</h3>
+                        </div>
+                        <div class="text-primary" style="font-size: 2rem;">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Supplier Payables Table -->
