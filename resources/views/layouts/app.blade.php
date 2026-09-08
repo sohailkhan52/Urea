@@ -237,7 +237,7 @@
     <footer class="mt-auto">
         <div class="container">
             <div class="row mb-4">
-                <div class="col-md-4 mb-4 mb-md-0">
+                <div class="col-md-6 mb-4 mb-md-0">
                     <h5 class="fw-bold mb-3">
                         <i class="bi bi-box-seam text-primary"></i> Inventory Management 
                     </h5>
@@ -245,20 +245,13 @@
                         Professional inventory management and accounting solution for businesses of all sizes.
                     </p>
                 </div>
-                <div class="col-md-4 mb-4 mb-md-0">
+                <div class="col-md-6 mb-4 mb-md-0">
                     <h6 class="fw-bold mb-3">Product</h6>
                     <ul class="list-unstyled small">
                         <li><a href="#features" class="text-decoration-none text-muted">Features</a></li>
                         <li><a href="#" class="text-decoration-none text-muted">Documentation</a></li>
                         <li><a href="#" class="text-decoration-none text-muted">Support</a></li>
                     </ul>
-                </div>
-                <div class="col-md-4">
-                    <h6 class="fw-bold mb-3">Contact</h6>
-                    <p class="text-muted small mb-0">
-                        <i class="bi bi-envelope"></i> support@inventory.local<br>
-                        <i class="bi bi-telephone"></i> +1 (555) 123-4567
-                    </p>
                 </div>
             </div>
             <hr>

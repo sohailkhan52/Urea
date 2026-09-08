@@ -87,6 +87,17 @@ class CustomerPaymentService
                     'received_by' => auth()->id(),
                 ]);
 
+                // Update the sale's paid_amount and due_amount
+                $newPaidAmount = $outstandingSale->paid_amount + $paymentForThisSale;
+                $newDueAmount = max(0, $outstandingSale->total_amount - $newPaidAmount);
+                $newPaymentStatus = $newDueAmount <= 0 ? Sale::PAYMENT_STATUS_PAID : ($outstandingSale->paid_amount > 0 ? Sale::PAYMENT_STATUS_PARTIAL : Sale::PAYMENT_STATUS_UNPAID);
+
+                $outstandingSale->update([
+                    'paid_amount' => $newPaidAmount,
+                    'due_amount' => $newDueAmount,
+                    'payment_status' => $newPaymentStatus,
+                ]);
+
                 $remainingAmount -= $paymentForThisSale;
             }
 
@@ -120,7 +131,7 @@ class CustomerPaymentService
 
         // Create payment record
         return DB::transaction(function () use ($sale, $amount) {
-            return CustomerPayment::create([
+            $payment = CustomerPayment::create([
                 'customer_id' => $sale->customer_id,
                 'sale_id' => $sale->id,
                 'account_type' => $sale->udhar_account_type,
@@ -132,6 +143,19 @@ class CustomerPaymentService
                 'notes' => null,
                 'received_by' => auth()->id(),
             ]);
+
+            // Update the sale's paid_amount and due_amount
+            $newPaidAmount = $sale->paid_amount + $amount;
+            $newDueAmount = max(0, $sale->total_amount - $newPaidAmount);
+            $newPaymentStatus = $newDueAmount <= 0 ? Sale::PAYMENT_STATUS_PAID : ($sale->paid_amount > 0 ? Sale::PAYMENT_STATUS_PARTIAL : Sale::PAYMENT_STATUS_UNPAID);
+
+            $sale->update([
+                'paid_amount' => $newPaidAmount,
+                'due_amount' => $newDueAmount,
+                'payment_status' => $newPaymentStatus,
+            ]);
+
+            return $payment;
         });
     }
 
@@ -403,6 +427,17 @@ class CustomerPaymentService
                         'received_by' => auth()->id(),
                     ]);
 
+                    // Update the sale's paid_amount and due_amount
+                    $newPaidAmount = $sale->paid_amount + $paymentForThisSale;
+                    $newDueAmount = max(0, $sale->total_amount - $newPaidAmount);
+                    $newPaymentStatus = $newDueAmount <= 0 ? Sale::PAYMENT_STATUS_PAID : ($sale->paid_amount > 0 ? Sale::PAYMENT_STATUS_PARTIAL : Sale::PAYMENT_STATUS_UNPAID);
+
+                    $sale->update([
+                        'paid_amount' => $newPaidAmount,
+                        'due_amount' => $newDueAmount,
+                        'payment_status' => $newPaymentStatus,
+                    ]);
+
                     $payments[] = $payment;
                     $remainingAmount -= $paymentForThisSale;
                 }
@@ -438,6 +473,17 @@ class CustomerPaymentService
                         'reference_number' => $reference,
                         'notes' => $notes,
                         'received_by' => auth()->id(),
+                    ]);
+
+                    // Update the sale's paid_amount and due_amount
+                    $newPaidAmount = $sale->paid_amount + $alloc['amount'];
+                    $newDueAmount = max(0, $sale->total_amount - $newPaidAmount);
+                    $newPaymentStatus = $newDueAmount <= 0 ? Sale::PAYMENT_STATUS_PAID : ($sale->paid_amount > 0 ? Sale::PAYMENT_STATUS_PARTIAL : Sale::PAYMENT_STATUS_UNPAID);
+
+                    $sale->update([
+                        'paid_amount' => $newPaidAmount,
+                        'due_amount' => $newDueAmount,
+                        'payment_status' => $newPaymentStatus,
                     ]);
 
                     $payments[] = $payment;

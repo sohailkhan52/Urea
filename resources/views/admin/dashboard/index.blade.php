@@ -380,6 +380,11 @@ document.getElementById('projectSettingsForm').addEventListener('submit', functi
             if (data.new_name) {
                 document.title = data.new_name + ' - Dashboard';
             }
+            
+            // Reload page to update sidebar with new logo and name
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
         } else {
             alert('Error: ' + (data.message || 'Failed to save settings'));
         }

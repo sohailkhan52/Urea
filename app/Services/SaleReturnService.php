@@ -151,7 +151,14 @@ class SaleReturnService
             // 2. Adjust customer balance
             $this->adjustCustomerBalance($sale, $return);
 
-            // 3. Update return status
+            // 3. Update sale's due_amount to reflect the return
+            // Due amount should be reduced by the return amount
+            $newDueAmount = max(0, $sale->due_amount - $return->total_return_amount);
+            $sale->update([
+                'due_amount' => $newDueAmount,
+            ]);
+
+            // 4. Update return status
             $return->update([
                 'status' => SaleReturn::STATUS_CONFIRMED,
                 'confirmed_at' => now(),

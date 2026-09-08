@@ -60,6 +60,11 @@
                                             <i class="bi bi-x-lg"></i>
                                         </button>
                                     </div>
+                                    
+                                    <!-- Validation Feedback -->
+                                    <div class="invalid-feedback d-block" id="supplierValidationFeedback" style="display: none;">
+                                        <i class="bi bi-exclamation-circle me-1"></i>Please select a supplier before adding products
+                                    </div>
 
                                     <!-- Recent Used Suppliers -->
                                     <div id="recentSuppliers" class="mt-2" style="display: none;">
@@ -330,30 +335,78 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="newSupplierForm">
+                <form id="newSupplierForm" novalidate>
                     <div class="mb-3">
                         <label for="supplier_name" class="form-label">Supplier Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="supplier_name" name="name" required>
+                        <input type="text" 
+                               class="form-control" 
+                               id="supplier_name" 
+                               name="name" 
+                               placeholder="Enter supplier name"
+                               minlength="3"
+                               pattern="[a-zA-Z\s]+"
+                               required>
+                        <div class="invalid-feedback" id="supplier_name_error" style="display: none;">
+                            Please provide a valid supplier name (alphabetic, minimum 3 letters)
+                        </div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label for="supplier_company" class="form-label">Company Name</label>
-                        <input type="text" class="form-control" id="supplier_company" name="company_name">
+                        <label for="supplier_company" class="form-label">Company Name <span class="text-danger">*</span></label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="supplier_company" 
+                               name="company_name"
+                               placeholder="Enter company name"
+                               required>
+                        <div class="invalid-feedback" id="supplier_company_error" style="display: none;">
+                            Company name is required
+                        </div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label for="supplier_phone" class="form-label">Phone</label>
-                        <input type="tel" class="form-control" id="supplier_phone" name="phone">
+                        <label for="supplier_phone" class="form-label">Phone <span class="text-danger">*</span></label>
+                        <input type="tel" 
+                               class="form-control" 
+                               id="supplier_phone" 
+                               name="phone"
+                               placeholder="03001234567"
+                               pattern="[0-9\-\+\s]+"
+                               inputmode="tel"
+                               required>
+                        <div class="invalid-feedback" id="supplier_phone_error" style="display: none;">
+                            Please provide a valid phone number (digits only)
+                        </div>
                     </div>
+                    
                     <div class="mb-3">
                         <label for="supplier_email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="supplier_email" name="email">
+                        <input type="email" 
+                               class="form-control" 
+                               id="supplier_email" 
+                               name="email"
+                               placeholder="example@company.com">
+                        <div class="invalid-feedback" id="supplier_email_error" style="display: none;">
+                            Please provide a valid email address
+                        </div>
                     </div>
+                    
                     <div class="mb-3">
                         <label for="supplier_address" class="form-label">Address</label>
-                        <textarea class="form-control" id="supplier_address" name="address" rows="2"></textarea>
+                        <textarea class="form-control" 
+                                  id="supplier_address" 
+                                  name="address" 
+                                  rows="2"
+                                  placeholder="Enter address"></textarea>
                     </div>
+                    
                     <div class="mb-3">
                         <label for="supplier_city" class="form-label">City</label>
-                        <input type="text" class="form-control" id="supplier_city" name="city">
+                        <input type="text" 
+                               class="form-control" 
+                               id="supplier_city" 
+                               name="city"
+                               placeholder="Enter city">
                     </div>
                 </form>
             </div>
@@ -374,12 +427,20 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="newProductForm">
+                <form id="newProductForm" novalidate>
                     <div class="row">
                         <div class="col-md-12">
                             <div class="mb-3">
                                 <label for="product_name" class="form-label">Product Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="product_name" name="name" required>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="product_name" 
+                                       name="name"
+                                       placeholder="Enter product name"
+                                       required>
+                                <div class="invalid-feedback d-block" id="product_name_error" style="display: none;">
+                                    Product name is required
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -388,12 +449,18 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="product_unit" class="form-label">Unit <span class="text-danger">*</span></label>
-                                <select class="form-select" id="product_unit" name="unit" required>
+                                <select class="form-select" 
+                                        id="product_unit" 
+                                        name="unit"
+                                        required>
                                     <option value="">-- Select Unit --</option>
                                     @foreach(\App\Models\Product::getUnits() as $value => $label)
                                         <option value="{{ $value }}">{{ $label }}</option>
                                     @endforeach
                                 </select>
+                                <div class="invalid-feedback d-block" id="product_unit_error" style="display: none;">
+                                    Please select a unit
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -402,13 +469,39 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="product_purchase_price" class="form-label">Purchase Price (Rs.) <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="product_purchase_price" name="purchase_price" step="0.01" min="0" required>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="product_purchase_price" 
+                                       name="purchase_price" 
+                                       step="0.01" 
+                                       min="0"
+                                       max="999999.99"
+                                       placeholder="0"
+                                       inputmode="decimal"
+                                       onwheel="return false"
+                                       required>
+                                <div class="invalid-feedback d-block" id="product_purchase_price_error" style="display: none;">
+                                    Purchase price must be a valid number
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="product_sale_price" class="form-label">Sale Price (Rs.) <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="product_sale_price" name="sale_price" step="0.01" min="0" required>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="product_sale_price" 
+                                       name="sale_price" 
+                                       step="0.01" 
+                                       min="0"
+                                       max="999999.99"
+                                       placeholder="0"
+                                       inputmode="decimal"
+                                       onwheel="return false"
+                                       required>
+                                <div class="invalid-feedback d-block" id="product_sale_price_error" style="display: none;">
+                                    Sale price must be a valid number
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -833,10 +926,66 @@
 
     function saveNewSupplier() {
         const form = document.getElementById('newSupplierForm');
+        const nameInput = document.getElementById('supplier_name');
+        const companyInput = document.getElementById('supplier_company');
+        const phoneInput = document.getElementById('supplier_phone');
+        const emailInput = document.getElementById('supplier_email');
         
-        // Validate form
-        if (!form.checkValidity()) {
-            form.classList.add('was-validated');
+        // Clear previous error states
+        const fields = [nameInput, companyInput, phoneInput, emailInput];
+        fields.forEach(field => {
+            field.classList.remove('is-invalid');
+            const feedback = field.nextElementSibling;
+            if (feedback && feedback.classList.contains('invalid-feedback')) {
+                feedback.style.display = 'none';
+            }
+        });
+        
+        // Validation flags
+        let isValid = true;
+        
+        // 1. SUPPLIER NAME validation
+        if (!nameInput.value.trim()) {
+            showFieldError(nameInput, 'Supplier name is required');
+            isValid = false;
+        } else if (nameInput.value.trim().length < 3) {
+            showFieldError(nameInput, 'Supplier name must be at least 3 letters');
+            isValid = false;
+        } else if (!/^[a-zA-Z\s]+$/.test(nameInput.value.trim())) {
+            showFieldError(nameInput, 'Supplier name must contain only alphabetic characters');
+            isValid = false;
+        }
+        
+        // 2. COMPANY NAME validation
+        if (!companyInput.value.trim()) {
+            showFieldError(companyInput, 'Company name is required');
+            isValid = false;
+        }
+        
+        // 3. PHONE validation
+        if (!phoneInput.value.trim()) {
+            showFieldError(phoneInput, 'Phone number is required');
+            isValid = false;
+        } else if (!/^[0-9\-\+\s]+$/.test(phoneInput.value.trim())) {
+            showFieldError(phoneInput, 'Phone number must contain only digits, spaces, hyphens, or plus sign');
+            isValid = false;
+        } else if (phoneInput.value.trim().replace(/[^\d]/g, '').length < 10) {
+            showFieldError(phoneInput, 'Phone number must be at least 10 digits');
+            isValid = false;
+        }
+        
+        // 4. EMAIL validation (optional but if provided must be valid)
+        if (emailInput.value.trim()) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(emailInput.value.trim())) {
+                showFieldError(emailInput, 'Please provide a valid email address');
+                isValid = false;
+            }
+        }
+        
+        // If validation fails, stop here
+        if (!isValid) {
+            showAlert('danger', 'Please correct the errors above');
             return;
         }
 
@@ -875,6 +1024,23 @@
             console.error('Error:', error);
             showAlert('danger', 'Error creating supplier: ' + error.message);
         });
+    }
+    
+    // Helper function to show field error
+    function showFieldError(field, message) {
+        field.classList.add('is-invalid');
+        
+        // Find the error div by ID pattern
+        const errorDivId = field.id + '_error';
+        const feedback = document.getElementById(errorDivId);
+        
+        if (feedback) {
+            feedback.textContent = message;
+            feedback.style.display = 'block';
+            feedback.classList.add('d-block');
+        } else {
+            console.warn('Error feedback div not found for:', errorDivId);
+        }
     }
 
     // ========== PRODUCT FUNCTIONS ==========
@@ -923,6 +1089,38 @@
     }
 
     function addProductToItems(product) {
+        // VALIDATION: Check if supplier is selected
+        const supplierId = document.getElementById('supplier_id').value;
+        const supplierSearchInput = document.getElementById('supplierSearch');
+        const supplierValidationFeedback = document.getElementById('supplierValidationFeedback');
+        
+        if (!supplierId) {
+            // Show validation error styling
+            supplierSearchInput.classList.add('is-invalid');
+            if (supplierValidationFeedback) {
+                supplierValidationFeedback.style.display = 'block';
+            }
+            
+            // Show alert
+            showAlert('danger', 'Please select a supplier before adding products');
+            
+            // Focus on supplier input
+            supplierSearchInput.focus();
+            
+            // Auto-scroll to supplier section
+            document.querySelector('.card:first-of-type')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Remove error styling after 3 seconds
+            setTimeout(() => {
+                supplierSearchInput.classList.remove('is-invalid');
+                if (supplierValidationFeedback) {
+                    supplierValidationFeedback.style.display = 'none';
+                }
+            }, 3000);
+            
+            return; // Exit function, don't add product
+        }
+        
         // Check if product already exists
         const existingItem = purchaseItems.find(item => item.product_id === product.id);
         if (existingItem) {
@@ -948,37 +1146,78 @@
     }
 
     function saveNewProduct() {
-        console.log('saveNewProduct called!'); // Debug: Function called
-        
         const form = document.getElementById('newProductForm');
+        const nameInput = document.getElementById('product_name');
+        const unitInput = document.getElementById('product_unit');
+        const purchasePriceInput = document.getElementById('product_purchase_price');
+        const salePriceInput = document.getElementById('product_sale_price');
         
-        if (!form) {
-            console.error('Form not found!');
-            showAlert('danger', 'Form not found. Please refresh the page.');
-            return;
+        console.log('saveNewProduct called'); // Debug
+        console.log('Form:', form); // Debug
+        console.log('Name input:', nameInput); // Debug
+        
+        // Clear previous error states
+        const fields = [nameInput, unitInput, purchasePriceInput, salePriceInput];
+        fields.forEach(field => {
+            field.classList.remove('is-invalid');
+            const errorDivId = field.id + '_error';
+            const feedback = document.getElementById(errorDivId);
+            if (feedback) {
+                feedback.style.display = 'none';
+            }
+        });
+        
+        // Validation flags
+        let isValid = true;
+        
+        // 1. PRODUCT NAME validation
+        if (!nameInput.value.trim()) {
+            console.log('Product name is empty'); // Debug
+            showFieldError(nameInput, 'Product name is required');
+            isValid = false;
         }
         
-        console.log('Form found:', form); // Debug: Form element
+        // 2. UNIT validation
+        if (!unitInput.value.trim()) {
+            console.log('Unit is empty'); // Debug
+            showFieldError(unitInput, 'Please select a unit');
+            isValid = false;
+        }
         
-        // Client-side validation
-        if (!form.checkValidity()) {
-            form.classList.add('was-validated');
-            showAlert('warning', 'Please fill in all required fields');
-            console.log('Form validation failed');
+        // 3. PURCHASE PRICE validation
+        if (!purchasePriceInput.value || purchasePriceInput.value === '') {
+            console.log('Purchase price is empty'); // Debug
+            showFieldError(purchasePriceInput, 'Purchase price is required');
+            isValid = false;
+        } else if (isNaN(parseFloat(purchasePriceInput.value)) || parseFloat(purchasePriceInput.value) < 0) {
+            console.log('Purchase price is invalid'); // Debug
+            showFieldError(purchasePriceInput, 'Purchase price must be a valid positive number');
+            isValid = false;
+        }
+        
+        // 4. SALE PRICE validation
+        if (!salePriceInput.value || salePriceInput.value === '') {
+            console.log('Sale price is empty'); // Debug
+            showFieldError(salePriceInput, 'Sale price is required');
+            isValid = false;
+        } else if (isNaN(parseFloat(salePriceInput.value)) || parseFloat(salePriceInput.value) < 0) {
+            console.log('Sale price is invalid'); // Debug
+            showFieldError(salePriceInput, 'Sale price must be a valid positive number');
+            isValid = false;
+        }
+        
+        console.log('isValid:', isValid); // Debug
+        
+        // If validation fails, stop here
+        if (!isValid) {
+            console.log('Validation failed'); // Debug
+            showAlert('danger', 'Please correct the errors above');
             return;
         }
 
-        console.log('Form validation passed'); // Debug: Validation passed
+        console.log('Validation passed, submitting form'); // Debug
 
         const formData = new FormData(form);
-
-        // Debug logging
-        console.log('Sending product data:', {
-            name: formData.get('name'),
-            unit: formData.get('unit'),
-            purchase_price: formData.get('purchase_price'),
-            sale_price: formData.get('sale_price')
-        });
 
         fetch('{{ route("admin.products.storeAjax") }}', {
             method: 'POST',
@@ -989,8 +1228,6 @@
             }
         })
         .then(response => {
-            console.log('Response status:', response.status);
-            
             if (response.status === 422) {
                 // Validation error - extract error messages
                 return response.json().then(errors => {
@@ -1015,8 +1252,6 @@
             return response.json();
         })
         .then(data => {
-            console.log('Product created:', data);
-            
             allProducts.push({
                 id: data.id,
                 name: data.name,
@@ -1028,11 +1263,10 @@
             addProductToItems(data);
             bootstrap.Modal.getInstance(document.getElementById('newProductModal')).hide();
             form.reset();
-            form.classList.remove('was-validated');
-            showAlert('success', 'Product created and added to purchase items');
+            showAlert('success', 'Product created successfully.');
         })
         .catch(error => {
-            console.error('Error creating product:', error);
+            console.error('Error:', error);
             showAlert('danger', 'Error creating product: ' + error.message);
         });
     }

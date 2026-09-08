@@ -88,7 +88,7 @@
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Update Product
                             </button>
-                            <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">
+                            <a href="{{ route('admin.reports.products.index') }}" class="btn btn-secondary">
                                 Cancel
                             </a>
                         </div>

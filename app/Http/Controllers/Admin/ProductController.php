@@ -50,7 +50,7 @@ class ProductController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.products.show', $product)
+        return redirect()->route('admin.reports.products.index')
             ->with('success', 'Product created successfully.');
     }
 
@@ -152,7 +152,7 @@ class ProductController extends Controller
 
         $product->update($validated);
 
-        return redirect()->route('admin.products.show', $product)
+        return redirect()->route('admin.reports.products.index')
             ->with('success', 'Product updated successfully.');
     }
 
