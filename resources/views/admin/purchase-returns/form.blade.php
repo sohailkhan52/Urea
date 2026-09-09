@@ -120,7 +120,7 @@
                                                min="0" 
                                                max="{{ $currentStock }}" 
                                                step="1"
-                                               value="0"
+                                               placeholder="0"
                                                onchange="updateItemRow({{ $index }})">
                                     </td>
                                     <td class="text-end">

@@ -306,6 +306,24 @@
             padding: 25px;
         }
 
+        .app-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            width: min(420px, calc(100vw - 40px));
+            margin: 0;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+        }
+
+        @media (max-width: 576px) {
+            .app-toast {
+                top: 10px;
+                right: 10px;
+                width: calc(100vw - 20px);
+            }
+        }
+
         /* Page Header */
         .page-header {
             background: #fff;
@@ -1084,7 +1102,7 @@
         <main class="content">
             <!-- Flash Messages -->
             @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <div class="alert alert-success alert-dismissible fade show app-toast" role="alert">
                     <i class="bi bi-check-circle me-2"></i>
                     {{ session('success') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -1092,7 +1110,7 @@
             @endif
 
             @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <div class="alert alert-danger alert-dismissible fade show app-toast" role="alert">
                     <i class="bi bi-exclamation-triangle me-2"></i>
                     {{ session('error') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -1100,7 +1118,7 @@
             @endif
 
             @if(session('warning'))
-                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <div class="alert alert-warning alert-dismissible fade show app-toast" role="alert">
                     <i class="bi bi-exclamation-circle me-2"></i>
                     {{ session('warning') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -1108,7 +1126,7 @@
             @endif
 
             @if(session('info'))
-                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <div class="alert alert-info alert-dismissible fade show app-toast" role="alert">
                     <i class="bi bi-info-circle me-2"></i>
                     {{ session('info') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>

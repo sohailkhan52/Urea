@@ -61,11 +61,6 @@
                                         </button>
                                     </div>
                                     
-                                    <!-- Validation Feedback -->
-                                    <div class="invalid-feedback d-block" id="supplierValidationFeedback" style="display: none;">
-                                        <i class="bi bi-exclamation-circle me-1"></i>Please select a supplier before adding products
-                                    </div>
-
                                     <!-- Recent Used Suppliers -->
                                     <div id="recentSuppliers" class="mt-2" style="display: none;">
                                         <small class="text-muted">Recently Used:</small>
@@ -312,7 +307,7 @@
 
                         <!-- Submit Buttons -->
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg" id="submitBtn" disabled>
+                            <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
                                 <i class="bi bi-check-circle"></i> Save & Confirm Purchase
                             </button>
                             <a href="{{ route('admin.purchases.index') }}" class="btn btn-secondary">
@@ -438,9 +433,6 @@
                                        name="name"
                                        placeholder="Enter product name"
                                        required>
-                                <div class="invalid-feedback d-block" id="product_name_error" style="display: none;">
-                                    Product name is required
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -458,9 +450,6 @@
                                         <option value="{{ $value }}">{{ $label }}</option>
                                     @endforeach
                                 </select>
-                                <div class="invalid-feedback d-block" id="product_unit_error" style="display: none;">
-                                    Please select a unit
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -480,9 +469,6 @@
                                        inputmode="decimal"
                                        onwheel="return false"
                                        required>
-                                <div class="invalid-feedback d-block" id="product_purchase_price_error" style="display: none;">
-                                    Purchase price must be a valid number
-                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -499,9 +485,6 @@
                                        inputmode="decimal"
                                        onwheel="return false"
                                        required>
-                                <div class="invalid-feedback d-block" id="product_sale_price_error" style="display: none;">
-                                    Sale price must be a valid number
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -770,7 +753,6 @@
             document.getElementById('supplier_id').value = '';
             document.getElementById('supplierInfo').style.display = 'none';
             currentSupplier = null;
-            checkFormValidity();
         });
 
         // Product Search
@@ -920,8 +902,6 @@
 
         // Track this supplier as recently used
         addToRecentSuppliers(supplier);
-        
-        checkFormValidity();
     }
 
     function saveNewSupplier() {
@@ -1092,31 +1072,12 @@
         // VALIDATION: Check if supplier is selected
         const supplierId = document.getElementById('supplier_id').value;
         const supplierSearchInput = document.getElementById('supplierSearch');
-        const supplierValidationFeedback = document.getElementById('supplierValidationFeedback');
-        
         if (!supplierId) {
-            // Show validation error styling
-            supplierSearchInput.classList.add('is-invalid');
-            if (supplierValidationFeedback) {
-                supplierValidationFeedback.style.display = 'block';
-            }
-            
-            // Show alert
-            showAlert('danger', 'Please select a supplier before adding products');
-            
             // Focus on supplier input
             supplierSearchInput.focus();
             
             // Auto-scroll to supplier section
             document.querySelector('.card:first-of-type')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Remove error styling after 3 seconds
-            setTimeout(() => {
-                supplierSearchInput.classList.remove('is-invalid');
-                if (supplierValidationFeedback) {
-                    supplierValidationFeedback.style.display = 'none';
-                }
-            }, 3000);
             
             return; // Exit function, don't add product
         }
@@ -1156,66 +1117,39 @@
         console.log('Form:', form); // Debug
         console.log('Name input:', nameInput); // Debug
         
-        // Clear previous error states
+        // Clear previous visual error states without rendering messages.
         const fields = [nameInput, unitInput, purchasePriceInput, salePriceInput];
         fields.forEach(field => {
             field.classList.remove('is-invalid');
-            const errorDivId = field.id + '_error';
-            const feedback = document.getElementById(errorDivId);
-            if (feedback) {
-                feedback.style.display = 'none';
-            }
         });
-        
-        // Validation flags
-        let isValid = true;
-        
-        // 1. PRODUCT NAME validation
+
+        const focusInvalidProductField = field => {
+            field.classList.add('is-invalid');
+            field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            field.focus({ preventScroll: true });
+        };
+
         if (!nameInput.value.trim()) {
-            console.log('Product name is empty'); // Debug
-            showFieldError(nameInput, 'Product name is required');
-            isValid = false;
-        }
-        
-        // 2. UNIT validation
-        if (!unitInput.value.trim()) {
-            console.log('Unit is empty'); // Debug
-            showFieldError(unitInput, 'Please select a unit');
-            isValid = false;
-        }
-        
-        // 3. PURCHASE PRICE validation
-        if (!purchasePriceInput.value || purchasePriceInput.value === '') {
-            console.log('Purchase price is empty'); // Debug
-            showFieldError(purchasePriceInput, 'Purchase price is required');
-            isValid = false;
-        } else if (isNaN(parseFloat(purchasePriceInput.value)) || parseFloat(purchasePriceInput.value) < 0) {
-            console.log('Purchase price is invalid'); // Debug
-            showFieldError(purchasePriceInput, 'Purchase price must be a valid positive number');
-            isValid = false;
-        }
-        
-        // 4. SALE PRICE validation
-        if (!salePriceInput.value || salePriceInput.value === '') {
-            console.log('Sale price is empty'); // Debug
-            showFieldError(salePriceInput, 'Sale price is required');
-            isValid = false;
-        } else if (isNaN(parseFloat(salePriceInput.value)) || parseFloat(salePriceInput.value) < 0) {
-            console.log('Sale price is invalid'); // Debug
-            showFieldError(salePriceInput, 'Sale price must be a valid positive number');
-            isValid = false;
-        }
-        
-        console.log('isValid:', isValid); // Debug
-        
-        // If validation fails, stop here
-        if (!isValid) {
-            console.log('Validation failed'); // Debug
-            showAlert('danger', 'Please correct the errors above');
+            focusInvalidProductField(nameInput);
             return;
         }
 
-        console.log('Validation passed, submitting form'); // Debug
+        if (!unitInput.value.trim()) {
+            focusInvalidProductField(unitInput);
+            return;
+        }
+
+        const purchasePrice = Number(purchasePriceInput.value);
+        if (purchasePriceInput.value === '' || !Number.isFinite(purchasePrice) || purchasePrice < 0) {
+            focusInvalidProductField(purchasePriceInput);
+            return;
+        }
+
+        const salePrice = Number(salePriceInput.value);
+        if (salePriceInput.value === '' || !Number.isFinite(salePrice) || salePrice < 0) {
+            focusInvalidProductField(salePriceInput);
+            return;
+        }
 
         const formData = new FormData(form);
 
@@ -1232,8 +1166,17 @@
                 // Validation error - extract error messages
                 return response.json().then(errors => {
                     console.error('Validation errors:', errors);
-                    const errorMessages = Object.values(errors.errors || errors).flat();
-                    throw new Error(errorMessages.join(', '));
+                    const firstField = Object.keys(errors.errors || {})[0];
+                    const fieldMap = {
+                        name: nameInput,
+                        unit: unitInput,
+                        purchase_price: purchasePriceInput,
+                        sale_price: salePriceInput,
+                    };
+                    if (fieldMap[firstField]) {
+                        focusInvalidProductField(fieldMap[firstField]);
+                    }
+                    throw new Error('Product validation failed');
                 });
             }
             
@@ -1267,7 +1210,9 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('danger', 'Error creating product: ' + error.message);
+            if (error.message !== 'Product validation failed') {
+                showAlert('danger', 'Error creating product: ' + error.message);
+            }
         });
     }
 
@@ -1479,42 +1424,55 @@
     }
 
     // ========== FORM SUBMISSION ==========
-    function checkFormValidity() {
-        const supplierId = document.getElementById('supplier_id').value;
-        const hasItems = purchaseItems.length > 0;
-        const submitBtn = document.getElementById('submitBtn');
+    function focusPurchaseField(field) {
+        if (!field) {
+            return;
+        }
 
-        submitBtn.disabled = !supplierId || !hasItems;
+        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        field.focus({ preventScroll: true });
+    }
+
+    function checkPurchaseFormBeforeSubmit() {
+        const supplierId = document.getElementById('supplier_id').value;
+        const supplierSearch = document.getElementById('supplierSearch');
+        const productSearch = document.getElementById('productSearch');
+
+        if (!supplierId) {
+            focusPurchaseField(supplierSearch);
+            return false;
+        }
+
+        if (purchaseItems.length === 0) {
+            focusPurchaseField(productSearch);
+            return false;
+        }
+
+        const firstInvalidItemField = Array.from(document.querySelectorAll('#itemsBody input[data-field]'))
+            .find(field => {
+                const value = parseFloat(field.value);
+                return !Number.isFinite(value) || (field.dataset.field === 'quantity' && value <= 0);
+            });
+
+        if (firstInvalidItemField) {
+            focusPurchaseField(firstInvalidItemField);
+            return false;
+        }
+
+        return true;
     }
 
     document.getElementById('purchaseForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
-        const supplierId = document.getElementById('supplier_id').value;
-        if (!supplierId) {
-            showAlert('danger', 'Please select a supplier');
+        if (!checkPurchaseFormBeforeSubmit()) {
             return;
         }
 
-        if (purchaseItems.length === 0) {
-            showAlert('danger', 'Please add at least one product');
-            return;
-        }
-
-        // Debug: Log items before submission
-        console.log('Purchase Items Before Submission:', purchaseItems);
-        console.log('Purchase Items JSON:', JSON.stringify(purchaseItems));
-
-        // Store items as JSON
         document.getElementById('items').value = JSON.stringify(purchaseItems);
 
-        // Submit the form
         this.submit();
     });
-
-    // Watch for item changes to enable/disable submit button
-    const observer = new MutationObserver(() => checkFormValidity());
-    observer.observe(document.getElementById('itemsTable'), { childList: true, subtree: true });
 
     // ========== UTILITY FUNCTIONS ==========
     function showAlert(type, message) {
@@ -1532,7 +1490,6 @@
 
     // Initialize calculations on page load
     updateCalculations();
-    checkFormValidity();
 </script>
 @endpush
 

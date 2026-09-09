@@ -17,7 +17,7 @@ return new class extends Migration
             // References
             $table->foreignId('sales_return_id')->constrained('sales_returns')->onDelete('cascade');
             $table->foreignId('sale_item_id')->constrained('sale_items')->onDelete('restrict');
-            $table->foreignId('product_id')->constrained('products')->onDelete('restrict');
+            $table->foreignId('product_id');
             
             // Quantities and pricing
             $table->decimal('quantity', 15, 4);

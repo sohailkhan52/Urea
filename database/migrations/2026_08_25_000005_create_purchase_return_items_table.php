@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             
             // References
-            $table->foreignId('purchase_return_id')->constrained('purchase_returns')->onDelete('cascade');
+            $table->foreignId('purchase_return_id');
             $table->foreignId('purchase_item_id')->constrained('purchase_items')->onDelete('restrict');
-            $table->foreignId('product_id')->constrained('products')->onDelete('restrict');
+            $table->foreignId('product_id');
             
             // Quantities and pricing
             $table->decimal('quantity', 15, 4);
