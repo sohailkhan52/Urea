@@ -9,11 +9,6 @@
             <div class="col">
                 <h3 class="page-title">Edit Product: {{ $product->name }}</h3>
             </div>
-            <div class="col-auto">
-                <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back
-                </a>
-            </div>
         </div>
     </div>
 
@@ -59,7 +54,7 @@
                                 class="form-control @error('purchase_price') is-invalid @enderror" 
                                 id="purchase_price" 
                                 name="purchase_price" 
-                                value="{{ old('purchase_price', $product->purchase_price) }}"
+                                value="{{ old('purchase_price', rtrim(rtrim(sprintf('%.2f', $product->purchase_price), '0'), '.')) }}"
                                 min="0" 
                                 step="0.01"
                                 required>
@@ -75,7 +70,7 @@
                                 class="form-control @error('sale_price') is-invalid @enderror" 
                                 id="sale_price" 
                                 name="sale_price" 
-                                value="{{ old('sale_price', $product->sale_price) }}"
+                                value="{{ old('sale_price', rtrim(rtrim(sprintf('%.2f', $product->sale_price), '0'), '.')) }}"
                                 min="0" 
                                 step="0.01"
                                 required>
