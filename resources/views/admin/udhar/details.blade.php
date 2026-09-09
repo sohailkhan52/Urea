@@ -18,9 +18,7 @@
                 <i class="bi bi-printer me-1"></i> Print Statement
             </a>
             @endcan
-            <a href="{{ route('admin.udhar.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i> Back
-            </a>
+
             <a href="{{ route('admin.udhar.transaction-history', $customer) }}" class="btn btn-outline-info">
                 <i class="bi bi-clock-history me-1"></i> Transaction History
             </a>

@@ -10,9 +10,6 @@
                 <h1 class="h3 mb-0">{{ $customer->name }}</h1>
                 <p class="text-muted mb-0">Individual Customer Account</p>
             </div>
-            <a href="{{ route('admin.udhar.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Back
-            </a>
         </div>
     </div>
 
