@@ -9,16 +9,25 @@
                 <p class="text-muted">Transaction history and payment records</p>
             </div>
             <div class="col-auto">
+                                          
+                <div class="card-body">
                 <a href="{{ route('admin.supplier-payables.show', $supplier->id) }}" class="btn btn-secondary">
                     <i class="bi bi-arrow-left me-1"></i> Back to Supplier
                 </a>
+
+                    <a href="javascript:window.print()" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-printer me-1"></i> Print
+                    </a>
+                
+                    
+            </div>
             </div>
         </div>
     </div>
 
     <!-- Summary Cards -->
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card stat-card">
                 <div class="card-body">
                     <p class="text-muted mb-1">Total Payments</p>
@@ -26,7 +35,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card stat-card success">
                 <div class="card-body">
                     <p class="text-muted mb-1">Total Amount Paid</p>
@@ -34,7 +43,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card stat-card info">
                 <div class="card-body">
                     <p class="text-muted mb-1">This Page</p>
@@ -42,15 +51,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <a href="javascript:window.print()" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-printer me-1"></i> Print
-                    </a>
-                </div>
-            </div>
-        </div>
+
     </div>
 
     <!-- Payments Table -->
