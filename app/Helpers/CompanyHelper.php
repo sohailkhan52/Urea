@@ -2,7 +2,9 @@
 
 namespace App\Helpers;
 
+use App\Models\Company;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class CompanyHelper
 {
@@ -52,7 +54,13 @@ class CompanyHelper
      */
     public static function getCompanyLogo()
     {
-        return null;
+        $company = Company::first();
+
+        if ($company?->logo && Storage::disk('public')->exists($company->logo)) {
+            return Storage::disk('public')->url($company->logo);
+        }
+
+        return asset('favicon.ico');
     }
 
     public static function getFaviconUrl()
