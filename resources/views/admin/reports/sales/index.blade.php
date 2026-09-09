@@ -168,17 +168,21 @@
             </h5>
         </div>
         <div class="card-body">
-            <form action="{{ route('admin.reports.sales.index') }}" method="GET" id="filterForm">
+            <form action="{{ route('admin.reports.sales.index') }}" method="GET" id="filterForm" autocomplete="off">
                 <div class="row g-3">
                     {{-- Search --}}
                     <div class="col-md-3">
-                        <label for="search" class="form-label">Search</label>
-                        <input type="text" 
+                        <label for="reports_search" class="form-label">Search</label>
+                        <input type="search" 
                                class="form-control" 
-                               id="search" 
+                               id="reports_search" 
                                name="search" 
                                value="{{ request('search') }}"
-                               placeholder="Invoice number or customer name">
+                               placeholder="Invoice number or customer name"
+                               autocomplete="off"
+                               autocorrect="off"
+                               autocapitalize="off"
+                               spellcheck="false">
                     </div>
 
                     {{-- Date From --}}
