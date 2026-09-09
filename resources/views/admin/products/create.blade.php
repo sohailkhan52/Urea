@@ -9,11 +9,6 @@
             <div class="col">
                 <h3 class="page-title">Create New Product</h3>
             </div>
-            <div class="col-auto">
-                <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back
-                </a>
-            </div>
         </div>
     </div>
 

@@ -12,9 +12,7 @@
                 <a href="{{ route('admin.supplier-payables.history', $supplier->id) }}" class="btn btn-info">
                     <i class="bi bi-clock-history me-1"></i> View History
                 </a>
-                <a href="{{ route('admin.supplier-payables.index') }}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Back
-                </a>
+
             </div>
         </div>
     </div>

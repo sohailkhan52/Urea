@@ -239,6 +239,21 @@ class DashboardService
     }
 
     /**
+     * Get out of stock items (quantity = 0)
+     * 
+     * @param int $limit
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getOutOfStockItems(int $limit = 20)
+    {
+        return WarehouseInventory::with(['product', 'warehouse'])
+            ->where('quantity', 0)
+            ->orderBy('product_id')
+            ->take($limit)
+            ->get();
+    }
+
+    /**
      * Get top customers by sales volume
      * 
      * @param int $limit
