@@ -365,6 +365,18 @@ class UdharService
             ];
         });
 
+        // Additional search filtering on calculated amounts
+        if (!empty($filters['search'])) {
+            $search = strtolower($filters['search']);
+            $summary = $summary->filter(function ($item) use ($search) {
+                return strpos(strtolower($item['customer']->name), $search) !== false
+                    || strpos(strtolower($item['customer']->phone ?? ''), $search) !== false
+                    || strpos(strval($item['total_sales']), $search) !== false
+                    || strpos(strval($item['total_paid']), $search) !== false
+                    || strpos(strval($item['outstanding']), $search) !== false;
+            });
+        }
+
         // Filter only outstanding if requested
         if (!empty($filters['only_outstanding'])) {
             $summary = $summary->filter(fn($item) => $item['outstanding'] != 0);
@@ -408,6 +420,17 @@ class UdharService
                 'oldest_sale_date' => $balance['oldest_sale_date'],
             ];
         });
+
+        // Additional search filtering on calculated amounts
+        if (!empty($filters['search'])) {
+            $search = strtolower($filters['search']);
+            $summary = $summary->filter(function ($item) use ($search) {
+                return strpos(strtolower($item['family']->name), $search) !== false
+                    || strpos(strval($item['total_sales']), $search) !== false
+                    || strpos(strval($item['total_paid']), $search) !== false
+                    || strpos(strval($item['outstanding']), $search) !== false;
+            });
+        }
 
         // Filter only outstanding if requested
         if (!empty($filters['only_outstanding'])) {

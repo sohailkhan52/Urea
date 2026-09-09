@@ -265,6 +265,14 @@
             position: relative;
         }
 
+        @media (max-width: 768px) {
+            .main-wrapper {
+                margin-left: 0;
+                width: 100%;
+                overflow-x: hidden;
+            }
+        }
+
         /* Top Navbar */
         .topbar {
             height: var(--topbar-height);
@@ -693,6 +701,69 @@
             padding-right: 0;
         }
 
+        /* Mobile Select Dropdown Fix */
+        @media (max-width: 768px) {
+            select {
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            /* When size attribute is set, show as dropdown list */
+            select[size] {
+                height: auto;
+                max-height: 60vh;
+                overflow-y: auto;
+                overflow-x: hidden;
+                border: 1px solid #dee2e6;
+                border-radius: 0.375rem;
+                padding: 0.375rem 0.75rem;
+                background-color: #fff;
+                display: block;
+                position: relative;
+                z-index: 9999;
+            }
+
+            /* Style the options in expanded state */
+            select[size] option {
+                padding: 0.5rem 0.75rem;
+                white-space: normal;
+                word-wrap: break-word;
+            }
+
+            select[size] option:hover,
+            select[size] option:focus {
+                background: #0d6efd;
+                color: white;
+            }
+
+            /* Ensure form containers don't overflow */
+            .form-control,
+            .form-select,
+            input[type="text"],
+            input[type="search"],
+            input[type="date"],
+            textarea {
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            /* Fix container padding issues */
+            .card {
+                overflow: hidden;
+            }
+
+            /* Ensure row doesn't create horizontal scroll */
+            .row {
+                overflow-x: hidden;
+            }
+
+            .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-6, .col-md-12 {
+                overflow-x: hidden;
+            }
+        }
+
         @media print {
             html,
             body,
@@ -973,9 +1044,6 @@
             </nav>
 
             <div class="topbar-right">
-                {{-- Notification Bell --}}
-                @component('components.notification-bell') @endcomponent
-
                 <div class="dropdown">
                     <button class="btn btn-link text-dark text-decoration-none dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
                         {{-- @noinspection PhpUndefinedClassInspection --}}
@@ -1213,6 +1281,184 @@
             if (activeItem && toggle) {
                 toggle.setAttribute('aria-expanded', 'true');
                 navDropdown.classList.add('open');
+            }
+        });
+
+        // Mobile Select Dropdown Fix - Close on selection
+        document.addEventListener('DOMContentLoaded', function() {
+            const isMobileView = window.innerWidth <= 768;
+            
+            if (isMobileView) {
+                const selectElements = document.querySelectorAll('select');
+                selectElements.forEach((select, index) => {
+                    // Create wrapper for custom dropdown
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'mobile-select-wrapper';
+                    wrapper.style.position = 'relative';
+                    select.parentNode.insertBefore(wrapper, select);
+                    wrapper.appendChild(select);
+                    
+                    // Hide original select visually but keep it for form submission
+                    select.style.display = 'none';
+                    
+                    // Create custom dropdown container
+                    const customDropdown = document.createElement('div');
+                    customDropdown.className = 'mobile-custom-select';
+                    customDropdown.style.cssText = 'position: relative; width: 100%;';
+                    
+                    // Create display button
+                    const displayBtn = document.createElement('button');
+                    displayBtn.className = 'form-control mobile-select-display';
+                    displayBtn.type = 'button';
+                    displayBtn.textContent = select.options[select.selectedIndex].text;
+                    displayBtn.style.cssText = 'width: 100%; text-align: left; padding: 0.375rem 0.75rem; padding-right: 2.5rem; border: 1px solid #dee2e6; border-radius: 0.375rem; background: white; cursor: pointer; position: relative; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1.15em;';
+                    
+                    // Create dropdown list container
+                    const listContainer = document.createElement('div');
+                    listContainer.className = 'mobile-select-list-container';
+                    
+                    // Function to position dropdown
+                    const positionDropdown = () => {
+                        const btnRect = displayBtn.getBoundingClientRect();
+                        listContainer.style.position = 'fixed';
+                        listContainer.style.top = (btnRect.bottom + 2) + 'px';
+                        listContainer.style.left = btnRect.left + 'px';
+                        listContainer.style.width = btnRect.width + 'px';
+                        listContainer.style.maxHeight = '60vh';
+                        listContainer.style.overflow = 'auto';
+                        listContainer.style.zIndex = '10000';
+                        listContainer.style.background = 'white';
+                        listContainer.style.border = '1px solid #dee2e6';
+                        listContainer.style.borderRadius = '0 0 0.375rem 0.375rem';
+                        listContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+                        listContainer.style.display = 'none';
+                    };
+                    positionDropdown();
+                    
+                    // Create search input
+                    const searchInput = document.createElement('input');
+                    searchInput.type = 'text';
+                    searchInput.className = 'mobile-select-search';
+                    searchInput.placeholder = 'Search...';
+                    searchInput.style.cssText = 'width: 100%; padding: 0.5rem 0.75rem; border: none; border-bottom: 1px solid #dee2e6; box-sizing: border-box; font-size: 14px;';
+                    listContainer.appendChild(searchInput);
+                    
+                    // Create options list
+                    const optionsList = document.createElement('div');
+                    optionsList.className = 'mobile-select-options';
+                    
+                    // Populate options
+                    for (let i = 0; i < select.options.length; i++) {
+                        const option = select.options[i];
+                        const optionItem = document.createElement('div');
+                        optionItem.className = 'mobile-select-option';
+                        optionItem.textContent = option.text;
+                        optionItem.dataset.value = option.value;
+                        optionItem.dataset.index = i;
+                        optionItem.style.cssText = 'padding: 0.5rem 0.75rem; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: background-color 0.2s;';
+                        
+                        if (i === select.selectedIndex) {
+                            optionItem.style.backgroundColor = '#0d6efd';
+                            optionItem.style.color = 'white';
+                        }
+                        
+                        optionItem.addEventListener('mouseenter', function() {
+                            if (this.style.display !== 'none') {
+                                this.style.backgroundColor = '#e7f1ff';
+                                this.style.color = '';
+                            }
+                        });
+                        optionItem.addEventListener('mouseleave', function() {
+                            if (this.dataset.index !== select.selectedIndex.toString()) {
+                                this.style.backgroundColor = '';
+                                this.style.color = '';
+                            }
+                        });
+                        
+                        optionItem.addEventListener('click', function() {
+                            select.selectedIndex = parseInt(this.dataset.index);
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                            displayBtn.textContent = this.textContent;
+                            listContainer.style.display = 'none';
+                            searchInput.value = '';
+                            
+                            document.querySelectorAll('.mobile-select-option').forEach(opt => {
+                                if (opt.dataset.index === this.dataset.index) {
+                                    opt.style.backgroundColor = '#0d6efd';
+                                    opt.style.color = 'white';
+                                } else {
+                                    opt.style.backgroundColor = '';
+                                    opt.style.color = '';
+                                }
+                            });
+                        });
+                        
+                        optionsList.appendChild(optionItem);
+                    }
+                    
+                    listContainer.appendChild(optionsList);
+                    customDropdown.appendChild(displayBtn);
+                    customDropdown.appendChild(listContainer);
+                    wrapper.appendChild(customDropdown);
+                    
+                    displayBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        if (listContainer.style.display === 'none') {
+                            positionDropdown();
+                            listContainer.style.display = 'block';
+                            searchInput.focus();
+                        } else {
+                            listContainer.style.display = 'none';
+                        }
+                    });
+                    
+                    searchInput.addEventListener('input', function() {
+                        const searchTerm = this.value.toLowerCase().trim();
+                        const options = optionsList.querySelectorAll('.mobile-select-option');
+                        let visibleCount = 0;
+                        
+                        options.forEach(option => {
+                            const text = option.textContent.toLowerCase();
+                            if (searchTerm === '' || text.includes(searchTerm)) {
+                                option.style.display = 'block';
+                                visibleCount++;
+                            } else {
+                                option.style.display = 'none';
+                            }
+                        });
+                        
+                        // Show "no results" message if needed
+                        if (visibleCount === 0 && searchTerm !== '') {
+                            let noResultsMsg = optionsList.querySelector('.no-results-msg');
+                            if (!noResultsMsg) {
+                                noResultsMsg = document.createElement('div');
+                                noResultsMsg.className = 'no-results-msg';
+                                noResultsMsg.textContent = 'No options found';
+                                noResultsMsg.style.cssText = 'padding: 1rem 0.75rem; text-align: center; color: #999; font-size: 14px;';
+                                optionsList.appendChild(noResultsMsg);
+                            }
+                        } else {
+                            const noResultsMsg = optionsList.querySelector('.no-results-msg');
+                            if (noResultsMsg) {
+                                noResultsMsg.remove();
+                            }
+                        }
+                    });
+                    
+                    document.addEventListener('click', function(e) {
+                        if (!wrapper.contains(e.target)) {
+                            listContainer.style.display = 'none';
+                            searchInput.value = '';
+                            optionsList.querySelectorAll('.mobile-select-option').forEach(opt => {
+                                opt.style.display = 'block';
+                            });
+                            const noResultsMsg = optionsList.querySelector('.no-results-msg');
+                            if (noResultsMsg) {
+                                noResultsMsg.remove();
+                            }
+                        }
+                    });
+                });
             }
         });
 

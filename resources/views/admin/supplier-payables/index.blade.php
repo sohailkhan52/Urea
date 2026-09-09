@@ -77,6 +77,37 @@
 
     </div>
 
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="{{ route('admin.supplier-payables.index') }}" method="GET" autocomplete="off">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="search" 
+                               class="form-control" 
+                               id="search" 
+                               name="search" 
+                               value="{{ $search ?? '' }}"
+                               placeholder="Search by supplier name, company, phone, or amounts"
+                               autocomplete="off"
+                               autocorrect="off"
+                               autocapitalize="off"
+                               spellcheck="false">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-secondary flex-grow-1">
+                            <i class="bi bi-funnel me-1"></i> Filter
+                        </button>
+                        <a href="{{ route('admin.supplier-payables.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i> Clear
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Supplier Payables Table -->
     <div class="card">
         <div class="card-header">

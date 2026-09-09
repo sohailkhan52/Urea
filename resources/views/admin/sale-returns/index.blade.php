@@ -16,16 +16,20 @@
     {{-- Search and Filter --}}
     <div class="card mb-4">
         <div class="card-body">
-            <form action="{{ route('admin.sale-returns.index') }}" method="GET">
+            <form action="{{ route('admin.sale-returns.index') }}" method="GET" autocomplete="off">
                 <div class="row g-3">
                     <div class="col-md-3">
-                        <label for="search" class="form-label">Search</label>
-                        <input type="text" 
+                        <label for="returns_search" class="form-label">Search</label>
+                        <input type="search" 
                                class="form-control" 
-                               id="search" 
+                               id="returns_search" 
                                name="search" 
                                value="{{ request('search') }}"
-                               placeholder="Search by return #, customer, or sale invoice">
+                               placeholder="Search by return #, customer, or sale invoice"
+                               autocomplete="off"
+                               autocorrect="off"
+                               autocapitalize="off"
+                               spellcheck="false">
                     </div>
 
                     <div class="col-md-2">

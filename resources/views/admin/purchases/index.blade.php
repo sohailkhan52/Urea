@@ -11,16 +11,20 @@
     {{-- Search and Filter --}}
     <div class="card mb-4">
         <div class="card-body">
-            <form action="{{ route('admin.purchases.index') }}" method="GET">
+            <form action="{{ route('admin.purchases.index') }}" method="GET" autocomplete="off">
                 <div class="row g-3">
                     <div class="col-md-3">
-                        <label for="search" class="form-label">Search</label>
-                        <input type="text" 
+                        <label for="purchases_search" class="form-label">Search</label>
+                        <input type="search" 
                                class="form-control" 
-                               id="search" 
+                               id="purchases_search" 
                                name="search" 
                                value="{{ request('search') }}"
-                               placeholder="Search by PO number or supplier">
+                               placeholder="Search by PO number or supplier"
+                               autocomplete="off"
+                               autocorrect="off"
+                               autocapitalize="off"
+                               spellcheck="false">
                     </div>
                     <div class="col-md-2">
                         <label for="supplier_id" class="form-label">Supplier</label>
