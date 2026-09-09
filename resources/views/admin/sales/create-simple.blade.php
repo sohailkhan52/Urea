@@ -256,8 +256,8 @@
 
                                 @foreach($productsWithStock ?? [] as $product)
 
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" 
-
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                            @if(($product->stock ?? 0) <= 0) disabled title="Out of stock" @endif
                                             onclick="addProduct({{ $product->id }}, '{{ $product->name }}', {{ $product->stock ?? 0 }}, {{ $product->sale_price ?? 0 }}, '{{ $product->unit ?? 'Piece' }}')">
 
                                         {{ $product->name }}
@@ -704,7 +704,7 @@ document.getElementById('productSearch').addEventListener('input', function(e) {
     const walkinName = document.getElementById('walkin_name').value.trim();
     
     if (!customerId && !walkinName) {
-        alert('Please select a customer first (either an existing customer or enter a walk-in customer name)');
+        focusSaleField(document.getElementById('walkin_name'));
         document.getElementById('productSearch').value = '';
         return;
     }
@@ -761,12 +761,17 @@ document.getElementById('productSearch').addEventListener('input', function(e) {
 
 function addProduct(productId, productName, stock = 0, salePrice = 0, unit = 'Piece') {
 
+    if (Number(stock) <= 0) {
+        focusSaleField(document.getElementById('productSearch'));
+        return;
+    }
+
     // Check if customer is selected
     const customerId = document.getElementById('customer_id').value.trim();
     const walkinName = document.getElementById('walkin_name').value.trim();
     
     if (!customerId && !walkinName) {
-        alert('Please select a customer first (either an existing customer or enter a walk-in customer name)');
+        focusSaleField(document.getElementById('walkin_name'));
         return;
     }
 
@@ -1113,6 +1118,15 @@ document.getElementById('saveFamilyBtn')?.addEventListener('click', function() {
 
 // Form submission
 
+function focusSaleField(field) {
+    if (!field) {
+        return;
+    }
+
+    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    field.focus({ preventScroll: true });
+}
+
 document.getElementById('saleForm').addEventListener('submit', function(e) {
 
     e.preventDefault();
@@ -1131,7 +1145,7 @@ document.getElementById('saleForm').addEventListener('submit', function(e) {
 
     if (!customerId && !walkinName) {
 
-        alert('Please either select an existing customer OR enter a walk-in customer name');
+        focusSaleField(document.getElementById('walkin_name'));
 
         return;
 
@@ -1141,10 +1155,35 @@ document.getElementById('saleForm').addEventListener('submit', function(e) {
 
     if (Object.keys(saleItems).length === 0) {
 
-        alert('Please add at least one product');
+        focusSaleField(document.getElementById('productSearch'));
 
         return;
+    }
 
+
+    const invalidItem = Object.values(saleItems).find(item => {
+        return !Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0 ||
+            !Number.isFinite(Number(item.price)) || Number(item.price) < 0;
+    });
+
+    if (invalidItem) {
+        const itemRow = Array.from(document.querySelectorAll('#saleItemsTable tr'))
+            .find(row => row.textContent.includes(invalidItem.name));
+        const invalidInput = itemRow?.querySelector('input[type="number"]');
+        focusSaleField(invalidInput || document.getElementById('productSearch'));
+        return;
+    }
+
+    const outOfStockItem = Object.values(saleItems).find(item => {
+        return Number(item.quantity) > Number(item.stock);
+    });
+
+    if (outOfStockItem) {
+        const itemRow = Array.from(document.querySelectorAll('#saleItemsTable tr'))
+            .find(row => row.textContent.includes(outOfStockItem.name));
+        const quantityInput = itemRow?.querySelector('input[type="number"]');
+        focusSaleField(quantityInput || document.getElementById('productSearch'));
+        return;
     }
 
     

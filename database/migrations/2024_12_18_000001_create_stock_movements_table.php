@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('stock_movements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('warehouse_id')->constrained('warehouses')->onDelete('restrict');
-            $table->foreignId('product_id')->constrained('products')->onDelete('restrict');
+            $table->foreignId('product_id');
             
             // Movement type
             $table->enum('type', [

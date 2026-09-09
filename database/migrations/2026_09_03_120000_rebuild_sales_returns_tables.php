@@ -15,6 +15,9 @@ return new class extends Migration
     public function up(): void
     {
         // Drop old tables if they exist (in reverse order due to foreign keys)
+        Schema::table('customer_ledgers', function (Blueprint $table) {
+            $table->dropForeign(['sales_return_id']);
+        });
         Schema::dropIfExists('sales_return_items');
         Schema::dropIfExists('sale_return_items');
         Schema::dropIfExists('sales_returns');
@@ -116,6 +119,13 @@ return new class extends Migration
             $table->index('sale_return_id');
             $table->index('sale_item_id');
             $table->index('product_id');
+        });
+
+        Schema::table('customer_ledgers', function (Blueprint $table) {
+            $table->foreign('sales_return_id')
+                ->references('id')
+                ->on('sales_returns')
+                ->onDelete('restrict');
         });
     }
 

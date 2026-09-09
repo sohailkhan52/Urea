@@ -32,7 +32,7 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'unit' => 'required|in:KG,MG,Piece',
+            'unit' => 'required|in:KG,MG,Gram,Piece,Dozen,Litre',
             'purchase_price' => 'required|numeric|min:0',
             'sale_price' => 'required|numeric|min:0',
         ]);
@@ -70,7 +70,7 @@ class ProductController extends Controller
             // Validate request - exactly matching modal form fields
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'unit' => 'required|in:KG,MG,Piece',
+                'unit' => 'required|in:KG,MG,Gram,Piece,Dozen,Litre',
                 'purchase_price' => 'required|numeric|min:0',
                 'sale_price' => 'required|numeric|min:0',
             ]);
@@ -145,7 +145,7 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'unit' => 'required|in:KG,MG,Piece',
+            'unit' => 'required|in:KG,MG,Gram,Piece,Dozen,Litre',
             'purchase_price' => 'required|numeric|min:0',
             'sale_price' => 'required|numeric|min:0',
         ]);

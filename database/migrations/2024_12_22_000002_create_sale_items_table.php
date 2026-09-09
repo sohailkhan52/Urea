@@ -19,9 +19,7 @@ return new class extends Migration
                   ->constrained('sales')
                   ->cascadeOnDelete();
             
-            $table->foreignId('product_id')
-                  ->constrained('products')
-                  ->restrictOnDelete();
+            $table->foreignId('product_id');
             
             // Quantity and Pricing
             $table->decimal('quantity', 10, 2)

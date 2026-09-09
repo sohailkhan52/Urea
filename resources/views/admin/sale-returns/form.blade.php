@@ -107,7 +107,7 @@
                                                min="0" 
                                                max="{{ $canReturn }}" 
                                                step="0.01"
-                                               value="0"
+                                               placeholder="0"
                                                disabled
                                                onchange="updateItemRow({{ $index }})">
                                     </td>
@@ -210,7 +210,7 @@ function updateItemRow(index) {
         // }
     } else {
         qtyInput.disabled = true;
-        qtyInput.value = 0;
+        qtyInput.value = '';
     }
     
     updateAmount(index);

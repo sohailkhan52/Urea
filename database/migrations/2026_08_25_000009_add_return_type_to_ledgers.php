@@ -18,7 +18,7 @@ return new class extends Migration
 
         // Add purchase_return_id to supplier_ledgers
         Schema::table('supplier_ledgers', function (Blueprint $table) {
-            $table->foreignId('purchase_return_id')->nullable()->after('purchase_payment_id')->constrained('purchase_returns')->onDelete('restrict');
+            $table->foreignId('purchase_return_id')->nullable()->after('purchase_payment_id');
         });
     }
 

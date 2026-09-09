@@ -50,12 +50,10 @@ return new class extends Migration
             $table->softDeletes();
             
             // Indexes
-            $table->index('return_number');
             $table->index(['purchase_id', 'status']);
             $table->index(['supplier_id', 'status']);
             $table->index(['warehouse_id', 'status']);
             $table->index('return_date');
-            $table->index('refund_status');
             $table->index('created_at');
         });
     }

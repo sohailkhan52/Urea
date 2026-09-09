@@ -12,6 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         // Drop if exists first to handle idempotency
+        Schema::table('customer_ledgers', function (Blueprint $table) {
+            $table->dropForeign(['sales_return_id']);
+        });
+        Schema::dropIfExists('sales_return_items');
         Schema::dropIfExists('sales_returns');
         
         Schema::create('sales_returns', function (Blueprint $table) {
@@ -63,8 +67,14 @@ return new class extends Migration
             $table->index('return_date');
             $table->index('status');
             $table->index('payment_status');
-            $table->index('return_number');
             $table->index('created_at');
+        });
+
+        Schema::table('customer_ledgers', function (Blueprint $table) {
+            $table->foreign('sales_return_id')
+                ->references('id')
+                ->on('sales_returns')
+                ->onDelete('restrict');
         });
     }
 

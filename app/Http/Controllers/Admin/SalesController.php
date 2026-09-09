@@ -158,7 +158,9 @@ class SalesController extends Controller
             
             $product->stock = $inventory ? $inventory->quantity : 0;
             return $product;
-        });
+        })->sortBy(function ($product) {
+            return ($product->stock > 0 ? '0' : '1') . '|' . strtolower($product->name);
+        })->values();
 
         return view('admin.sales.create-simple', compact('customers', 'warehouses', 'productsWithStock', 'defaultWarehouse', 'families'));
     }
@@ -766,7 +768,11 @@ class SalesController extends Controller
                     'unit' => $product->unit ?? 'unit',
                     'display_name' => $product->name . ' — Available: ' . $availableStock . ' ' . ($product->unit ?? 'unit'),
                 ];
-            });
+            })
+            ->sortBy(function ($product) {
+                return ($product['available_stock'] > 0 ? '0' : '1') . '|' . strtolower($product['name']);
+            })
+            ->values();
 
         return response()->json($products);
     }
