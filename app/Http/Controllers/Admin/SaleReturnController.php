@@ -59,6 +59,9 @@ class SaleReturnController extends Controller
                     })
                     ->orWhereHas('sale', function ($q) use ($search) {
                         $q->where('invoice_number', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('items', function ($q) use ($search) {
+                        $q->where('unit_price', 'like', "%{$search}%");
                     });
             });
         }

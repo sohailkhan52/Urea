@@ -18,6 +18,8 @@ class SupplierPayableController extends Controller
         $this->authorize('purchases.view');
 
         $user = auth()->user();
+        $request = request();
+        $search = $request->input('search', '');
         
         // Get all confirmed purchases
         $purchasesQuery = Purchase::where('status', 'confirmed');
@@ -94,6 +96,19 @@ class SupplierPayableController extends Controller
                 ->sortByDesc('outstanding_payable')
                 ->values();
             
+            // Apply search filter on collection
+            if (!empty($search)) {
+                $allSuppliers = $allSuppliers->filter(function ($supplier) use ($search) {
+                    $searchLower = strtolower($search);
+                    return strpos(strtolower($supplier->name), $searchLower) !== false
+                        || strpos(strtolower($supplier->company_name), $searchLower) !== false
+                        || strpos(strtolower($supplier->phone), $searchLower) !== false
+                        || strpos(strval($supplier->total_purchases), $searchLower) !== false
+                        || strpos(strval($supplier->total_paid), $searchLower) !== false
+                        || strpos(strval($supplier->outstanding_payable), $searchLower) !== false;
+                })->values();
+            }
+            
             // Paginate the results (10 per page)
             $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
             $perPage = 10;
@@ -102,7 +117,7 @@ class SupplierPayableController extends Controller
                 $allSuppliers->count(),
                 $perPage,
                 $page,
-                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
             );
         }
         
@@ -113,7 +128,7 @@ class SupplierPayableController extends Controller
             'supplier_count' => $suppliers->count(),
         ];
         
-        return view('admin.supplier-payables.index', compact('suppliers', 'summary'));
+        return view('admin.supplier-payables.index', compact('suppliers', 'summary', 'search'));
     }
     
     /**
