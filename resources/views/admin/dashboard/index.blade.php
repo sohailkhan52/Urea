@@ -236,6 +236,44 @@
     </div>
     @endif
 
+    {{-- Out of Stock Alert --}}
+    @if($outOfStockItems->count() > 0)
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-circle me-2"></i> Out of Stock Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Warehouse</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($outOfStockItems->take(10) as $item)
+                                <tr>
+                                    <td>
+                                        <strong>{{ $item->product->name }}</strong><br>
+                                        <small class="text-muted">{{ $item->product->sku }}</small>
+                                    </td>
+                                    <td>{{ $item->warehouse->name ?? 'N/A' }}</td>
+                                    <td><span class="badge bg-danger">Out of Stock</span></td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Project Settings --}}
     <div class="row mb-4">
         <div class="col-12">
