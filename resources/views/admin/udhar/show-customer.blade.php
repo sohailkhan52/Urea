@@ -10,6 +10,10 @@
                 <h1 class="h3 mb-0">{{ $customer->name }}</h1>
                 <p class="text-muted mb-0">Individual Customer Account</p>
             </div>
+<<<<<<< HEAD
+
+=======
+>>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
         </div>
     </div>
 

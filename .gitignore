@@ -22,3 +22,16 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+# Electron build output
+release/
+build-release/
+
+# Electron generated files
+*.exe
+*.blockmap
+*.pdb
+# Runtime generated database files
+runtime/mysql-data-backup/
+runtime/mysql-data/
+
+runtime/mysql-data/

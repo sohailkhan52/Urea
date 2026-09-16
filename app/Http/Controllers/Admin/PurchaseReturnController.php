@@ -119,17 +119,54 @@ class PurchaseReturnController extends Controller
     {
         $this->authorize('purchases.create');
 
+        // Step 1: Get raw items and filter out items with 0 or empty quantity
+        $rawItems = $request->input('items', []);
+        $itemsWithQuantity = [];
+        
+        foreach ($rawItems as $index => $item) {
+            $quantity = isset($item['quantity']) ? floatval($item['quantity']) : 0;
+            // Only include items with quantity > 0
+            if ($quantity > 0) {
+                $itemsWithQuantity[] = $item;
+            }
+        }
+
+        // Step 2: Check if at least one item has quantity > 0
+        if (empty($itemsWithQuantity)) {
+            return back()->withInput()
+                ->with('error', 'Please select at least one item with quantity greater than 0 to return.');
+        }
+
+        // Step 3: Validate only the basic fields (not items array with wildcard)
         $validated = $request->validate([
             'purchase_id' => 'required|exists:purchases,id',
             'return_date' => 'required|date',
-            'items' => 'required|array|min:1',
-            'items.*.purchase_item_id' => 'required|exists:purchase_items,id',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:0',
-            'items.*.unit_price' => 'required|numeric|min:0',
             'reason' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:1000',
         ]);
+
+        // Step 4: Manually validate the filtered items
+        foreach ($itemsWithQuantity as $item) {
+            if (!isset($item['purchase_item_id']) || !isset($item['product_id']) || !isset($item['unit_price'])) {
+                return back()->withInput()
+                    ->with('error', 'Invalid item data. Missing required fields.');
+            }
+            
+            // Verify purchase_item_id exists
+            if (!\App\Models\PurchaseItem::find($item['purchase_item_id'])) {
+                return back()->withInput()
+                    ->with('error', 'Invalid purchase item.');
+            }
+            
+            // Verify product_id exists
+            if (!\App\Models\Product::find($item['product_id'])) {
+                return back()->withInput()
+                    ->with('error', 'Invalid product.');
+            }
+        }
+
+        // Step 5: Add validated items to the validated array
+        $validated['items'] = $itemsWithQuantity;
 
         try {
             $return = $this->returnService->createReturn(
