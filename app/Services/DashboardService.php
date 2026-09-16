@@ -64,9 +64,10 @@ class DashboardService
     public function getInventoryStats(): array
     {
         $totalStock = WarehouseInventory::sum('quantity');
-        // Count low stock items (quantity < 10 and > 0)
-        $lowStockItems = WarehouseInventory::where('quantity', '<', 10)
-            ->where('quantity', '>', 0)
+        // Count stocked items below each product's configured minimum.
+        $lowStockItems = WarehouseInventory::join('products', 'warehouse_inventory.product_id', '=', 'products.id')
+            ->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
+            ->where('warehouse_inventory.quantity', '>', 0)
             ->count();
         
         $outOfStockItems = WarehouseInventory::where('quantity', 0)->count();
@@ -231,8 +232,11 @@ class DashboardService
     public function getLowStockItems(int $limit = 20)
     {
         return WarehouseInventory::with(['product', 'warehouse'])
-            ->where('quantity', '<', 10)
-            ->where('quantity', '>', 0)
+            ->withoutGlobalScopes()
+            ->join('products', 'warehouse_inventory.product_id', '=', 'products.id')
+            ->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
+            ->where('warehouse_inventory.quantity', '>', 0)
+            ->select('warehouse_inventory.*')
             ->orderBy('quantity')
             ->take($limit)
             ->get();
@@ -247,6 +251,10 @@ class DashboardService
     public function getOutOfStockItems(int $limit = 20)
     {
         return WarehouseInventory::with(['product', 'warehouse'])
+<<<<<<< HEAD
+            ->withoutGlobalScopes()
+=======
+>>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
             ->where('quantity', 0)
             ->orderBy('product_id')
             ->take($limit)
@@ -254,6 +262,26 @@ class DashboardService
     }
 
     /**
+<<<<<<< HEAD
+     * Get products below their minimum stock level
+     * 
+     * @param int $limit
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getProductsBelowMinimumStock(int $limit = 20)
+    {
+        return WarehouseInventory::with(['product', 'warehouse'])
+            ->join('products', 'warehouse_inventory.product_id', '=', 'products.id')
+            ->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
+            ->select('warehouse_inventory.*')
+            ->orderBy('warehouse_inventory.quantity')
+            ->take($limit)
+            ->get();
+    }
+
+    /**
+=======
+>>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
      * Get top customers by sales volume
      * 
      * @param int $limit

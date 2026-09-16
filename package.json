@@ -2,6 +2,7 @@
     "$schema": "https://www.schemastore.org/package.json",
     "private": true,
     "type": "module",
+
     "scripts": {
         "build": "vite build",
         "dev": "vite",
@@ -13,8 +14,11 @@
         "queue": "php artisan queue:work --sleep=3 --tries=3",
         "queue:listen": "php artisan queue:listen --sleep=3 --tries=3",
         "start": "Composer\\Config::disableProcessTimeout && concurrently -c \"#93c5fd,#c4b5fd,#fdba74,#fca5a5\" \"php artisan octane:start --server=roadrunner --workers=4 --watch\" \"php artisan horizon\" \"npm run dev\" --names='octane,horizon,vite'",
-        "prod": "Composer\\Config::disableProcessTimeout && concurrently -c \"#93c5fd,#c4b5fd\" \"php artisan octane:start --server=roadrunner --workers=8\" \"php artisan horizon\" --names='octane,horizon'"
+        "prod": "Composer\\Config::disableProcessTimeout && concurrently -c \"#c4b5fd\" \"php artisan octane:start --server=roadrunner --workers=8\" \"php artisan horizon\" --names='octane,horizon'",
+        "electron": "electron .",
+        "dist": "electron-builder"
     },
+
     "dependencies": {
         "@tailwindcss/vite": "^4.1.11",
         "concurrently": "^10.0.3",
@@ -22,10 +26,133 @@
         "tailwindcss": "^4.0.7",
         "vite": "^8.0.0"
     },
+
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1",
         "@rollup/rollup-linux-x64-gnu": "4.9.5",
         "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
         "lightningcss-linux-x64-gnu": "^1.29.1"
+    },
+
+    "name": "urea",
+    "version": "1.0.0",
+    "description": "Urea Inventory Management System",
+    "main": "electron/main.js",
+
+    "devDependencies": {
+        "electron": "^44.3.0",
+        "electron-builder": "^26.15.3"
+    },
+
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/sohailkhan52/Urea.git"
+    },
+
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+
+    "bugs": {
+        "url": "https://github.com/sohailkhan52/Urea/issues"
+    },
+
+    "homepage": "https://github.com/sohailkhan52/Urea#readme",
+
+    "build": {
+    "appId": "com.urea.inventory",
+    "productName": "Urea Inventory",
+
+    "directories": {
+        "output": "release",
+        "buildResources": "electron"
+    },
+
+    "files": [
+    "electron/**/*",
+    "package.json",
+    "!node_modules/**",
+    "!runtime/mysql-data/**"
+],
+
+    "extraResources": [
+    {
+        "from": "runtime",
+        "to": "runtime"
+    },
+    {
+    "from": "mysql-init.sql",
+    "to": "mysql-init.sql"
+    },
+    {
+        "from": "app",
+        "to": "laravel/app"
+    },
+    {
+        "from": "bootstrap",
+        "to": "laravel/bootstrap"
+    },
+    {
+        "from": "config",
+        "to": "laravel/config"
+    },
+    {
+        "from": "database",
+        "to": "laravel/database"
+    },
+    {
+        "from": "public",
+        "to": "laravel/public"
+    },
+    {
+        "from": "resources",
+        "to": "laravel/resources"
+    },
+    {
+        "from": "routes",
+        "to": "laravel/routes"
+    },
+    {
+        "from": "storage",
+        "to": "laravel/storage"
+    },
+    {
+        "from": "vendor",
+        "to": "laravel/vendor"
+    },
+    {
+        "from": "artisan",
+        "to": "laravel/artisan"
+    },
+    {
+        "from": "composer.json",
+        "to": "laravel/composer.json"
+    },
+    {
+        "from": "composer.lock",
+        "to": "laravel/composer.lock"
+    },
+    {
+        "from": ".env",
+        "to": "laravel/.env"
+    },
+    {
+        "from": "urea_database.sql",
+        "to": "urea_database.sql"
     }
+],
+
+    "win": {
+        "target": "nsis",
+        "icon": "build/icon.ico"
+    },
+
+    "nsis": {
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "shortcutName": "Urea Inventory"
+    }
+}
 }

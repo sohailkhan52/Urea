@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $unit
  * @property float $purchase_price
  * @property float $sale_price
+ * @property int $minimum_stock_level
  * @property string $status
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
@@ -44,6 +45,7 @@ class Product extends Model
         'purchase_price',
         'sale_price',
         'status',
+        'minimum_stock_level',
     ];
 
     /**

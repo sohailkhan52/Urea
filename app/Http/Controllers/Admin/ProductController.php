@@ -35,11 +35,15 @@ class ProductController extends Controller
             'unit' => 'required|in:KG,MG,Gram,Piece,Dozen,Litre',
             'purchase_price' => 'required|numeric|min:0',
             'sale_price' => 'required|numeric|min:0',
+            'minimum_stock_level' => 'nullable|integer|min:0',
         ]);
+
+        if (empty($validated['minimum_stock_level'])) {
+            $validated['minimum_stock_level'] = 10;
+        }
 
         $product = Product::create($validated);
 
-        // Return JSON for AJAX requests, redirect for form submissions
         if ($request->expectsJson()) {
             return response()->json([
                 'id' => $product->id,
@@ -67,15 +71,21 @@ class ProductController extends Controller
                 'user' => auth()->id(),
             ]);
             
-            // Validate request - exactly matching modal form fields
+            // Validate request - include minimum_stock_level from modal
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'unit' => 'required|in:KG,MG,Gram,Piece,Dozen,Litre',
                 'purchase_price' => 'required|numeric|min:0',
                 'sale_price' => 'required|numeric|min:0',
+                'minimum_stock_level' => 'nullable|integer|min:0',
             ]);
 
             \Log::info('Validation passed', ['validated' => $validated]);
+
+            // Default minimum_stock_level to 10 if empty
+            if (empty($validated['minimum_stock_level'])) {
+                $validated['minimum_stock_level'] = 10;
+            }
 
             // Add auto-generated SKU since it's required by reports
             $productData = array_merge($validated, [
@@ -85,7 +95,7 @@ class ProductController extends Controller
             // Create product
             $product = Product::create($productData);
 
-            \Log::info('Product created', ['product_id' => $product->id]);
+            \Log::info('Product created', ['product_id' => $product->id, 'minimum_stock_level' => $product->minimum_stock_level]);
 
             // Return JSON response exactly as modal expects
             return response()->json([
@@ -148,7 +158,12 @@ class ProductController extends Controller
             'unit' => 'required|in:KG,MG,Gram,Piece,Dozen,Litre',
             'purchase_price' => 'required|numeric|min:0',
             'sale_price' => 'required|numeric|min:0',
+            'minimum_stock_level' => 'nullable|integer|min:0',
         ]);
+
+        if (empty($validated['minimum_stock_level'])) {
+            $validated['minimum_stock_level'] = 10;
+        }
 
         $product->update($validated);
 

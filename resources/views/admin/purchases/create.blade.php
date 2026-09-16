@@ -432,7 +432,34 @@
                                        id="product_name" 
                                        name="name"
                                        placeholder="Enter product name"
+                                       autocomplete="off"
                                        required>
+                                <style>
+                                    #product_name::-webkit-calendar-picker-indicator,
+                                    #product_name::-webkit-search-cancel-button {
+                                        display: none;
+                                    }
+                                    
+                                    /* Fix autocomplete dropdown styling */
+                                    #product_name {
+                                        background-image: none !important;
+                                        background-color: white !important;
+                                    }
+                                    
+                                    /* Remove autocomplete blue background on focus */
+                                    input:-webkit-autofill,
+                                    input:-webkit-autofill:hover,
+                                    input:-webkit-autofill:focus,
+                                    input:-webkit-autofill:active {
+                                        -webkit-box-shadow: 0 0 0 30px white inset !important;
+                                        box-shadow: 0 0 0 30px white inset !important;
+                                    }
+                                    
+                                    /* Remove blue text on autofill */
+                                    input:-webkit-autofill {
+                                        -webkit-text-fill-color: #333 !important;
+                                    }
+                                </style>
                             </div>
                         </div>
                     </div>
@@ -485,6 +512,24 @@
                                        inputmode="decimal"
                                        onwheel="return false"
                                        required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="product_minimum_stock_level" class="form-label">Minimum Stock Level</label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="product_minimum_stock_level" 
+                                       name="minimum_stock_level" 
+                                       min="0" 
+                                       step="1"
+                                       placeholder="10"
+                                       inputmode="numeric"
+                                       onwheel="return false">
+                                <small class="text-muted d-block mt-1">Alert will show when stock falls below this level (default: 10)</small>
                             </div>
                         </div>
                     </div>
@@ -1522,6 +1567,42 @@
 
     #emptyRow td {
         padding: 3rem 1rem;
+    }
+
+    /* ========== FIX: Remove black autocomplete dropdown ========== */
+    /* Disable browser autocomplete dropdown styling */
+    input[autocomplete="off"]:-webkit-autofill,
+    input[autocomplete="off"]:-webkit-autofill:hover,
+    input[autocomplete="off"]:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px white inset !important;
+        box-shadow: 0 0 0 1000px white inset !important;
+        -webkit-text-fill-color: #333 !important;
+    }
+
+    /* Hide browser's datalist dropdown */
+    input::selection {
+        background: transparent;
+    }
+
+    /* Remove autocomplete highlight color */
+    input:autofill {
+        -webkit-text-fill-color: #333 !important;
+        -webkit-box-shadow: 0 0 0 1000px white inset !important;
+        caret-color: #333 !important;
+    }
+
+    /* Ensure modal is above autocomplete */
+    .modal {
+        z-index: 9999 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 9998 !important;
+    }
+
+    /* Prevent autocomplete from showing */
+    input[list]::-webkit-calendar-picker-indicator {
+        display: none;
     }
 </style>
 @endpush
