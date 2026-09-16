@@ -260,15 +260,48 @@ class SaleReturnController extends Controller
     {
         $this->authorize('sales.create');
 
+        // Step 1: Get raw items and filter out items with 0 or empty quantity
+        $rawItems = $request->input('items', []);
+        $itemsWithQuantity = [];
+        
+        foreach ($rawItems as $index => $item) {
+            $quantity = isset($item['quantity']) ? floatval($item['quantity']) : 0;
+            // Only include items with quantity > 0
+            if ($quantity > 0) {
+                $itemsWithQuantity[] = $item;
+            }
+        }
+
+        // Step 2: Check if at least one item has quantity > 0
+        if (empty($itemsWithQuantity)) {
+            return back()->withInput()
+                ->with('error', 'Please select at least one item with quantity greater than 0 to return.');
+        }
+
+        // Step 3: Validate only the basic fields (not items array with wildcard)
         $validated = $request->validate([
             'sale_id' => 'required|exists:sales,id',
             'return_date' => 'required|date',
             'reason' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:1000',
-            'items' => 'required|array|min:1',
-            'items.*.sale_item_id' => 'required|exists:sale_items,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
         ]);
+
+        // Step 4: Manually validate the filtered items
+        foreach ($itemsWithQuantity as $item) {
+            if (!isset($item['sale_item_id'])) {
+                return back()->withInput()
+                    ->with('error', 'Invalid item data. Missing sale_item_id.');
+            }
+            
+            // Verify sale_item_id exists
+            if (!\App\Models\SaleItem::find($item['sale_item_id'])) {
+                return back()->withInput()
+                    ->with('error', 'Invalid sale item.');
+            }
+        }
+
+        // Step 5: Add validated items to the validated array
+        $validated['items'] = $itemsWithQuantity;
 
         try {
             $sale = Sale::findOrFail($validated['sale_id']);

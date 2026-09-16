@@ -9,6 +9,11 @@
             <div class="col">
                 <h3 class="page-title">Edit Product: {{ $product->name }}</h3>
             </div>
+<<<<<<< HEAD
+            <div class="col-auto">
+            </div>
+=======
+>>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
         </div>
     </div>
 
@@ -79,11 +84,25 @@
                             @enderror
                         </div>
 
+                        <div class="mb-3">
+                            <label for="minimum_stock_level" class="form-label">Minimum Stock Level</label>
+                            <input 
+                                type="number" 
+                                class="form-control" 
+                                id="minimum_stock_level" 
+                                name="minimum_stock_level" 
+                                value="{{ old('minimum_stock_level', $product->minimum_stock_level ?? '') }}"
+                                min="0" 
+                                step="1"
+                                placeholder="10">
+                            <small class="text-muted d-block mt-1">Alert will show when stock falls below this level</small>
+                        </div>
+
                         <div class="mb-0 text-end">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Update Product
                             </button>
-                            <a href="{{ route('admin.reports.products.index') }}" class="btn btn-secondary">
+                            <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">
                                 Cancel
                             </a>
                         </div>

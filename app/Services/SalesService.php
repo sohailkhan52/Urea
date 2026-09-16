@@ -565,25 +565,28 @@ class SalesService
     protected function generateInvoiceNumber(): string
     {
         $year = now()->year;
-        
-        // Use pessimistic locking to prevent race conditions
+
+        DB::table('invoice_sequences')->insertOrIgnore([
+            'year' => $year,
+            'next_number' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         $sequence = DB::table('invoice_sequences')
             ->where('year', $year)
             ->lockForUpdate()
             ->first();
-        
-        if (!$sequence) {
-            // If sequence doesn't exist, create it
-            DB::table('invoice_sequences')->insert([
-                'year' => $year,
-                'next_number' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-            $nextNumber = 1;
-        } else {
-            $nextNumber = $sequence->next_number;
-        }
+
+        $latestInvoiceNumber = DB::table('sales')
+            ->where('invoice_number', 'like', "INV-{$year}-%")
+            ->lockForUpdate()
+            ->orderByDesc('invoice_number')
+            ->value('invoice_number');
+        $latestNumber = $latestInvoiceNumber
+            ? (int) substr($latestInvoiceNumber, strrpos($latestInvoiceNumber, '-') + 1)
+            : 0;
+        $nextNumber = max($sequence->next_number, $latestNumber + 1);
         
         // Ensure we never exceed 99999
         if ($nextNumber > 99999) {
