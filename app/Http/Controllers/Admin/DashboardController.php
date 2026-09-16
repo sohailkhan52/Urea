@@ -60,10 +60,7 @@ class DashboardController extends Controller
         $recentMovements = $this->dashboardService->getRecentStockMovements(10);
         $lowStockItems = $this->dashboardService->getLowStockItems(10);
         $outOfStockItems = $this->dashboardService->getOutOfStockItems(10);
-<<<<<<< HEAD
         $minimumStockItems = $this->dashboardService->getProductsBelowMinimumStock(10);
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
         
         // Get company/project settings
         $company = Company::first();
@@ -76,10 +73,7 @@ class DashboardController extends Controller
             'inventoryStats' => $inventoryStats,
             'lowStockItems' => $lowStockItems,
             'outOfStockItems' => $outOfStockItems,
-<<<<<<< HEAD
             'minimumStockItems' => $minimumStockItems,
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
             
             // Financial
             'financialSummary' => $financialSummary,

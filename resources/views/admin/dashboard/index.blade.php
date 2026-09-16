@@ -236,7 +236,6 @@
     </div>
     @endif
 
-<<<<<<< HEAD
     {{-- No Low Stock Items Message --}}
     @if($lowStockItems->count() == 0)
     <div class="row mb-4">
@@ -249,19 +248,13 @@
     </div>
     @endif
 
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
     {{-- Out of Stock Alert --}}
     @if($outOfStockItems->count() > 0)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-danger">
                 <div class="card-header bg-danger text-white">
-<<<<<<< HEAD
-                    <h5 class="mb-0"><i class="bi bi-x-circle me-2"></i> Out of Stock</h5>
-=======
                     <h5 class="mb-0"><i class="bi bi-exclamation-circle me-2"></i> Out of Stock Items</h5>
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -269,12 +262,8 @@
                             <thead>
                                 <tr>
                                     <th>Product</th>
-<<<<<<< HEAD
-                                    <th>Stock Status</th>
-=======
                                     <th>Warehouse</th>
                                     <th>Status</th>
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
                                 </tr>
                             </thead>
                             <tbody>
@@ -284,12 +273,8 @@
                                         <strong>{{ $item->product->name }}</strong><br>
                                         <small class="text-muted">{{ $item->product->sku }}</small>
                                     </td>
-<<<<<<< HEAD
-                                    <td><span class="badge bg-danger">Out of Stock (0)</span></td>
-=======
                                     <td>{{ $item->warehouse->name ?? 'N/A' }}</td>
                                     <td><span class="badge bg-danger">Out of Stock</span></td>
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -301,7 +286,6 @@
     </div>
     @endif
 
-<<<<<<< HEAD
     {{-- No Out of Stock Items Message --}}
     @if($outOfStockItems->count() == 0)
     <div class="row mb-4">
@@ -314,8 +298,6 @@
     </div>
     @endif
 
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
     {{-- Project Settings --}}
     <div class="row mb-4">
         <div class="col-12">
