@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
  * @property string|null $logo
  * @property string|null $contact_person
  * @property string|null $phone
+ * @property string|null $additional_number
  * @property string|null $email
  * @property string|null $website
  * @property string|null $address
@@ -43,6 +44,7 @@ class Company extends Model
         'logo',
         'contact_person',
         'phone',
+        'additional_number',
         'email',
         'website',
         'address',

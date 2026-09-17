@@ -1,10 +1,55 @@
 @extends('layouts.admin')
 
+@push('styles')
+<style>
+    .sale-detail-print-header,
+    .sale-detail-print-meta,
+    .sale-detail-print-headings { display: none; }
+
+    @media print {
+        @page { size: A4 portrait; margin: 8mm; }
+        .sidebar, .topbar, .no-print { display: none !important; }
+        .content { margin-left: 0 !important; padding: 0 !important; }
+        .sale-detail-page { width: 100% !important; max-width: none !important; padding: 0 !important; margin: 0 !important; font-size: 12px !important; }
+        .sale-detail-page .row > [class*="col-lg-"] { width: 100% !important; max-width: none !important; flex: 0 0 100% !important; }
+        .sale-detail-page .card { break-inside: avoid; margin-bottom: 0.7rem !important; }
+        .sale-detail-page .card-header { padding: 0.45rem 0.6rem !important; }
+        .sale-detail-page .card-body { padding: 0.6rem !important; }
+        .sale-detail-page .sale-detail-info-card > .card-header { display: none !important; }
+        .sale-detail-page .sale-detail-info-grid { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.5rem 2rem; }
+        .sale-detail-page .sale-detail-info-grid > div { width: auto !important; max-width: none !important; padding: 0 !important; }
+        .sale-detail-page .sale-detail-info-grid > div:first-child { grid-column: 1 / -1; grid-row: 1; width: 50% !important; justify-self: center; }
+        .sale-customer-row { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 0.6rem; margin-bottom: 0.25rem; }
+        .sale-customer-row > :first-child { color: #666; }
+        .sale-detail-print-header { display: flex !important; align-items: flex-start; justify-content: space-between; border-bottom: 2px solid #000; margin-bottom: 0.75rem; padding-bottom: 0.5rem; }
+        .sale-detail-print-header h1, .sale-detail-print-header h2, .sale-detail-print-header p { margin: 0; }
+        .sale-detail-print-meta { display: flex !important; align-items: center; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 0.5rem; margin-bottom: 0.6rem; font-weight: 700; }
+        .sale-detail-print-headings { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; margin-bottom: 0.4rem; }
+        .sale-detail-print-headings h6:first-child { grid-column: 1 / -1; text-align: center; }
+        .sale-detail-print-headings h6 { margin: 0; }
+        .sale-detail-page table { font-size: 11px; }
+    }
+</style>
+@endpush
+
 @section('title', 'View Sale - ' . $sale->invoice_number)
 
 @section('content')
-<div class="container-fluid">
-    <div class="mb-4">
+<div class="container-fluid sale-detail-page">
+    <div class="sale-detail-print-header">
+        <div>
+            <h1>{{ $company->name ?? config('app.name') }}</h1>
+            @if($company?->address)<p>{{ $company->address }}</p>@endif
+            <p>{{ $company?->phone }}@if($company?->phone && $company?->email) | @endif{{ $company?->email }}</p>
+        </div>
+        <div class="text-end">
+            <h2>Sale Invoice</h2>
+            <p><strong>Invoice #:</strong> {{ $sale->invoice_number }}</p>
+            <p><strong>Date:</strong> {{ $sale->sale_date->format('d M Y') }}</p>
+        </div>
+    </div>
+
+    <div class="mb-4 no-print">
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h1 class="h3 mb-0">Sale Invoice Details</h1>
@@ -17,12 +62,9 @@
             </div>
             <div class="btn-group">
                 @can('sales.view')
-                <a href="{{ route('admin.sales.print-invoice', $sale) }}" 
-                   class="btn btn-primary" 
-                   target="_blank"
-                   title="Print Invoice">
+                <button type="button" class="btn btn-primary" onclick="window.print()" title="Print Invoice">
                     <i class="bi bi-printer me-1"></i> Print
-                </a>
+                </button>
                 @endcan
                 @if($sale->isDraft())
                     @can('sales.update')
@@ -41,7 +83,11 @@
     <div class="row">
         <div class="col-lg-8">
             {{-- Sale Header --}}
-            <div class="card mb-4">
+            <div class="card mb-4 sale-detail-info-card">
+                <div class="sale-detail-print-meta">
+                    <span><i class="bi bi-receipt me-1"></i> {{ $sale->invoice_number }}</span>
+                    <span>{{ $sale->status_label }}</span>
+                </div>
                 <div class="card-header bg-light">
                     <div class="row align-items-center">
                         <div class="col">
@@ -56,43 +102,28 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="row g-4">
+                    <div class="row g-4 sale-detail-info-grid">
                         <div class="col-md-6">
-                            <small class="text-muted d-block mb-2">Customer</small>
-                            @if($sale->customer)
-                                <p class="mb-0">
-                                    <strong>{{ $sale->customer->name }}</strong>
-                                </p>
-                                @if($sale->customer->phone)
-                                <small>
-                                    <i class="bi bi-telephone me-1"></i>
-                                    {{ $sale->customer->phone }}
-                                </small>
-                                @endif
-                                @if($sale->customer->email)
-                                <br><small>
-                                    <i class="bi bi-envelope me-1"></i>
-                                    {{ $sale->customer->email }}
-                                </small>
-                                @endif
-                            @elseif($sale->walkin_customer_name)
-                                <p class="mb-0">
-                                    <strong>{{ $sale->walkin_customer_name }}</strong>
-                                    <span class="badge bg-secondary ms-2">Walk-in</span>
-                                </p>
-                                @if($sale->walkin_customer_contact)
-                                <small>
-                                    <i class="bi bi-telephone me-1"></i>
-                                    {{ $sale->walkin_customer_contact }}
-                                </small>
-                                @endif
-                            @else
-                                <p class="mb-0">
-                                    <span class="badge bg-secondary">Walk-in Customer</span>
-                                </p>
-                            @endif
+                            <div class="sale-customer-row">
+                                <span>Customer</span>
+                                <strong>{{ $sale->customer?->name ?? $sale->walkin_customer_name ?? 'Walk-in Customer' }}</strong>
+                            </div>
+                            <div class="sale-customer-row">
+                                <span>Family</span>
+                                <span>{{ $sale->family?->name ?? '-------' }}</span>
+                            </div>
+                            <div class="sale-customer-row">
+                                <span>Phone</span>
+                                <span>
+                                    @if($sale->customer?->phone || $sale->walkin_customer_contact)
+                                        <i class="bi bi-telephone me-1"></i>{{ $sale->customer?->phone ?? $sale->walkin_customer_contact }}
+                                    @else
+                                        -------
+                                    @endif
+                                </span>
+                            </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 no-print">
                             <small class="text-muted d-block mb-2">Warehouse</small>
                             <p class="mb-0">
                                 <strong>
@@ -101,13 +132,13 @@
                                 </strong>
                             </p>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 no-print">
                             <small class="text-muted d-block mb-2">Sale Date</small>
                             <p class="mb-0">
                                 <strong>{{ $sale->sale_date->format('M d, Y') }}</strong>
                             </p>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 no-print">
                             <small class="text-muted d-block mb-2">Created</small>
                             <p class="mb-0">
                                 <strong>{{ $sale->created_at->format('M d, Y h:i A') }}</strong>
@@ -115,7 +146,7 @@
                             <small class="text-muted">By: {{ $sale->creator->name }}</small>
                         </div>
                         @if($sale->isConfirmed())
-                        <div class="col-md-6">
+                        <div class="col-md-6 no-print">
                             <small class="text-muted d-block mb-2">Confirmed</small>
                             <p class="mb-0">
                                 <strong>{{ $sale->confirmed_at->format('M d, Y h:i A') }}</strong>
@@ -124,7 +155,7 @@
                         </div>
                         @endif
                         @if($sale->isCancelled())
-                        <div class="col-md-6">
+                        <div class="col-md-6 no-print">
                             <small class="text-muted d-block mb-2">Cancelled</small>
                             <p class="mb-0">
                                 <strong>{{ $sale->cancelled_at->format('M d, Y h:i A') }}</strong>
@@ -333,7 +364,7 @@
 
             {{-- Actions --}}
             @if($sale->isDraft() || $sale->isConfirmed())
-            <div class="card mt-3">
+            <div class="card mt-3 no-print">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Actions</h5>
                 </div>
@@ -370,7 +401,7 @@
             @endif
 
             {{-- Key Info --}}
-            <div class="card mt-3 border-info">
+            <div class="card mt-3 border-info no-print">
                 <div class="card-body">
                     <h6 class="card-title text-info">
                         <i class="bi bi-info-circle me-1"></i>

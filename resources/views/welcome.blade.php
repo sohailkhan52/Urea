@@ -209,40 +209,6 @@
             </div>
         </div>
 
-        <!-- Call to Action -->
-        <div class="row">
-            <div class="col-lg-8 mx-auto">
-                <div class="card border-0 bg-primary bg-gradient text-white shadow-lg">
-                    <div class="card-body p-5 text-center">
-                        <h3 class="card-title mb-3">Ready to Optimize Your Inventory?</h3>
-                        <p class="card-text mb-4 lead">
-                            Sign in to access the full power of our inventory management system.
-                        </p>
-                        <div class="d-flex gap-2 justify-content-center flex-wrap">
-                            <a href="{{ route('login') }}" class="btn btn-light btn-lg px-4">
-                                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In Now
-                            </a>
-  
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer Info -->
-        <div class="text-center mt-5 pt-4 border-top border-light">
-            <p class="text-muted mb-2">
-                <i class="bi bi-c-circle"></i> 2026 Inventory Management System. All rights reserved.
-            </p>
-            <p class="text-muted small">
-                @php
-                    $superAdmin = \App\Models\User::whereHas('roles', function($q) {
-                        $q->where('slug', 'super-admin');
-                    })->first();
-                @endphp
-                For questions or support, please <a href="mailto:{{ $superAdmin ? $superAdmin->email : 'support@inventory.local' }}" class="text-muted text-decoration-none">contact your system administrator</a>.
-            </p>
-        </div>
     </div>
 </div>
 

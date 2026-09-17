@@ -207,7 +207,7 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('profile.show') }}">
+                                    <a class="dropdown-item" href="{{ route('profile.edit') }}">
                                         <i class="bi bi-person me-2"></i>Profile
                                     </a>
                                 </li>
@@ -246,28 +246,20 @@
                     </p>
                 </div>
                 <div class="col-md-6 mb-4 mb-md-0">
-                    <h6 class="fw-bold mb-3">Product</h6>
-                    <ul class="list-unstyled small">
-                        <li><a href="#features" class="text-decoration-none text-muted">Features</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">Documentation</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">Support</a></li>
-                    </ul>
+                    <h6 class="fw-bold mb-3">Address</h6>
+                    @php($footerCompany = \App\Models\Company::first())
+                    @php($footerPhones = array_filter([$footerCompany?->phone, $footerCompany?->additional_number], fn($value) => !empty($value)))
+                    <p class="text-muted small mb-1">
+                        <i class="bi bi-telephone me-1"></i>
+                        {{ !empty($footerPhones) ? implode(' / ', $footerPhones) : 'Phone not available' }}
+                    </p>
+                    <p class="text-muted small mb-0">
+                        <i class="bi bi-geo-alt me-1"></i>
+                        {{ $footerCompany?->address ?? 'Address not available' }}
+                    </p>
                 </div>
             </div>
             <hr>
-            <div class="row">
-                <div class="col-md-6">
-                    <p class="text-muted small mb-0">
-                        <i class="bi bi-c-circle"></i> 2026 Inventory Management System. All rights reserved.
-                    </p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p class="text-muted small mb-0">
-                        <a href="#" class="text-decoration-none text-muted">Privacy Policy</a> | 
-                        <a href="#" class="text-decoration-none text-muted">Terms of Service</a>
-                    </p>
-                </div>
-            </div>
         </div>
     </footer>
 
