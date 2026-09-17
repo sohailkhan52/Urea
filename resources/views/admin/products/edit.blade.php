@@ -9,11 +9,8 @@
             <div class="col">
                 <h3 class="page-title">Edit Product: {{ $product->name }}</h3>
             </div>
-<<<<<<< HEAD
             <div class="col-auto">
             </div>
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
         </div>
     </div>
 

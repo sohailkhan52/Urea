@@ -20,11 +20,6 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes - Home/Welcome
 Route::get('/', function () {
-    if (auth()->check()) {
-        // Authenticated users (admin) go to dashboard
-        return redirect()->route('admin.dashboard');
-    }
-    // Guests see welcome page
     return view('welcome');
 })->name('home');
 

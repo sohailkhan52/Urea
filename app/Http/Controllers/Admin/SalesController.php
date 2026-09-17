@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreSaleWithItemsRequest;
 use App\Http\Requests\Admin\UpdateSaleRequest;
+use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
@@ -233,7 +234,11 @@ class SalesController extends Controller
 
         $summary = $this->salesService->getSaleSummary($sale);
 
-        return view('admin.sales.show', compact('sale', 'summary'))->with('salesReturnService', $this->salesReturnService);
+        return view('admin.sales.show', [
+            'sale' => $sale,
+            'summary' => $summary,
+            'company' => Company::first(),
+        ])->with('salesReturnService', $this->salesReturnService);
     }
 
     /**

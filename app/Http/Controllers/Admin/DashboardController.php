@@ -60,10 +60,7 @@ class DashboardController extends Controller
         $recentMovements = $this->dashboardService->getRecentStockMovements(10);
         $lowStockItems = $this->dashboardService->getLowStockItems(10);
         $outOfStockItems = $this->dashboardService->getOutOfStockItems(10);
-<<<<<<< HEAD
         $minimumStockItems = $this->dashboardService->getProductsBelowMinimumStock(10);
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
         
         // Get company/project settings
         $company = Company::first();
@@ -76,10 +73,7 @@ class DashboardController extends Controller
             'inventoryStats' => $inventoryStats,
             'lowStockItems' => $lowStockItems,
             'outOfStockItems' => $outOfStockItems,
-<<<<<<< HEAD
             'minimumStockItems' => $minimumStockItems,
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
             
             // Financial
             'financialSummary' => $financialSummary,
@@ -116,6 +110,9 @@ class DashboardController extends Controller
 
         $validated = $request->validate([
             'project_name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'additional_number' => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:500',
             'logo' => 'nullable|image|mimes:jpeg,png,gif,svg|max:2048',
         ]);
 
@@ -132,6 +129,9 @@ class DashboardController extends Controller
 
             // Update project name
             $company->name = $validated['project_name'];
+            $company->phone = $validated['phone'] ?? null;
+            $company->additional_number = $validated['additional_number'] ?? null;
+            $company->address = $validated['address'] ?? null;
 
             // Handle logo upload
             if ($request->hasFile('logo')) {
