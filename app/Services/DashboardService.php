@@ -13,6 +13,7 @@ use App\Models\Sale;
 use App\Models\StockMovement;
 use App\Models\WarehouseInventory;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 /**
@@ -65,10 +66,17 @@ class DashboardService
     {
         $totalStock = WarehouseInventory::sum('quantity');
         // Count stocked items below each product's configured minimum.
-        $lowStockItems = WarehouseInventory::join('products', 'warehouse_inventory.product_id', '=', 'products.id')
-            ->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
-            ->where('warehouse_inventory.quantity', '>', 0)
-            ->count();
+        if (Schema::hasColumn('products', 'minimum_stock_level')) {
+            $lowStockItems = WarehouseInventory::join('products', 'warehouse_inventory.product_id', '=', 'products.id')
+                ->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
+                ->where('warehouse_inventory.quantity', '>', 0)
+                ->count();
+        } else {
+            // Fallback when the column is missing: use a sensible default threshold of 10
+            $lowStockItems = WarehouseInventory::where('quantity', '>', 0)
+                ->where('quantity', '<', 10)
+                ->count();
+        }
         
         $outOfStockItems = WarehouseInventory::where('quantity', 0)->count();
 
@@ -231,11 +239,23 @@ class DashboardService
      */
     public function getLowStockItems(int $limit = 20)
     {
+        if (Schema::hasColumn('products', 'minimum_stock_level')) {
+            return WarehouseInventory::with(['product', 'warehouse'])
+                ->withoutGlobalScopes()
+                ->join('products', 'warehouse_inventory.product_id', '=', 'products.id')
+                ->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
+                ->where('warehouse_inventory.quantity', '>', 0)
+                ->select('warehouse_inventory.*')
+                ->orderBy('quantity')
+                ->take($limit)
+                ->get();
+        }
+
+        // Fallback when the column is not present
         return WarehouseInventory::with(['product', 'warehouse'])
             ->withoutGlobalScopes()
-            ->join('products', 'warehouse_inventory.product_id', '=', 'products.id')
-            ->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
-            ->where('warehouse_inventory.quantity', '>', 0)
+            ->where('quantity', '>', 0)
+            ->where('quantity', '<', 10)
             ->select('warehouse_inventory.*')
             ->orderBy('quantity')
             ->take($limit)
@@ -251,10 +271,7 @@ class DashboardService
     public function getOutOfStockItems(int $limit = 20)
     {
         return WarehouseInventory::with(['product', 'warehouse'])
-<<<<<<< HEAD
             ->withoutGlobalScopes()
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
             ->where('quantity', 0)
             ->orderBy('product_id')
             ->take($limit)
@@ -262,7 +279,6 @@ class DashboardService
     }
 
     /**
-<<<<<<< HEAD
      * Get products below their minimum stock level
      * 
      * @param int $limit
@@ -270,9 +286,18 @@ class DashboardService
      */
     public function getProductsBelowMinimumStock(int $limit = 20)
     {
+        if (Schema::hasColumn('products', 'minimum_stock_level')) {
+            return WarehouseInventory::with(['product', 'warehouse'])
+                ->join('products', 'warehouse_inventory.product_id', '=', 'products.id')
+                ->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
+                ->select('warehouse_inventory.*')
+                ->orderBy('warehouse_inventory.quantity')
+                ->take($limit)
+                ->get();
+        }
+
         return WarehouseInventory::with(['product', 'warehouse'])
-            ->join('products', 'warehouse_inventory.product_id', '=', 'products.id')
-            ->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
+            ->where('quantity', '<', 10)
             ->select('warehouse_inventory.*')
             ->orderBy('warehouse_inventory.quantity')
             ->take($limit)
@@ -280,8 +305,6 @@ class DashboardService
     }
 
     /**
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
      * Get top customers by sales volume
      * 
      * @param int $limit

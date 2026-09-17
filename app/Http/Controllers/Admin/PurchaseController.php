@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
@@ -209,7 +210,11 @@ class PurchaseController extends Controller
 
         $summary = $this->purchaseService->getPurchaseSummary($purchase);
 
-        return view('admin.purchases.show', compact('purchase', 'summary'));
+        return view('admin.purchases.show', [
+            'purchase' => $purchase,
+            'summary' => $summary,
+            'company' => Company::first(),
+        ]);
     }
 
     /**

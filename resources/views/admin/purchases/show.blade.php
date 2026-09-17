@@ -1,10 +1,59 @@
 @extends('layouts.admin')
 
+@push('styles')
+<style>
+    .purchase-detail-print-header,
+    .purchase-detail-print-meta,
+    .purchase-detail-print-headings {
+        display: none;
+    }
+
+    @media print {
+        @page { size: A4 portrait; margin: 8mm; }
+
+        .sidebar, .topbar, .no-print { display: none !important; }
+        .content { margin-left: 0 !important; padding: 0 !important; }
+        .purchase-detail-page { width: 100% !important; max-width: none !important; padding: 0 !important; margin: 0 !important; font-size: 12px !important; }
+        .purchase-detail-page .row > [class*="col-lg-"] { width: 100% !important; max-width: none !important; flex: 0 0 100% !important; }
+        .purchase-detail-page .card { break-inside: avoid; margin-bottom: 0.7rem !important; }
+        .purchase-detail-page .card-header { padding: 0.45rem 0.6rem !important; }
+        .purchase-detail-page .card-body { padding: 0.6rem !important; }
+        .purchase-detail-page .purchase-detail-info-card > .card-header { display: none !important; }
+        .purchase-detail-page .purchase-detail-info-grid { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.5rem 2rem; }
+        .purchase-detail-page .purchase-detail-info-grid > div { width: auto !important; max-width: none !important; padding: 0 !important; }
+        .purchase-detail-page .purchase-detail-info-grid > div:nth-child(3) { grid-column: 2; grid-row: 2; }
+        .purchase-detail-page .purchase-detail-info-grid > div:first-child { grid-column: 1 / -1; grid-row: 1; width: 50% !important; justify-self: center; }
+        .purchase-supplier-row { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 0.6rem; margin-bottom: 0.25rem; }
+        .purchase-supplier-row > :first-child { color: #666; }
+        .purchase-detail-print-header { display: flex !important; align-items: flex-start; justify-content: space-between; border-bottom: 2px solid #000; margin-bottom: 0.75rem; padding-bottom: 0.5rem; }
+        .purchase-detail-print-header h1, .purchase-detail-print-header h2, .purchase-detail-print-header p { margin: 0; }
+        .purchase-detail-print-meta { display: flex !important; align-items: center; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 0.5rem; margin-bottom: 0.6rem; font-weight: 700; }
+        .purchase-detail-print-headings { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; margin-bottom: 0.4rem; }
+        .purchase-detail-print-headings h6:first-child { grid-column: 1 / -1; text-align: center; }
+        .purchase-detail-print-headings h6 { margin: 0; }
+        .purchase-detail-page table { font-size: 11px; }
+    }
+</style>
+@endpush
+
 @section('title', 'View Purchase - ' . $purchase->purchase_number)
 
 @section('content')
-<div class="container-fluid">
-    <div class="mb-4">
+<div class="container-fluid purchase-detail-page">
+    <div class="purchase-detail-print-header">
+        <div>
+            <h1>{{ $company->name ?? config('app.name') }}</h1>
+            @if($company?->address)<p>{{ $company->address }}</p>@endif
+            <p>{{ $company?->phone }}@if($company?->phone && $company?->email) | @endif{{ $company?->email }}</p>
+        </div>
+        <div class="text-end">
+            <h2>Purchase Order</h2>
+            <p><strong>Purchase #:</strong> {{ $purchase->purchase_number }}</p>
+            <p><strong>Date:</strong> {{ $purchase->purchase_date->format('d M Y') }}</p>
+        </div>
+    </div>
+
+    <div class="mb-4 no-print">
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h1 class="h3 mb-0">Purchase Order Details</h1>
@@ -17,12 +66,9 @@
             </div>
             <div class="btn-group">
                 @can('purchases.view')
-                <a href="{{ route('admin.purchases.print', $purchase) }}" 
-                   class="btn btn-primary" 
-                   target="_blank"
-                   title="Print Purchase Order">
+                <button type="button" class="btn btn-primary" onclick="window.print()" title="Print Purchase Order">
                     <i class="bi bi-printer me-1"></i> Print
-                </a>
+                </button>
                 @endcan
                 @if($purchase->isDraft())
                     @can('purchases.update')
@@ -41,7 +87,11 @@
     <div class="row">
         <div class="col-lg-8">
             {{-- Purchase Header --}}
-            <div class="card mb-4">
+            <div class="card mb-4 purchase-detail-info-card">
+                <div class="purchase-detail-print-meta">
+                    <span><i class="bi bi-receipt me-1"></i> {{ $purchase->purchase_number }}</span>
+                    <span>{{ $purchase->status_label }}</span>
+                </div>
                 <div class="card-header bg-light">
                     <div class="row align-items-center">
                         <div class="col">
@@ -56,23 +106,27 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="row g-4">
+                    </div>
+                    <div class="row g-4 purchase-detail-info-grid">
                         <div class="col-md-6">
-                            <small class="text-muted d-block mb-2">Supplier</small>
-                            <p class="mb-0">
+                            <div class="purchase-supplier-row">
+                                <span>Supplier</span>
                                 <strong>{{ $purchase->supplier->name }}</strong>
-                            </p>
+                            </div>
                             @if($purchase->supplier->company_name)
-                            <small class="text-muted">{{ $purchase->supplier->company_name }}</small>
+                            <div class="purchase-supplier-row">
+                                <span>Company</span>
+                                <span>{{ $purchase->supplier->company_name }}</span>
+                            </div>
                             @endif
                             @if($purchase->supplier->phone)
-                            <br><small>
-                                <i class="bi bi-telephone me-1"></i>
-                                {{ $purchase->supplier->phone }}
-                            </small>
+                            <div class="purchase-supplier-row">
+                                <span>Phone</span>
+                                <span><i class="bi bi-telephone me-1"></i>{{ $purchase->supplier->phone }}</span>
+                            </div>
                             @endif
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 no-print">
                             <small class="text-muted d-block mb-2">Warehouse</small>
                             <p class="mb-0">
                                 <strong>
@@ -81,13 +135,13 @@
                                 </strong>
                             </p>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 no-print">
                             <small class="text-muted d-block mb-2">Purchase Date</small>
                             <p class="mb-0">
                                 <strong>{{ $purchase->purchase_date->format('M d, Y') }}</strong>
                             </p>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 no-print">
                             <small class="text-muted d-block mb-2">Created</small>
                             <p class="mb-0">
                                 <strong>{{ $purchase->created_at->format('M d, Y h:i A') }}</strong>
@@ -95,7 +149,7 @@
                             <small class="text-muted">By: {{ $purchase->creator->name }}</small>
                         </div>
                         @if($purchase->isConfirmed())
-                        <div class="col-md-6">
+                        <div class="col-md-6 no-print">
                             <small class="text-muted d-block mb-2">Confirmed</small>
                             <p class="mb-0">
                                 <strong>{{ $purchase->confirmed_at->format('M d, Y h:i A') }}</strong>
@@ -284,7 +338,7 @@
 
             {{-- Status Info --}}
             @if($purchase->isDraft())
-            <div class="alert alert-warning mt-3">
+            <div class="alert alert-warning mt-3 no-print">
                 <strong>
                     <i class="bi bi-exclamation-triangle me-1"></i>
                     Draft Status
@@ -305,7 +359,7 @@
                 <p class="mb-0 small mt-2">This purchase has been confirmed. Stock has been added to the warehouse.</p>
             </div>
             @else
-            <div class="alert alert-danger mt-3">
+            <div class="alert alert-danger mt-3 no-print">
                 <strong>
                     <i class="bi bi-x-circle me-1"></i>
                     Cancelled
@@ -316,7 +370,7 @@
 
             {{-- Actions --}}
             @if($purchase->isDraft() || $purchase->isConfirmed())
-            <div class="card mt-3">
+            <div class="card mt-3 no-print">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Actions</h5>
                 </div>
@@ -353,7 +407,7 @@
             @endif
 
             {{-- Key Info --}}
-            <div class="card mt-3 border-info">
+            <div class="card mt-3 border-info no-print">
                 <div class="card-body">
                     <h6 class="card-title text-info">
                         <i class="bi bi-info-circle me-1"></i>

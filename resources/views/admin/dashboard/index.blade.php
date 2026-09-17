@@ -236,7 +236,6 @@
     </div>
     @endif
 
-<<<<<<< HEAD
     {{-- No Low Stock Items Message --}}
     @if($lowStockItems->count() == 0)
     <div class="row mb-4">
@@ -248,20 +247,13 @@
         </div>
     </div>
     @endif
-
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
     {{-- Out of Stock Alert --}}
     @if($outOfStockItems->count() > 0)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-danger">
                 <div class="card-header bg-danger text-white">
-<<<<<<< HEAD
-                    <h5 class="mb-0"><i class="bi bi-x-circle me-2"></i> Out of Stock</h5>
-=======
                     <h5 class="mb-0"><i class="bi bi-exclamation-circle me-2"></i> Out of Stock Items</h5>
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -269,12 +261,8 @@
                             <thead>
                                 <tr>
                                     <th>Product</th>
-<<<<<<< HEAD
-                                    <th>Stock Status</th>
-=======
                                     <th>Warehouse</th>
                                     <th>Status</th>
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
                                 </tr>
                             </thead>
                             <tbody>
@@ -284,12 +272,8 @@
                                         <strong>{{ $item->product->name }}</strong><br>
                                         <small class="text-muted">{{ $item->product->sku }}</small>
                                     </td>
-<<<<<<< HEAD
-                                    <td><span class="badge bg-danger">Out of Stock (0)</span></td>
-=======
                                     <td>{{ $item->warehouse->name ?? 'N/A' }}</td>
                                     <td><span class="badge bg-danger">Out of Stock</span></td>
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -301,21 +285,6 @@
     </div>
     @endif
 
-<<<<<<< HEAD
-    {{-- No Out of Stock Items Message --}}
-    @if($outOfStockItems->count() == 0)
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle me-2"></i> <strong>Excellent!</strong> All products are in stock.
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        </div>
-    </div>
-    @endif
-
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
     {{-- Project Settings --}}
     <div class="row mb-4">
         <div class="col-12">
@@ -328,19 +297,57 @@
                         @csrf
                         
                         <div class="row">
-                            {{-- Project Name Input --}}
+                            {{-- Company Name Input --}}
                             <div class="col-md-6 mb-3">
                                 <label for="project_name" class="form-label">
-                                    <i class="bi bi-text-left me-2"></i> Project Name
+                                    <i class="bi bi-text-left me-2"></i> Company Name
                                 </label>
                                 <input type="text" 
                                        class="form-control @error('project_name') is-invalid @enderror" 
                                        id="project_name" 
                                        name="project_name" 
                                        value="{{ $company->name ?? config('app.name') }}"
-                                       placeholder="Enter project name"
+                                       placeholder="Enter company name"
                                        required>
                                 @error('project_name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+
+                                <label for="phone" class="form-label mt-3">
+                                    <i class="bi bi-telephone me-2"></i> Phone Number
+                                </label>
+                                <input type="text"
+                                       class="form-control @error('phone') is-invalid @enderror"
+                                       id="phone"
+                                       name="phone"
+                                       value="{{ old('phone', $company->phone ?? '') }}"
+                                       placeholder="Enter phone number">
+                                @error('phone')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+
+                                <label for="additional_number" class="form-label mt-3">
+                                    <i class="bi bi-telephone-forward me-2"></i> Additional Number
+                                </label>
+                                <input type="text"
+                                       class="form-control @error('additional_number') is-invalid @enderror"
+                                       id="additional_number"
+                                       name="additional_number"
+                                       value="{{ old('additional_number', $company->additional_number ?? '') }}"
+                                       placeholder="Enter additional number">
+                                @error('additional_number')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+
+                                <label for="address" class="form-label mt-3">
+                                    <i class="bi bi-geo-alt me-2"></i> Address
+                                </label>
+                                <textarea class="form-control @error('address') is-invalid @enderror"
+                                          id="address"
+                                          name="address"
+                                          rows="2"
+                                          placeholder="Enter address">{{ old('address', $company->address ?? '') }}</textarea>
+                                @error('address')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -362,29 +369,17 @@
                                 @error('logo')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
-                            </div>
-                        </div>
 
-                        {{-- Logo Preview --}}
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <label class="form-label">Current Logo Preview</label>
-                                <div class="d-flex gap-3 align-items-center">
+                                <div class="d-flex justify-content-start align-items-center mt-3">
                                     <div>
-                                        <small class="text-muted d-block mb-2">Logo</small>
-                                        <div style="width: 120px; height: 120px; border: 1px solid #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; overflow: hidden;">
+                                        <small class="text-muted d-block mb-2">Logo & Favicon</small>
+                                        <div id="logoPreviewWrapper" style="position: relative; width: 90px; height: 90px; border: 1px solid #ddd; border-radius: 12px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08);">
                                             @if($company && $company->logo)
-                                                <img id="logoPreview" src="{{ asset('storage/' . $company->logo) }}" alt="Logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                                <img id="logoPreview" src="{{ asset('storage/' . $company->logo) }}" alt="Logo" data-default="{{ asset('storage/' . $company->logo) }}" style="width: 100%; height: 100%; object-fit: cover;">
                                             @else
-                                                <img id="logoPreview" src="https://ui-avatars.com/api/?name={{ urlencode(config('app.name')) }}&color=fff&background=6c757d&size=200" alt="Default Logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                                <img id="logoPreview" src="https://ui-avatars.com/api/?name={{ urlencode(config('app.name')) }}&color=fff&background=6c757d&size=200" alt="Default Logo" data-default="https://ui-avatars.com/api/?name={{ urlencode(config('app.name')) }}&color=fff&background=6c757d&size=200" style="width: 100%; height: 100%; object-fit: cover;">
                                             @endif
-                                        </div>
-                                    </div>
-                                    
-                                    <div>
-                                        <small class="text-muted d-block mb-2">Favicon Preview</small>
-                                        <div style="width: 120px; height: 120px; border: 1px solid #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; padding: 20px;">
-                                            <img id="faviconPreview" src="{{ asset('favicon.ico') }}" alt="Favicon" style="width: 32px; height: 32px;">
+                                            <button type="button" id="clearLogoPreview" aria-label="Remove image" style="position:absolute; top:4px; right:4px; width:18px; height:18px; border:none; border-radius:50%; background:rgba(0,0,0,0.7); color:#fff; font-size:12px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0;">×</button>
                                         </div>
                                     </div>
                                 </div>
@@ -410,16 +405,55 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
+const logoInput = document.getElementById('logo');
+const logoPreview = document.getElementById('logoPreview');
+const clearLogoPreview = document.getElementById('clearLogoPreview');
+const defaultLogoSrc = logoPreview ? logoPreview.dataset.default : '';
+
 function previewLogo(event) {
     const file = event.target.files[0];
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            document.getElementById('logoPreview').src = e.target.result;
-            document.getElementById('faviconPreview').src = e.target.result;
+            if (logoPreview) {
+                logoPreview.src = e.target.result;
+            }
+            if (clearLogoPreview) {
+                clearLogoPreview.style.display = 'flex';
+            }
         };
         reader.readAsDataURL(file);
+        return;
     }
+
+    if (logoPreview && defaultLogoSrc) {
+        logoPreview.src = defaultLogoSrc;
+    }
+    if (clearLogoPreview) {
+        clearLogoPreview.style.display = defaultLogoSrc ? 'flex' : 'none';
+    }
+}
+
+if (clearLogoPreview) {
+    clearLogoPreview.addEventListener('click', function() {
+        if (logoInput) {
+            logoInput.value = '';
+        }
+        if (logoPreview && defaultLogoSrc) {
+            logoPreview.src = defaultLogoSrc;
+        }
+        clearLogoPreview.style.display = 'none';
+    });
+}
+
+if (logoInput) {
+    logoInput.addEventListener('change', function(event) {
+        if (!event.target.files || event.target.files.length === 0) {
+            previewLogo({ target: { files: [] } });
+            return;
+        }
+        previewLogo(event);
+    });
 }
 
 // Handle form submission
@@ -455,7 +489,7 @@ document.getElementById('projectSettingsForm').addEventListener('submit', functi
             // Auto-hide after 3 seconds
             setTimeout(() => alert.remove(), 3000);
             
-            // Update window title if project name changed
+            // Update window title if Company Name changed
             if (data.new_name) {
                 document.title = data.new_name + ' - Dashboard';
             }

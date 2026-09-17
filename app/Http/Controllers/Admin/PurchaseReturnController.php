@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Purchase;
 use App\Models\PurchaseReturn;
 use App\Services\PurchaseReturnService;
@@ -212,7 +213,10 @@ class PurchaseReturnController extends Controller
             'confirmer'
         ]);
 
-        return view('admin.purchase-returns.show', compact('purchaseReturn'));
+        return view('admin.purchase-returns.show', [
+            'purchaseReturn' => $purchaseReturn,
+            'company' => Company::first(),
+        ]);
     }
 
     /**

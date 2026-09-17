@@ -1,13 +1,97 @@
 @extends('layouts.admin')
 
+@section('title', 'Purchase Return - ' . $purchaseReturn->return_number)
+
+@push('styles')
+<style>
+    .purchase-return-print-header {
+        display: none;
+    }
+
+    @media print {
+        .sidebar,
+        .topbar,
+        .no-print {
+            display: none !important;
+        }
+
+        .content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+        }
+
+        .purchase-return-page,
+        .purchase-return-page .container-fluid {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .purchase-return-page .card {
+            break-inside: avoid;
+        }
+
+        .purchase-return-info-grid {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 2rem;
+        }
+
+        .purchase-return-info-grid > div {
+            width: auto !important;
+            max-width: none !important;
+            flex: none !important;
+        }
+
+        .purchase-return-print-header {
+            display: flex !important;
+            align-items: flex-start;
+            justify-content: space-between;
+            border-bottom: 2px solid #000;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+        }
+
+        .purchase-return-print-header h1,
+        .purchase-return-print-header h2,
+        .purchase-return-print-header p {
+            margin: 0;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="container-fluid">
-    <div class="page-header">
+<div class="container-fluid purchase-return-page">
+    <div class="purchase-return-print-header">
+        <div>
+            <h1>{{ $company->name ?? config('app.name') }}</h1>
+            @if($company?->address)
+                <p>{{ $company->address }}</p>
+            @endif
+            <p>
+                @if($company?->phone) {{ $company->phone }} @endif
+                @if($company?->phone && $company?->email) | @endif
+                @if($company?->email) {{ $company->email }} @endif
+            </p>
+        </div>
+        <div class="text-end">
+            <h2>Purchase Return</h2>
+            <p><strong>Return #:</strong> {{ $purchaseReturn->return_number }}</p>
+            <p><strong>Date:</strong> {{ $purchaseReturn->return_date->format('d M Y') }}</p>
+        </div>
+    </div>
+
+    <div class="page-header no-print">
         <div class="row align-items-center">
             <div class="col-md-6">
                 <h1 class="page-title">Purchase Return Details</h1>
             </div>
             <div class="col-md-6 text-end">
+                <button type="button" class="btn btn-primary me-2" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Print Return
+                </button>
                 <a href="{{ route('admin.purchase-returns.index') }}" class="btn btn-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Returns
                 </a>
@@ -27,7 +111,7 @@
                     </span>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row purchase-return-info-grid">
                         <div class="col-md-6">
                             <h6>Original Purchase</h6>
                             <p>
@@ -151,7 +235,7 @@
 
             <!-- Actions -->
             @if($purchaseReturn->isDraft())
-                <div class="card mb-4">
+                <div class="card mb-4 no-print">
                     <div class="card-header bg-warning bg-opacity-10">
                         <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Actions</h5>
                     </div>
