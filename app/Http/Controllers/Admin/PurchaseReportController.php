@@ -188,7 +188,7 @@ class PurchaseReportController extends Controller
     /**
      * Bulk delete purchases with safety checks
      */
-    public function bulkDelete(Request $request): RedirectResponse
+    public function bulkDelete(Request $request)
     {
         $this->authorize('purchases.delete');
 
@@ -196,20 +196,26 @@ class PurchaseReportController extends Controller
         $purchaseIds = (array) $request->input('purchase_ids', []);
         
         if (empty($purchaseIds)) {
-            return redirect()->route('admin.reports.purchases.index')
-                ->with('error', 'No purchases selected for deletion.');
+            return response()->json([
+                'success' => false,
+                'message' => 'No purchases selected for deletion.',
+            ], 400);
         }
 
         // Validate each ID is an integer and exists
         foreach ($purchaseIds as $id) {
             if (!is_numeric($id)) {
-                return redirect()->route('admin.reports.purchases.index')
-                    ->with('error', 'Invalid purchase ID provided.');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid purchase ID provided.',
+                ], 400);
             }
             
             if (!Purchase::where('id', $id)->exists()) {
-                return redirect()->route('admin.reports.purchases.index')
-                    ->with('error', 'One or more purchases do not exist.');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'One or more purchases do not exist.',
+                ], 404);
             }
         }
 
@@ -223,7 +229,7 @@ class PurchaseReportController extends Controller
 
         try {
             // Fetch all purchases with necessary relationships
-            $purchases = Purchase::with(['warehouse', 'payments', 'items'])
+            $purchases = Purchase::with(['warehouse', 'payments', 'items', 'purchaseReturns'])
                 ->whereIn('id', $purchaseIds)
                 ->get();
 
@@ -237,7 +243,15 @@ class PurchaseReportController extends Controller
                     continue;
                 }
 
-                // Check 2: If purchase is confirmed, we need to restore stock
+                // Check 2: Purchase Return protection - DO NOT delete purchases with confirmed returns
+                $confirmedReturnsCount = $purchase->purchaseReturns()->where('status', 'confirmed')->count();
+                if ($confirmedReturnsCount > 0) {
+                    $errors[] = "Purchase #{$purchase->purchase_number}: Cannot be deleted because it has {$confirmedReturnsCount} confirmed return(s).";
+                    $skippedCount++;
+                    continue;
+                }
+
+                // Check 3: If purchase is confirmed, we need to restore stock
                 if ($purchase->isConfirmed()) {
                     try {
                         // Cancel the purchase first (this restores stock using existing logic)
@@ -260,7 +274,7 @@ class PurchaseReportController extends Controller
                     $purchase->items()->delete();
                     
                     // 3. Delete pending (draft) returns if any
-                    $purchase->returns()->where('status', 'draft')->delete();
+                    $purchase->purchaseReturns()->where('status', 'draft')->delete();
                     
                     // 4. Finally delete the purchase itself (soft delete)
                     $purchase->delete();
@@ -288,19 +302,25 @@ class PurchaseReportController extends Controller
 
             if (!empty($errors)) {
                 // Show errors as warning
-                return redirect()->route('admin.reports.purchases.index')
-                    ->with('warning', $message)
-                    ->with('errors', $errors);
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'errors' => $errors,
+                ]);
             }
 
-            return redirect()->route('admin.reports.purchases.index')
-                ->with('success', $message);
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             
-            return redirect()->route('admin.reports.purchases.index')
-                ->with('error', 'Bulk deletion failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Bulk deletion failed: ' . $e->getMessage(),
+            ], 500);
         }
     }
 }

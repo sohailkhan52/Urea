@@ -36,7 +36,7 @@ return new class extends Migration
                     ->onDelete('restrict');
             });
 
-            Schema::table('sales_return_items', function (Blueprint $table) {
+            Schema::table('sale_return_items', function (Blueprint $table) {
                 $table->foreign('product_id')
                     ->references('id')
                     ->on('products')
@@ -69,7 +69,7 @@ return new class extends Migration
             $table->dropForeign(['product_id']);
         });
 
-        Schema::table('sales_return_items', function (Blueprint $table) {
+        Schema::table('sale_return_items', function (Blueprint $table) {
             $table->dropForeign(['product_id']);
         });
 
