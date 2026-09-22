@@ -159,6 +159,7 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
 
     // Supplier Management
     Route::resource('suppliers', \App\Http\Controllers\Admin\SupplierController::class)
+        ->except(['show'])
         ->middleware('permission:suppliers.view');
 
     // AJAX: Create product inline
@@ -410,9 +411,17 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         Route::post('/customer/{customer}/receive-payment', [\App\Http\Controllers\Admin\UdharController::class, 'receiveIndividualPayment'])
             ->name('receive-individual-payment')
             ->middleware('permission:sales.create');
+
+        Route::post('/customer/{customer}/refund', [\App\Http\Controllers\Admin\UdharController::class, 'refundIndividualPayment'])
+            ->name('refund-individual-payment')
+            ->middleware('permission:sales.create');
         
         Route::post('/family/{family}/receive-payment', [\App\Http\Controllers\Admin\UdharController::class, 'receiveFamilyPayment'])
             ->name('receive-family-payment')
+            ->middleware('permission:sales.create');
+
+        Route::post('/family/{family}/adjust-payment', [\App\Http\Controllers\Admin\UdharController::class, 'adjustFamilyPayment'])
+            ->name('adjust-family-payment')
             ->middleware('permission:sales.create');
         
         Route::post('/sales/{sale}/receive-payment', [\App\Http\Controllers\Admin\UdharController::class, 'receivePayment'])
@@ -427,6 +436,21 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
 
     // Customer Account Statements
     Route::prefix('customers')->name('customers.')->middleware('permission:sales.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\CustomerController::class, 'index'])
+            ->name('index');
+
+        Route::post('/', [\App\Http\Controllers\Admin\CustomerController::class, 'store'])
+            ->name('store')
+            ->middleware('permission:customers.create');
+
+        Route::put('/{customer}', [\App\Http\Controllers\Admin\CustomerController::class, 'update'])
+            ->name('update')
+            ->middleware('permission:customers.update');
+
+        Route::delete('/{customer}', [\App\Http\Controllers\Admin\CustomerController::class, 'destroy'])
+            ->name('destroy')
+            ->middleware('permission:customers.delete');
+
         Route::get('/{customer}/statement', [\App\Http\Controllers\Admin\CustomerAccountController::class, 'statement'])
             ->name('statement');
         

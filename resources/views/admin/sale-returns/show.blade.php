@@ -6,6 +6,8 @@
         display: none;
     }
 
+    .sale-return-print-footer { display: none; }
+
     .sale-return-print-meta {
         display: none;
     }
@@ -57,6 +59,47 @@
 
         .sale-return-page {
             font-size: 12px !important;
+        }
+
+        .sale-return-print-header {
+            display: flex !important;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #000;
+            margin-bottom: 20px;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .sale-return-print-header .company-name,
+        .sale-return-print-header .print-title {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .sale-return-print-header .print-title-block {
+            text-align: right;
+        }
+
+        .sale-return-print-header .print-title-block small {
+            display: block;
+            font-size: 11px;
+            font-weight: 400;
+        }
+
+        .sale-return-print-footer {
+            display: block !important;
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            padding-top: 6px;
+            border-top: 1px solid #000;
+            text-align: center;
+            font-size: 11px;
+            color: #000 !important;
         }
 
         .sale-return-page .card-body {
@@ -171,20 +214,13 @@
 <div class="container-fluid sale-return-page">
     <div class="sale-return-print-header">
         <div>
-            <h1>{{ $company->name ?? config('app.name') }}</h1>
-            @if($company?->address)
-                <p>{{ $company->address }}</p>
-            @endif
-            <p>
-                @if($company?->phone) {{ $company->phone }} @endif
-                @if($company?->phone && $company?->email) | @endif
-                @if($company?->email) {{ $company->email }} @endif
-            </p>
+            <div class="company-name">{{ $company?->name ?? 'DeraNexa' }}</div>
+            <div>{{ implode(' / ', array_filter([$company?->phone ?: '03239123800', $company?->additional_number])) }}</div>
         </div>
-        <div class="text-end">
-            <h2>Sale Return</h2>
-            <p><strong>Return #:</strong> {{ $return->return_number }}</p>
-            <p><strong>Date:</strong> {{ $return->return_date->format('d M Y') }}</p>
+        <div class="print-title-block">
+            <div class="print-title">Sale Return</div>
+            <small>Return #: {{ $return->return_number }}</small>
+            <small>Date: {{ $return->return_date->format('d M Y') }}</small>
         </div>
     </div>
 
@@ -511,6 +547,10 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="sale-return-print-footer">
+        Address: {{ $company?->address ?: 'Naivela Dera Ismail Khan' }}
     </div>
 </div>
 

@@ -11,15 +11,32 @@ class SupplierController extends Controller
     /**
      * Display a listing of suppliers.
      */
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('suppliers.view');
 
-        $suppliers = Supplier::orderBy('name')
-            ->paginate(15)
+        $search = trim((string) $request->input('search', ''));
+        $perPage = (int) $request->input('per_page', 15);
+        $perPage = in_array($perPage, [10, 25, 50, 100], true) ? $perPage : 15;
+
+        $query = Supplier::query();
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('company_name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%")
+                  ->orWhere('city', 'like', "%{$search}%");
+            });
+        }
+
+        $suppliers = $query->orderBy('name')
+            ->paginate($perPage)
             ->withQueryString();
 
-        return view('admin.suppliers.index', compact('suppliers'));
+        return view('admin.suppliers.index', compact('suppliers', 'search'));
     }
 
     /**
@@ -53,18 +70,8 @@ class SupplierController extends Controller
 
         $supplier = Supplier::create($validated);
 
-        return redirect()->route('admin.suppliers.show', $supplier)
+        return redirect()->route('admin.suppliers.index')
             ->with('success', 'Supplier created successfully.');
-    }
-
-    /**
-     * Display the specified supplier.
-     */
-    public function show(Supplier $supplier)
-    {
-        $this->authorize('suppliers.view');
-
-        return view('admin.suppliers.show', compact('supplier'));
     }
 
     /**
@@ -98,7 +105,7 @@ class SupplierController extends Controller
 
         $supplier->update($validated);
 
-        return redirect()->route('admin.suppliers.show', $supplier)
+        return redirect()->route('admin.suppliers.index')
             ->with('success', 'Supplier updated successfully.');
     }
 

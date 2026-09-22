@@ -11,9 +11,11 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::latest()->paginate(15);
+        $perPage = (int) $request->input('per_page', 15);
+        $perPage = in_array($perPage, [10, 25, 50, 100], true) ? $perPage : 15;
+        $products = Product::latest()->paginate($perPage)->withQueryString();
         return view('admin.products.index', compact('products'));
     }
 

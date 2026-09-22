@@ -2,6 +2,103 @@
 
 @section('title', 'Sale Report')
 
+@php
+    $company = \App\Models\Company::active()->first();
+@endphp
+
+@push('styles')
+<style>
+    .sales-report-print-header,
+    .sales-report-print-footer {
+        display: none;
+    }
+
+    @media print {
+        @page { size: A4 landscape; margin: 8mm; }
+
+        .sidebar,
+        .topbar,
+        .no-print {
+            display: none !important;
+        }
+
+        .content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+        }
+
+        .sales-report-print-header {
+            display: flex !important;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #000;
+            margin-bottom: 20px;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .sales-report-print-header .company-name,
+        .sales-report-print-header .print-title {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .sales-report-print-header .print-title-block {
+            text-align: right;
+        }
+
+        .sales-report-print-header .print-title-block small {
+            display: block;
+            font-size: 11px;
+            font-weight: 400;
+        }
+
+        .sales-report-print-footer {
+            display: block !important;
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            padding-top: 6px;
+            border-top: 1px solid #000;
+            text-align: center;
+            font-size: 11px;
+            color: #000 !important;
+        }
+
+        .container-fluid {
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        .card {
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .card-body {
+            padding: 0 !important;
+        }
+
+        table {
+            font-size: 10px !important;
+        }
+
+        .pagination,
+        .d-flex.justify-content-between.align-items-center.mt-3 {
+            display: none !important;
+        }
+    }
+</style>
+@endpush
+
 @section('breadcrumbs')
     <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
     <li class="breadcrumb-item active">Sale Report</li>
@@ -9,7 +106,18 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="sales-report-print-header">
+        <div>
+            <div class="company-name">{{ $company?->name ?? 'DeraNexa' }}</div>
+            <div>{{ implode(' / ', array_filter([$company?->phone ?: '03239123800', $company?->additional_number])) }}</div>
+        </div>
+        <div class="print-title-block">
+            <div class="print-title">Sale Report</div>
+            <small>Date: {{ now()->format('d M Y') }}</small>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
         <h1 class="h3 mb-0">Sale Report</h1>
         <div>
             <button type="button" class="btn btn-info me-2" onclick="window.print()">
@@ -23,7 +131,7 @@
 
     {{-- Summary Cards --}}
     @if($totals && $totals->total_sales > 0)
-    <div class="row mb-4">
+    <div class="row mb-4 no-print">
         <div class="col-md-3">
             <div class="card border-primary">
                 <div class="card-body">
@@ -88,7 +196,7 @@
 
     {{-- Profit/Loss Summary Cards --}}
     @if($totals->sales_with_cost_data > 0)
-    <div class="row mb-4">
+    <div class="row mb-4 no-print">
         <div class="col-md-3">
             <div class="card border-success bg-light">
                 <div class="card-body">
@@ -161,7 +269,7 @@
     @endif
 
     {{-- Filters --}}
-    <div class="card mb-4">
+    <div class="card mb-4 no-print">
         <div class="card-header bg-light">
             <h5 class="card-title mb-0">
                 <i class="bi bi-funnel me-2"></i>Filters
@@ -287,16 +395,16 @@
                             <th>Date</th>
                             <th>Customer</th>
                             <th>Family</th>
-                            <th>Warehouse</th>
+                            <th class="no-print">Warehouse</th>
                             <th class="text-end">Total Amount</th>
                             <th class="text-end">Paid</th>
                             <th class="text-end">Outstanding</th>
                             <th class="text-end">COGS</th>
                             <th class="text-end">Profit/Loss</th>
-                            <th class="text-end">Margin %</th>
-                            <th>Payment Status</th>
+                            <th class="text-end no-print">Margin %</th>
+                            <th class="no-print">Payment Status</th>
                             <th>Created By</th>
-                            <th class="text-center">Actions</th>
+                            <th class="text-center no-print">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -332,7 +440,7 @@
                                     <span class="text-muted">-</span>
                                 @endif
                             </td>
-                            <td>{{ $sale->warehouse->name }}</td>
+                            <td class="no-print">{{ $sale->warehouse->name }}</td>
                             <td class="text-end">Rs. {{ number_format($sale->total_amount, 0) }}</td>
                             <td class="text-end">Rs. {{ number_format($sale->paid_amount, 0) }}</td>
                             <td class="text-end">Rs. {{ number_format($sale->due_amount, 0) }}</td>
@@ -347,22 +455,22 @@
                                 @if($sale->has_cost_data)
                                     @if($sale->profit_status === 'profit')
                                         <span class="text-success fw-bold">
-                                            <i class="bi bi-arrow-up-circle me-1"></i>Rs. {{ number_format($sale->gross_profit, 0) }}
+                                            <i class="bi bi-arrow-up-circle me-1 no-print"></i>Rs. {{ number_format($sale->gross_profit, 0) }}
                                         </span>
                                     @elseif($sale->profit_status === 'loss')
                                         <span class="text-danger fw-bold">
-                                            <i class="bi bi-arrow-down-circle me-1"></i>Rs. {{ number_format(abs($sale->gross_profit), 0) }}
+                                            <i class="bi bi-arrow-down-circle me-1 no-print"></i>Rs. {{ number_format(abs($sale->gross_profit), 0) }}
                                         </span>
                                     @else
                                         <span class="text-secondary fw-bold">
-                                            <i class="bi bi-dash-circle me-1"></i>Rs. 0.00
+                                            <i class="bi bi-dash-circle me-1 no-print"></i>Rs. 0.00
                                         </span>
                                     @endif
                                 @else
                                     <span class="text-muted small">N/A</span>
                                 @endif
                             </td>
-                            <td class="text-end">
+                            <td class="text-end no-print">
                                 @if($sale->has_cost_data && $sale->net_revenue > 0)
                                     <span class="badge bg-{{ $sale->profit_margin_percentage >= 20 ? 'success' : ($sale->profit_margin_percentage >= 10 ? 'warning' : 'danger') }}">
                                         {{ number_format($sale->profit_margin_percentage, 1) }}%
@@ -371,7 +479,7 @@
                                     <span class="text-muted small">N/A</span>
                                 @endif
                             </td>
-                            <td>
+                            <td class="no-print">
                                 @if($sale->paid_amount >= $sale->total_amount)
                                     <span class="badge bg-success">Paid</span>
                                 @elseif($sale->paid_amount > 0)
@@ -387,7 +495,7 @@
                                     <small class="text-muted">-</small>
                                 @endif
                             </td>
-                            <td class="text-center">
+                            <td class="text-center no-print">
                                 <a href="{{ route('admin.reports.sales.show', $sale) }}" 
                                    class="btn btn-sm btn-outline-primary"
                                    title="View Details">
@@ -420,6 +528,10 @@
             @endif
         </div>
     </div>
+</div>
+
+<div class="sales-report-print-footer">
+    Address: {{ $company?->address ?: 'Naivela Dera Ismail Khan' }}
 </div>
 
 {{-- Bulk Delete Confirmation Modal --}}

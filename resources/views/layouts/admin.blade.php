@@ -1001,6 +1001,16 @@
                         </a>
                     </li>
                     @endcan
+                    <li>
+                        <a href="{{ route('admin.suppliers.index') }}" class="dropdown-item {{ request()->routeIs('admin.suppliers.*') ? 'active' : '' }}">
+                            <i class="bi bi-truck me-2"></i> Supplier
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.customers.index') }}" class="dropdown-item {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
+                            <i class="bi bi-person-lines-fill me-2"></i> Customer
+                        </a>
+                    </li>
                     @can('sales.view')
                     <li>
                         <a href="{{ route('admin.reports.profit-loss.index') }}" class="dropdown-item {{ request()->routeIs('admin.reports.profit-loss.*') ? 'active' : '' }}">

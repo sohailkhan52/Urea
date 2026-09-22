@@ -6,11 +6,18 @@
     .sale-detail-print-meta,
     .sale-detail-print-headings { display: none; }
 
+    .sale-detail-print-footer { display: none; }
+
     @media print {
         @page { size: A4 portrait; margin: 8mm; }
         .sidebar, .topbar, .no-print { display: none !important; }
         .content { margin-left: 0 !important; padding: 0 !important; }
         .sale-detail-page { width: 100% !important; max-width: none !important; padding: 0 !important; margin: 0 !important; font-size: 12px !important; }
+        .sale-detail-print-header { display: flex !important; align-items: flex-start; justify-content: space-between; padding-bottom: 12px; border-bottom: 3px solid #000; margin-bottom: 20px; font-size: 11px; line-height: 1.4; }
+        .sale-detail-print-header .company-name, .sale-detail-print-header .print-title { font-size: 24px; font-weight: 800; line-height: 1.2; }
+        .sale-detail-print-header .print-title-block { text-align: right; }
+        .sale-detail-print-header .print-title-block small { display: block; font-size: 11px; font-weight: 400; }
+        .sale-detail-print-footer { display: block !important; position: fixed; right: 0; bottom: 0; left: 0; padding-top: 6px; border-top: 1px solid #000; text-align: center; font-size: 11px; color: #000 !important; }
         .sale-detail-page .row > [class*="col-lg-"] { width: 100% !important; max-width: none !important; flex: 0 0 100% !important; }
         .sale-detail-page .card { break-inside: avoid; margin-bottom: 0.7rem !important; }
         .sale-detail-page .card-header { padding: 0.45rem 0.6rem !important; }
@@ -38,14 +45,13 @@
 <div class="container-fluid sale-detail-page">
     <div class="sale-detail-print-header">
         <div>
-            <h1>{{ $company->name ?? config('app.name') }}</h1>
-            @if($company?->address)<p>{{ $company->address }}</p>@endif
-            <p>{{ $company?->phone }}@if($company?->phone && $company?->email) | @endif{{ $company?->email }}</p>
+            <div class="company-name">{{ $company?->name ?? 'DeraNexa' }}</div>
+            <div>{{ implode(' / ', array_filter([$company?->phone ?: '03239123800', $company?->additional_number])) }}</div>
         </div>
-        <div class="text-end">
-            <h2>Sale Invoice</h2>
-            <p><strong>Invoice #:</strong> {{ $sale->invoice_number }}</p>
-            <p><strong>Date:</strong> {{ $sale->sale_date->format('d M Y') }}</p>
+        <div class="print-title-block">
+            <div class="print-title">Sale Invoice</div>
+            <small>Invoice #: {{ $sale->invoice_number }}</small>
+            <small>Date: {{ $sale->sale_date->format('d M Y') }}</small>
         </div>
     </div>
 
@@ -420,6 +426,10 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="sale-detail-print-footer">
+        Address: {{ $company?->address ?: 'Naivela Dera Ismail Khan' }}
     </div>
 
     {{-- Cancel Modal --}}

@@ -132,7 +132,9 @@
                             @foreach($suppliers as $supplier)
                             <tr>
                                 <td>
-                                    <strong>{{ $supplier->name }}</strong><br>
+                                    <a href="{{ route('admin.supplier-payables.show', $supplier->id) }}" class="text-decoration-none text-dark fw-semibold">
+                                        {{ $supplier->name }}
+                                    </a><br>
                                     <small class="text-muted">{{ $supplier->phone }}</small>
                                 </td>
                                 <td>{{ $supplier->company_name ?? '-' }}</td>
@@ -144,7 +146,7 @@
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{{ route('admin.supplier-payables.show', $supplier->id) }}" class="btn btn-outline-primary" title="View Details">
+                                        <a href="{{ route('admin.supplier-payables.show', $supplier->id) }}" class="btn btn-outline-primary" title="View Supplier Payable Details">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#paymentModal" 
