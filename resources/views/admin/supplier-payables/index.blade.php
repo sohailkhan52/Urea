@@ -153,9 +153,6 @@
                                             onclick="setSupplierPayment({{ $supplier->id }}, '{{ $supplier->name }}', {{ $supplier->outstanding_payable }})">
                                             <i class="bi bi-cash-coin"></i>
                                         </button>
-                                        <a href="{{ route('admin.supplier-payables.history', $supplier->id) }}" class="btn btn-outline-info" title="Payment History">
-                                            <i class="bi bi-clock-history"></i>
-                                        </a>
                                     </div>
                                 </td>
                             </tr>

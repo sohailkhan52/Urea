@@ -201,45 +201,6 @@
                 </div>
             </div>
 
-            {{-- FAMILY PAYMENT HISTORY --}}
-            @php
-                $paymentHistory = app(\App\Services\CustomerPaymentService::class)->getFamilyPaymentHistory($family->id);
-            @endphp
-            
-            @if($paymentHistory->count() > 0)
-            <button type="button" class="btn btn-outline-primary mt-3 mb-3 no-print" id="toggleFamilyPaymentHistory" aria-expanded="false" aria-controls="familyPaymentHistory">
-                <i class="bi bi-clock-history me-1"></i> Family Payment History
-            </button>
-            <div class="table-responsive" id="familyPaymentHistory" style="display: none;">
-                <table class="table table-sm table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Date</th>
-                            <th>Customer</th>
-                            <th>Invoice</th>
-                            <th>Method</th>
-                            <th class="text-end">Amount</th>
-                            <th>Reference</th>
-                            <th>Received By</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($paymentHistory as $payment)
-                        <tr>
-                            <td><small>{{ $payment->payment_date->format('M d, Y') }}</small></td>
-                            <td><strong>{{ $payment->customer->name }}</strong></td>
-                            <td><small>{{ $payment->sale->invoice_number }}</small></td>
-                            <td><span class="badge bg-secondary">{{ ucfirst($payment->payment_method) }}</span></td>
-                            <td class="text-end text-success"><strong>Rs. {{ number_format($payment->amount, 0) }}</strong></td>
-                            <td><small>{{ $payment->reference_number ?? '—' }}</small></td>
-                            <td><small>{{ $payment->receiver->name ?? 'System' }}</small></td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            @endif
-
             {{-- FAMILY TRANSACTION LEDGER --}}
             @if($familyAccount['sales_count'] > 0)
             <h6 class="mb-3 mt-4"><i class="bi bi-journal-text me-2"></i>Family Transaction Ledger</h6>
@@ -356,14 +317,6 @@
 
 @push('scripts')
 <script>
-document.getElementById('toggleFamilyPaymentHistory')?.addEventListener('click', function() {
-    const history = document.getElementById('familyPaymentHistory');
-    const isHidden = history.style.display === 'none';
-
-    history.style.display = isHidden ? 'block' : 'none';
-    this.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-});
-
 document.getElementById('familyCashPaymentForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
     const form = this;

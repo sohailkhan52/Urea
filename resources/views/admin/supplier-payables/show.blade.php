@@ -8,12 +8,6 @@
                 <h1 class="page-title">{{ $supplier->name }}</h1>
                 <p class="text-muted">Supplier Payables Detail</p>
             </div>
-            <div class="col-auto">
-                <a href="{{ route('admin.supplier-payables.history', $supplier->id) }}" class="btn btn-info">
-                    <i class="bi bi-clock-history me-1"></i> View History
-                </a>
-
-            </div>
         </div>
     </div>
 

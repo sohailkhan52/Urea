@@ -41,7 +41,7 @@
             <div class="card text-center">
                 <div class="card-body">
                     <h6 class="card-title text-muted mb-2">Avg. Margin</h6>
-                    <h3 class="text-info mb-0">{{ number_format($totals['total_margin'], 1) }}%</h3>
+                    <h3 class="text-info mb-0">Rs. {{ number_format($totals['total_margin'], 0) }}</h3>
                 </div>
             </div>
         </div>
@@ -162,11 +162,9 @@
                             <td>
                                 @if($product->purchase_price > 0)
                                     @php
-                                        $margin = (($product->sale_price - $product->purchase_price) / $product->purchase_price) * 100;
+                                        $margin = $product->sale_price - $product->purchase_price;
                                     @endphp
-                                    <span class="badge bg-{{ $margin >= 20 ? 'success' : ($margin >= 10 ? 'warning' : 'danger') }}">
-                                        {{ number_format($margin, 1) }}%
-                                    </span>
+                                    <strong class="text-{{ $margin >= 0 ? 'success' : 'danger' }}">Rs. {{ number_format($margin, 0) }}</strong>
                                 @else
                                     <span class="text-muted">—</span>
                                 @endif

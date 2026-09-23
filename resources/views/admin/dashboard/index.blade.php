@@ -12,32 +12,7 @@
 
     {{-- Management Quick Links --}}
     <div class="row mb-5">
-        <!-- Sales Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <a href="{{ route('admin.sales.index') }}" class="text-decoration-none">
-                <div class="card management-card h-100 border-0 shadow-sm" style="cursor: pointer; transition: all 0.3s ease; border-left: 4px solid #e3165b !important;">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="text-muted small mb-2">Sales</div>
-                                <div class="h4 mb-0 fw-bold text-primary">
-                                    {{ $totalSales ?? 0 }}
-                                </div>
-                            </div>
-                            <div class="text-primary" style="font-size: 3rem; opacity: 0.15;">
-                                <i class="bi bi-bag-check"></i>
-                            </div>
-                        </div>
-                        <div class="mt-3 pt-3 border-top">
-                            <small class="text-muted">
-                                <i class="bi bi-arrow-right me-1"></i>View All Sales
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-
+        
         <!-- Purchases Card -->
         <div class="col-xl-3 col-md-6 mb-4">
             <a href="{{ route('admin.purchases.index') }}" class="text-decoration-none">
@@ -64,31 +39,33 @@
             </a>
         </div>
 
-        <!-- Udhar (Credit) Card -->
+
+        <!-- Sales Card -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <a href="{{ route('admin.udhar.index') }}" class="text-decoration-none">
-                <div class="card management-card h-100 border-0 shadow-sm" style="cursor: pointer; transition: all 0.3s ease; border-left: 4px solid #ffc107 !important;">
+            <a href="{{ route('admin.sales.index') }}" class="text-decoration-none">
+                <div class="card management-card h-100 border-0 shadow-sm" style="cursor: pointer; transition: all 0.3s ease; border-left: 4px solid #e3165b !important;">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="text-muted small mb-2">Udhar (Credit)</div>
-                                <div class="h4 mb-0 fw-bold text-warning">
-                                    PKR {{ number_format($totalUdhar ?? 0, 0) }}
+                                <div class="text-muted small mb-2">Sales</div>
+                                <div class="h4 mb-0 fw-bold text-primary">
+                                    {{ $totalSales ?? 0 }}
                                 </div>
                             </div>
-                            <div class="text-warning" style="font-size: 3rem; opacity: 0.15;">
-                                <i class="bi bi-cash-stack"></i>
+                            <div class="text-primary" style="font-size: 3rem; opacity: 0.15;">
+                                <i class="bi bi-bag-check"></i>
                             </div>
                         </div>
                         <div class="mt-3 pt-3 border-top">
                             <small class="text-muted">
-                                <i class="bi bi-arrow-right me-1"></i>View Udhar Details
+                                <i class="bi bi-arrow-right me-1"></i>View All Sales
                             </small>
                         </div>
                     </div>
                 </div>
             </a>
         </div>
+
 
         <!-- Payables Card -->
         <div class="col-xl-3 col-md-6 mb-4">
@@ -115,7 +92,35 @@
                 </div>
             </a>
         </div>
+
+          
+        <!-- Udhar (Credit) Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <a href="{{ route('admin.udhar.index') }}" class="text-decoration-none">
+                <div class="card management-card h-100 border-0 shadow-sm" style="cursor: pointer; transition: all 0.3s ease; border-left: 4px solid #ffc107 !important;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-muted small mb-2">Udhar (Credit)</div>
+                                <div class="h4 mb-0 fw-bold text-warning">
+                                    PKR {{ number_format($totalUdhar ?? 0, 0) }}
+                                </div>
+                            </div>
+                            <div class="text-warning" style="font-size: 3rem; opacity: 0.15;">
+                                <i class="bi bi-cash-stack"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-top">
+                            <small class="text-muted">
+                                <i class="bi bi-arrow-right me-1"></i>View Udhar Details
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
     </div>
+
 
     <style>
         .management-card {

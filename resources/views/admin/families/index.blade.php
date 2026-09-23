@@ -70,12 +70,12 @@
                                             data-bs-toggle="modal" 
                                             data-bs-target="#editFamilyModal"
                                             onclick="loadFamilyForEdit({{ $family->id }}, '{{ $family->name }}', '{{ $family->family_code }}', '{{ $family->address ?? '' }}', '{{ $family->city ?? '' }}', '{{ $family->village ?? '' }}', '{{ $family->notes ?? '' }}', '{{ $family->status }}')">
-                                        <i class="bi bi-pencil-square"></i> Edit
+                                        <i class="bi bi-pencil-square"></i>
                                     </button>
                                     <button type="button" 
                                             class="btn btn-sm btn-outline-danger" 
                                             onclick="deleteFamily({{ $family->id }}, '{{ $family->name }}')">
-                                        <i class="bi bi-trash"></i> Delete
+                                        <i class="bi bi-trash"></i>
                                     </button>
                                 </td>
                             </tr>

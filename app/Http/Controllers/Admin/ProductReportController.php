@@ -61,7 +61,7 @@ class ProductReportController extends Controller
             'total_margin' => Product::where('purchase_price', '>', 0)
                 ->get()
                 ->average(function ($product) {
-                    return (($product->sale_price - $product->purchase_price) / $product->purchase_price) * 100;
+                    return $product->sale_price - $product->purchase_price;
                 }),
         ];
 

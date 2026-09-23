@@ -160,9 +160,21 @@
                                     <strong class="text-danger">Rs. {{ number_format($item['outstanding'], 0) }}</strong>
                                 </td>
                                 <td class="text-end">
-                                    <a href="{{ route('admin.udhar.show-family', $item['family']) }}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-eye"></i> View
-                                    </a>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ route('admin.udhar.show-family', $item['family']) }}" class="btn btn-outline-primary" title="View Family">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        @if($item['outstanding'] > 0)
+                                        <button type="button" class="btn btn-outline-success" title="Record Payment"
+                                                data-bs-toggle="modal" data-bs-target="#familyPaymentModal"
+                                                data-family-id="{{ $item['family']->id }}"
+                                                data-family-name="{{ $item['family']->name }}"
+                                                data-outstanding="{{ $item['outstanding'] }}"
+                                                data-payment-url="{{ route('admin.udhar.receive-family-payment', $item['family']) }}">
+                                            <i class="bi bi-cash-coin"></i>
+                                        </button>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach
@@ -219,9 +231,20 @@
                                     <strong class="text-danger">Rs. {{ number_format($item['outstanding'], 0) }}</strong>
                                 </td>
                                 <td class="text-end">
-                                    <a href="{{ route('admin.udhar.show-customer', $item['customer']) }}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-eye"></i> View
-                                    </a>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ route('admin.udhar.show-customer', $item['customer']) }}" class="btn btn-outline-primary" title="View Customer">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        @if($item['outstanding'] > 0)
+                                        <button type="button" class="btn btn-outline-success" title="Record Payment"
+                                                data-bs-toggle="modal" data-bs-target="#individualPaymentModal"
+                                                data-customer-id="{{ $item['customer']->id }}"
+                                                data-customer-name="{{ $item['customer']->name }}"
+                                                data-outstanding="{{ $item['outstanding'] }}">
+                                            <i class="bi bi-cash-coin"></i>
+                                        </button>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach
@@ -239,4 +262,193 @@
         </div>
     @endif
 </div>
+
+<div class="modal fade" id="familyPaymentModal" tabindex="-1" aria-labelledby="familyPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="familyPaymentModalLabel">Record Cash Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="familyPaymentForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Family</label>
+                        <input type="text" id="familyPaymentName" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Outstanding Amount</label>
+                        <input type="text" id="familyPaymentOutstanding" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Amount <span class="text-danger">*</span></label>
+                        <input type="number" id="familyPaymentAmount" class="form-control" name="amount" step="0.01" min="0.01" required>
+                        <small class="text-muted">Max: <span id="familyPaymentMaxAmount"></span></small>
+                    </div>
+                    <input type="hidden" name="payment_date" value="{{ date('Y-m-d') }}">
+                    <input type="hidden" name="allocation_type" value="auto">
+                    <div class="mb-3">
+                        <label class="form-label">Reference (Optional)</label>
+                        <input type="text" class="form-control" name="reference" maxlength="100" placeholder="Transaction ID, etc.">
+                    </div>
+                    <div>
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Add any notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i> Record Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="individualPaymentModal" tabindex="-1" aria-labelledby="individualPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="individualPaymentModalLabel">Record Cash Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="individualPaymentForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Customer</label>
+                        <input type="text" id="paymentCustomerName" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Outstanding Amount</label>
+                        <input type="text" id="paymentOutstanding" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Amount <span class="text-danger">*</span></label>
+                        <input type="number" id="individualPaymentAmount" class="form-control" name="amount" step="0.01" min="0.01" required>
+                        <small class="text-muted">Max: <span id="paymentMaxAmount"></span></small>
+                    </div>
+                    <input type="hidden" name="payment_date" value="{{ date('Y-m-d') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Reference (Optional)</label>
+                        <input type="text" class="form-control" name="reference" maxlength="100" placeholder="Transaction ID, etc.">
+                    </div>
+                    <div>
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Add any notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i> Record Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+let individualPaymentCustomerId = null;
+let familyPaymentUrl = null;
+
+document.querySelectorAll('[data-bs-target="#familyPaymentModal"]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        const outstanding = Number(this.dataset.outstanding);
+        const formattedAmount = 'Rs. ' + Math.round(outstanding).toLocaleString('en-PK');
+        familyPaymentUrl = this.dataset.paymentUrl;
+        document.getElementById('familyPaymentName').value = this.dataset.familyName;
+        document.getElementById('familyPaymentOutstanding').value = formattedAmount;
+        document.getElementById('familyPaymentMaxAmount').textContent = formattedAmount;
+        document.getElementById('familyPaymentAmount').max = outstanding;
+        document.getElementById('familyPaymentAmount').value = '';
+    });
+});
+
+document.getElementById('familyPaymentForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    const form = this;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const formData = new FormData(form);
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Processing...';
+
+    fetch(familyPaymentUrl, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': formData.get('_token'),
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.message || 'Unable to record family payment.');
+            }
+            alert(data.message);
+            window.location.reload();
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+            submitButton.disabled = false;
+            submitButton.innerHTML = '<i class="bi bi-check-circle me-1"></i> Record Payment';
+        });
+});
+
+document.querySelectorAll('[data-bs-target="#individualPaymentModal"]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        setIndividualPayment(
+            this.dataset.customerId,
+            this.dataset.customerName,
+            Number(this.dataset.outstanding)
+        );
+    });
+});
+
+function setIndividualPayment(customerId, customerName, outstanding) {
+    individualPaymentCustomerId = customerId;
+    const formattedAmount = 'Rs. ' + Math.round(outstanding).toLocaleString('en-PK');
+    document.getElementById('paymentCustomerName').value = customerName;
+    document.getElementById('paymentOutstanding').value = formattedAmount;
+    document.getElementById('paymentMaxAmount').textContent = formattedAmount;
+    document.getElementById('individualPaymentAmount').max = outstanding;
+    document.getElementById('individualPaymentAmount').value = '';
+}
+
+document.getElementById('individualPaymentForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    const form = this;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const formData = new FormData(form);
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Processing...';
+
+    fetch(`/admin/udhar/customer/${individualPaymentCustomerId}/receive-payment`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': formData.get('_token'),
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.message || 'Unable to record payment.');
+            }
+            alert(data.message);
+            window.location.reload();
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+            submitButton.disabled = false;
+            submitButton.innerHTML = '<i class="bi bi-check-circle me-1"></i> Record Payment';
+        });
+});
+</script>
+@endpush
 @endsection
