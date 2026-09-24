@@ -152,9 +152,14 @@
                             <h6>Original Purchase</h6>
                             <p>
                                 <strong>Purchase #:</strong> 
-                                <a href="{{ route('admin.purchases.show', $purchaseReturn->purchase) }}">
-                                    {{ $purchaseReturn->purchase->purchase_number }}
-                                </a><br>
+                                @if($purchaseReturn->purchase)
+                                    <a href="{{ route('admin.purchases.show', $purchaseReturn->purchase) }}">
+                                        {{ $purchaseReturn->purchase->purchase_number }}
+                                    </a>
+                                @else
+                                    <span class="text-muted">(Deleted Purchase)</span>
+                                @endif
+                                <br>
                                 <strong>Date:</strong> {{ $purchaseReturn->purchase->purchase_date->format('d M Y') }}
                             </p>
 

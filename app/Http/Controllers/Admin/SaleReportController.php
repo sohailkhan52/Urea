@@ -325,7 +325,7 @@ class SaleReportController extends Controller
     /**
      * Bulk delete sales with safety checks
      */
-    public function bulkDelete(Request $request): RedirectResponse
+    public function bulkDelete(Request $request)
     {
         $this->authorize('sales.delete');
 
@@ -333,20 +333,26 @@ class SaleReportController extends Controller
         $saleIds = (array) $request->input('sale_ids', []);
         
         if (empty($saleIds)) {
-            return redirect()->route('admin.reports.sales.index')
-                ->with('error', 'No sales selected for deletion.');
+            return response()->json([
+                'success' => false,
+                'message' => 'No sales selected for deletion.',
+            ], 400);
         }
 
         // Validate each ID is an integer and exists
         foreach ($saleIds as $id) {
             if (!is_numeric($id)) {
-                return redirect()->route('admin.reports.sales.index')
-                    ->with('error', 'Invalid sale ID provided.');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid sale ID provided.',
+                ], 400);
             }
             
             if (!Sale::where('id', $id)->exists()) {
-                return redirect()->route('admin.reports.sales.index')
-                    ->with('error', 'One or more sales do not exist.');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'One or more sales do not exist.',
+                ], 404);
             }
         }
 
@@ -433,19 +439,25 @@ class SaleReportController extends Controller
 
             if (!empty($errors)) {
                 // Show errors as warning
-                return redirect()->route('admin.reports.sales.index')
-                    ->with('warning', $message)
-                    ->with('errors', $errors);
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'errors' => $errors,
+                ]);
             }
 
-            return redirect()->route('admin.reports.sales.index')
-                ->with('success', $message);
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             
-            return redirect()->route('admin.reports.sales.index')
-                ->with('error', 'Bulk deletion failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Bulk deletion failed: ' . $e->getMessage(),
+            ], 500);
         }
     }
 }

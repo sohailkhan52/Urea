@@ -80,9 +80,13 @@
                                     </a>
                                 </td>
                                 <td>
-                                    <a href="{{ route('admin.purchases.show', $return->purchase) }}">
-                                        {{ $return->purchase->purchase_number }}
-                                    </a>
+                                    @if($return->purchase)
+                                        <a href="{{ route('admin.purchases.show', $return->purchase) }}">
+                                            {{ $return->purchase->purchase_number }}
+                                        </a>
+                                    @else
+                                        <span class="text-muted">(Deleted Purchase)</span>
+                                    @endif
                                 </td>
                                 <td>{{ $return->supplier->name }}</td>
                                 <td>{{ $return->return_date->format('d M Y') }}</td>
