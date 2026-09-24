@@ -56,9 +56,16 @@
             <h1 class="h3 mb-0 fw-bold" style="font-size: 2.2rem; color: #1f2937;">Customers</h1>
             <p class="text-muted mb-0 mt-1">View and manage all customers in your inventory</p>
         </div>
-        <button type="button" class="btn btn-primary btn-lg px-4" data-bs-toggle="modal" data-bs-target="#createCustomerModal" style="background: #1d74d9; border-color: #1d74d9; border-radius: 10px; font-weight: 600;">
-            <i class="bi bi-plus-lg me-2"></i> Add Customer
-        </button>
+        <div class="d-flex gap-2">
+            @can('customers.delete')
+                <button type="button" class="btn btn-danger btn-sm px-3" id="deleteSelectedCustomersBtn" disabled onclick="deleteSelectedCustomers()" style="border-radius: 8px; font-weight: 600;">
+                    <i class="bi bi-trash me-1"></i> Delete Selected
+                </button>
+            @endcan
+            <button type="button" class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#createCustomerModal" style="background: #1d74d9; border-color: #1d74d9; border-radius: 8px; font-weight: 600;">
+                <i class="bi bi-plus-lg me-1"></i> Add Customer
+            </button>
+        </div>
     </div>
 
     <div class="modal fade customer-modal" id="createCustomerModal" tabindex="-1" aria-labelledby="createCustomerModalLabel" aria-hidden="true">
@@ -108,6 +115,7 @@
                         <div class="col-md-8">
                             <label for="customer-search" class="form-label fs-6 mb-2">Search</label>
                             <input type="search" class="form-control form-control-lg" id="customer-search" name="search" value="{{ $search ?? '' }}" placeholder="Search by customer name, phone, email, address or city" autocomplete="off" style="border-radius: 10px; border: 1px solid #d5d9df; background: #fff; width: 100%;">
+                            <input type="hidden" name="per_page" value="{{ $perPage }}">
                         </div>
                         <div class="col-md-4 d-flex gap-2">
                             <button type="submit" class="btn btn-secondary flex-fill" style="background: #6b7280; border-color: #6b7280; border-radius: 9px; font-weight: 600; padding: 0.65rem 0.8rem;"><i class="bi bi-funnel me-1"></i> Filter</button>
@@ -125,7 +133,7 @@
             <label for="customer-per-page" class="small text-muted mb-0">Per Page</label>
             <select id="customer-per-page" name="per_page" class="form-select form-select-sm" style="width: 82px;" onchange="this.form.submit()">
                 @foreach([10, 25, 50, 100] as $option)
-                    <option value="{{ $option }}" @selected(request('per_page', 15) == $option)>{{ $option }}</option>
+                    <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
                 @endforeach
             </select>
         </form>
@@ -138,6 +146,9 @@
                     <table class="table table-hover align-middle mb-0" style="border-collapse: collapse;">
                         <thead class="table-light" style="background: #f3f4f6;">
                             <tr>
+                                @can('customers.delete')
+                                    <th class="px-3 py-3" style="width: 52px;"><input type="checkbox" id="selectAllCustomers" class="form-check-input" onchange="toggleCustomerSelection()" aria-label="Select all customers"></th>
+                                @endcan
                                 <th class="fw-bold text-dark px-3 py-3" style="font-size: 1.05rem;">Name</th>
                                 <th class="fw-bold text-dark px-3 py-3" style="font-size: 1.05rem;">Customer Type</th>
                                 <th class="fw-bold text-dark px-3 py-3" style="font-size: 1.05rem;">Family</th>
@@ -148,6 +159,9 @@
                         <tbody>
                             @foreach($customers as $customer)
                                 <tr style="border-top: 1px solid #e5e7eb;">
+                                    @can('customers.delete')
+                                        <td class="px-3 py-3"><input type="checkbox" class="form-check-input customer-checkbox" value="{{ $customer->id }}" onchange="updateCustomerDeleteButton()" aria-label="Select {{ $customer->name }}"></td>
+                                    @endcan
                                     <td class="fw-semibold px-3 py-3" style="font-size: 1rem; color: #111827;">{{ $customer->name ?: '-' }}</td>
                                     <td class="px-3 py-3" style="font-size: 0.98rem; color: #374151;">{{ $customer->type_label }}</td>
                                     <td class="px-3 py-3" style="font-size: 0.98rem; color: #374151;">{{ $customer->family?->name ?: '-' }}</td>
@@ -156,6 +170,7 @@
                                         <div class="d-flex justify-content-end gap-2">
                                             <button type="button" class="btn btn-outline-primary btn-sm" title="View" data-bs-toggle="modal" data-bs-target="#customerDetailsModal{{ $customer->id }}" style="border-radius: 8px; border-color: #93c5fd; color: #2563eb; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-eye"></i></button>
                                             <button type="button" class="btn btn-outline-secondary btn-sm" title="Edit" data-bs-toggle="modal" data-bs-target="#customerEditModal{{ $customer->id }}" style="border-radius: 8px; border-color: #cbd5e1; color: #475569; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-pencil"></i></button>
+                                            <a href="{{ route('admin.customers.history', $customer) }}" class="btn btn-outline-info btn-sm" title="Payment History" style="border-radius: 8px; border-color: #67e8f9; color: #0891b2; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;"><i class="bi bi-clock-history"></i></a>
                                         </div>
                                     </td>
                                 </tr>
@@ -223,3 +238,47 @@
     </div>
 </div>
 @endsection
+
+@can('customers.delete')
+    <form id="bulkCustomerDeleteForm" action="{{ route('admin.customers.bulk-delete') }}" method="POST" class="d-none">
+        @csrf
+        @method('DELETE')
+    </form>
+@endcan
+
+@push('scripts')
+<script>
+    function toggleCustomerSelection() {
+        const selectAll = document.getElementById('selectAllCustomers');
+        document.querySelectorAll('.customer-checkbox').forEach((checkbox) => {
+            checkbox.checked = selectAll.checked;
+        });
+        updateCustomerDeleteButton();
+    }
+
+    function updateCustomerDeleteButton() {
+        const selectedCount = document.querySelectorAll('.customer-checkbox:checked').length;
+        const deleteButton = document.getElementById('deleteSelectedCustomersBtn');
+        if (deleteButton) {
+            deleteButton.disabled = selectedCount === 0;
+        }
+    }
+
+    function deleteSelectedCustomers() {
+        const selected = Array.from(document.querySelectorAll('.customer-checkbox:checked'));
+        if (selected.length === 0 || !confirm(`Delete ${selected.length} selected customer(s)?`)) {
+            return;
+        }
+
+        const form = document.getElementById('bulkCustomerDeleteForm');
+        selected.forEach((checkbox) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'customer_ids[]';
+            input.value = checkbox.value;
+            form.appendChild(input);
+        });
+        form.submit();
+    }
+</script>
+@endpush

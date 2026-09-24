@@ -55,9 +55,16 @@
             <h1 class="h3 mb-0 fw-bold" style="font-size: 2.2rem; color: #1f2937;">Suppliers</h1>
             <p class="text-muted mb-0 mt-1">View and manage all suppliers in your inventory</p>
         </div>
-        <button type="button" class="btn btn-primary btn-lg px-4" data-bs-toggle="modal" data-bs-target="#createSupplierModal" style="background: #1d74d9; border-color: #1d74d9; border-radius: 10px; font-weight: 600;">
-            <i class="bi bi-plus-lg me-2"></i> Add Supplier
-        </button>
+        <div class="d-flex gap-2">
+            @can('suppliers.delete')
+            <button type="button" class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#createSupplierModal" style="background: #1d74d9; border-color: #1d74d9; border-radius: 8px; font-weight: 600;">
+                <i class="bi bi-plus-lg me-1"></i> Add Supplier
+            </button>
+                <button type="button" class="btn btn-danger btn-sm px-3" id="deleteSelectedBtn" disabled onclick="deleteSelectedSuppliers()" style="border-radius: 8px; font-weight: 600;">
+                    <i class="bi bi-trash me-1"></i> Delete Selected
+                </button>
+            @endcan
+        </div>
     </div>
 
     <div class="modal fade supplier-create-modal" id="createSupplierModal" tabindex="-1" aria-labelledby="createSupplierModalLabel" aria-hidden="true">
@@ -123,6 +130,7 @@
                                    autocapitalize="off"
                                    spellcheck="false"
                                    style="border-radius: 10px; border: 1px solid #d5d9df; background: #fff; width: 100%;">
+                            <input type="hidden" name="per_page" value="{{ $perPage }}">
                         </div>
                         <div class="col-md-4 d-flex gap-2">
                             <button type="submit" class="btn btn-secondary flex-fill" style="background: #6b7280; border-color: #6b7280; border-radius: 9px; font-weight: 600; padding: 0.65rem 0.8rem;">
@@ -144,7 +152,7 @@
             <label for="supplier-per-page" class="small text-muted mb-0">Per Page</label>
             <select id="supplier-per-page" name="per_page" class="form-select form-select-sm" style="width: 82px;" onchange="this.form.submit()">
                 @foreach([10, 25, 50, 100] as $option)
-                    <option value="{{ $option }}" @selected(request('per_page', 15) == $option)>{{ $option }}</option>
+                    <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
                 @endforeach
             </select>
         </form>
@@ -157,6 +165,9 @@
                     <table class="table table-hover align-middle mb-0" style="border-collapse: collapse;">
                         <thead class="table-light" style="background: #f3f4f6;">
                             <tr>
+                                @can('suppliers.delete')
+                                    <th class="px-3 py-3" style="width: 52px;"><input type="checkbox" id="selectAllSuppliers" class="form-check-input" onchange="toggleSupplierSelection()" aria-label="Select all suppliers"></th>
+                                @endcan
                                 <th class="fw-bold text-dark px-3 py-3" style="font-size: 1.05rem;">Name</th>
                                 <th class="fw-bold text-dark px-3 py-3" style="font-size: 1.05rem;">Company Name</th>
                                 <th class="fw-bold text-dark px-3 py-3" style="font-size: 1.05rem;">Phone</th>
@@ -169,6 +180,9 @@
                         <tbody>
                             @foreach($suppliers as $supplier)
                                 <tr style="border-top: 1px solid #e5e7eb;">
+                                    @can('suppliers.delete')
+                                        <td class="px-3 py-3"><input type="checkbox" class="form-check-input supplier-checkbox" value="{{ $supplier->id }}" onchange="updateSupplierDeleteButton()" aria-label="Select {{ $supplier->name }}"></td>
+                                    @endcan
                                     <td class="fw-semibold px-3 py-3" style="font-size: 1rem; color: #111827;">{{ $supplier->name ?? '-' }}</td>
                                     <td class="px-3 py-3" style="font-size: 0.98rem; color: #374151;">{{ $supplier->company_name ?? '-' }}</td>
                                     <td class="px-3 py-3" style="font-size: 0.98rem; color: #374151;">{{ $supplier->phone ?? '-' }}</td>
@@ -183,6 +197,9 @@
                                             <button type="button" class="btn btn-outline-secondary btn-sm" title="Edit" data-bs-toggle="modal" data-bs-target="#supplierEditModal{{ $supplier->id }}" style="border-radius: 8px; border-color: #cbd5e1; color: #475569; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
+                                            <a href="{{ route('admin.suppliers.history', $supplier) }}" class="btn btn-outline-info btn-sm" title="Payment History" style="border-radius: 8px; border-color: #67e8f9; color: #0891b2; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-clock-history"></i>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -287,4 +304,52 @@
         </div>
     </div>
 </div>
+
+@can('suppliers.delete')
+    <form id="bulkSupplierDeleteForm" action="{{ route('admin.suppliers.bulk-delete') }}" method="POST" class="d-none">
+        @csrf
+        @method('DELETE')
+    </form>
+@endcan
 @endsection
+
+@push('scripts')
+<script>
+    function toggleSupplierSelection() {
+        const selectAll = document.getElementById('selectAllSuppliers');
+        document.querySelectorAll('.supplier-checkbox').forEach((checkbox) => {
+            checkbox.checked = selectAll.checked;
+        });
+        updateSupplierDeleteButton();
+    }
+
+    function updateSupplierDeleteButton() {
+        const selectedCount = document.querySelectorAll('.supplier-checkbox:checked').length;
+        const deleteButton = document.getElementById('deleteSelectedBtn');
+        if (deleteButton) {
+            deleteButton.disabled = selectedCount === 0;
+        }
+    }
+
+    function deleteSelectedSuppliers() {
+        const selected = Array.from(document.querySelectorAll('.supplier-checkbox:checked'));
+        if (selected.length === 0) {
+            return;
+        }
+
+        if (!confirm(`Delete ${selected.length} selected supplier(s)?`)) {
+            return;
+        }
+
+        const form = document.getElementById('bulkSupplierDeleteForm');
+        selected.forEach((checkbox) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'supplier_ids[]';
+            input.value = checkbox.value;
+            form.appendChild(input);
+        });
+        form.submit();
+    }
+</script>
+@endpush

@@ -158,6 +158,14 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->middleware('permission:suppliers.create');
 
     // Supplier Management
+    Route::get('/suppliers/{supplier}/history', [\App\Http\Controllers\Admin\SupplierController::class, 'history'])
+        ->name('suppliers.history')
+        ->middleware('permission:suppliers.view');
+
+    Route::delete('/suppliers/bulk-delete', [\App\Http\Controllers\Admin\SupplierController::class, 'bulkDestroy'])
+        ->name('suppliers.bulk-delete')
+        ->middleware('permission:suppliers.delete');
+
     Route::resource('suppliers', \App\Http\Controllers\Admin\SupplierController::class)
         ->except(['show'])
         ->middleware('permission:suppliers.view');
@@ -169,6 +177,7 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
 
     // Product Management
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)
+        ->except(['edit'])
         ->middleware('permission:products.view');
 
     // AJAX: Get all products (for single-page create form) - MUST come BEFORE resource routes
@@ -238,7 +247,12 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     // ============ PRODUCT REPORTS ============
     Route::prefix('reports/products')->name('reports.products.')->middleware('permission:products.view')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\ProductReportController::class, 'index'])->name('index');
+        Route::get('/history', [\App\Http\Controllers\Admin\ProductReportController::class, 'history'])->name('history');
+        Route::get('/{product}/history', [\App\Http\Controllers\Admin\ProductReportController::class, 'historyShow'])
+            ->whereNumber('product')
+            ->name('history.show');
         Route::delete('/{product}', [\App\Http\Controllers\Admin\ProductReportController::class, 'destroy'])
+            ->whereNumber('product')
             ->name('destroy')
             ->middleware('permission:products.delete');
         Route::get('/export', [\App\Http\Controllers\Admin\ProductReportController::class, 'export'])
@@ -438,6 +452,13 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     Route::prefix('customers')->name('customers.')->middleware('permission:sales.view')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\CustomerController::class, 'index'])
             ->name('index');
+
+        Route::delete('/bulk-delete', [\App\Http\Controllers\Admin\CustomerController::class, 'bulkDestroy'])
+            ->name('bulk-delete')
+            ->middleware('permission:customers.delete');
+
+        Route::get('/{customer}/history', [\App\Http\Controllers\Admin\CustomerController::class, 'history'])
+            ->name('history');
 
         Route::post('/', [\App\Http\Controllers\Admin\CustomerController::class, 'store'])
             ->name('store')
