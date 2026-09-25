@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sales_return_items', function (Blueprint $table) {
+        Schema::create('sale_return_items', function (Blueprint $table) {
             $table->id();
             
             // References
-            $table->foreignId('sales_return_id')->constrained('sales_returns')->onDelete('cascade');
+            $table->foreignId('sale_return_id')->constrained('sales_returns')->onDelete('cascade');
             $table->foreignId('sale_item_id')->constrained('sale_items')->onDelete('restrict');
             $table->foreignId('product_id');
             
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->timestamps();
             
             // Indexes
-            $table->index('sales_return_id');
+            $table->index('sale_return_id');
             $table->index('sale_item_id');
             $table->index('product_id');
         });
@@ -43,6 +43,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sales_return_items');
+        Schema::dropIfExists('sale_return_items');
     }
 };

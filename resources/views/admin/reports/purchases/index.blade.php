@@ -486,6 +486,15 @@
         const purchaseIds = Array.from(checkboxes).map(cb => cb.value);
         console.log('Selected purchase IDs:', purchaseIds);
         
+        if (purchaseIds.length === 0) {
+            alert('Please select at least one purchase to delete');
+            return;
+        }
+        
+        if (!confirm(`Delete ${purchaseIds.length} purchase(es)? This action cannot be undone.`)) {
+            return;
+        }
+        
         // Close the modal first
         const modalElement = document.getElementById('bulkDeleteModal');
         if (modalElement) {
@@ -495,45 +504,53 @@
             }
         }
         
-        // Clear previous inputs
-        const form = document.getElementById('bulkDeleteForm');
-        console.log('Form found:', form);
-        
-        if (!form) {
-            console.error('bulkDeleteForm not found!');
-            alert('Error: Form not found. Please refresh the page and try again.');
-            return;
-        }
-        
-        const oldInputs = form.querySelectorAll('input[name^="purchase_ids"]');
-        console.log('Found old inputs to remove:', oldInputs.length);
-        oldInputs.forEach(input => input.remove());
-        
-        // Add each ID as a separate hidden input
+        // Prepare FormData
+        const formData = new FormData();
         purchaseIds.forEach(id => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'purchase_ids[]';
-            input.value = id;
-            form.appendChild(input);
-            console.log('Added input for purchase ID:', id);
+            formData.append('purchase_ids[]', id);
         });
         
-        console.log('Form inputs before submission:');
-        console.log(new FormData(form));
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                         document.querySelector('input[name="_token"]')?.value;
         
-        console.log('Submitting form to:', form.action);
+        if (csrfToken) {
+            formData.append('_token', csrfToken);
+        }
         
-        // Submit form with a small delay to allow modal to close
-        setTimeout(() => {
-            try {
-                form.submit();
-                console.log('Form submitted successfully');
-            } catch (e) {
-                console.error('Error submitting form:', e);
-                alert('Error submitting form: ' + e.message);
+        // Send DELETE request using fetch
+        fetch('{{ route("admin.reports.purchases.bulk-delete") }}', {
+            method: 'DELETE',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
             }
-        }, 100);
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Response data:', data);
+            
+            if (data.success) {
+                // Show success message
+                if (data.errors && data.errors.length > 0) {
+                    let errorMsg = data.message + '\n\nErrors:\n' + data.errors.join('\n');
+                    alert(errorMsg);
+                } else {
+                    alert(data.message);
+                }
+                // Reload page after a short delay
+                setTimeout(() => {
+                    window.location.href = '{{ route("admin.reports.purchases.index") }}';
+                }, 1000);
+            } else {
+                alert('Error: ' + (data.message || 'Unknown error occurred'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting. Please try again.');
+        });
     }
 
     // Update delete button on page load
