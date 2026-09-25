@@ -251,10 +251,7 @@ class DashboardService
     public function getOutOfStockItems(int $limit = 20)
     {
         return WarehouseInventory::with(['product', 'warehouse'])
-<<<<<<< HEAD
             ->withoutGlobalScopes()
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
             ->where('quantity', 0)
             ->orderBy('product_id')
             ->take($limit)
@@ -262,7 +259,6 @@ class DashboardService
     }
 
     /**
-<<<<<<< HEAD
      * Get products below their minimum stock level
      * 
      * @param int $limit
@@ -280,8 +276,6 @@ class DashboardService
     }
 
     /**
-=======
->>>>>>> fda2d10da9b7d26919ff41c4eda83db54f46c0be
      * Get top customers by sales volume
      * 
      * @param int $limit
