@@ -376,6 +376,40 @@ class UdharController extends Controller
         }
     }
 
+    public function refundIndividualPayment(Request $request, Customer $customer)
+    {
+        $this->authorize('sales.create');
+
+        if (!auth()->user()->canAccessWarehouse($customer->warehouse_id)) {
+            return response()->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_date' => 'required|date',
+            'reference' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $refund = $this->paymentService->refundIndividualCredit(
+                $customer,
+                (float) $validated['amount'],
+                $validated['payment_date'],
+                $validated['reference'] ?? null,
+                $validated['notes'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Refund recorded successfully.',
+                'payment' => ['id' => $refund->id, 'amount' => (float) $refund->amount],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
     /**
      * Receive family payment (AJAX)
      */
@@ -419,6 +453,36 @@ class UdharController extends Controller
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 422);
+        }
+    }
+
+    public function adjustFamilyPayment(Request $request, Family $family)
+    {
+        $this->authorize('sales.create');
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_date' => 'required|date',
+            'reference' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $adjustment = $this->paymentService->adjustFamilyCredit(
+                $family,
+                (float) $validated['amount'],
+                $validated['payment_date'],
+                $validated['reference'] ?? null,
+                $validated['notes'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Family payment adjusted to zero successfully.',
+                'payment' => ['id' => $adjustment->id, 'amount' => (float) $adjustment->amount],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
     }
 

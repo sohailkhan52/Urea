@@ -87,21 +87,52 @@ class CustomerPaymentService
                     'received_by' => auth()->id(),
                 ]);
 
-                // Update the sale's paid_amount and due_amount
-                $newPaidAmount = $outstandingSale->paid_amount + $paymentForThisSale;
-                $newDueAmount = max(0, $outstandingSale->total_amount - $newPaidAmount);
-                $newPaymentStatus = $newDueAmount <= 0 ? Sale::PAYMENT_STATUS_PAID : ($outstandingSale->paid_amount > 0 ? Sale::PAYMENT_STATUS_PARTIAL : Sale::PAYMENT_STATUS_UNPAID);
-
-                $outstandingSale->update([
-                    'paid_amount' => $newPaidAmount,
-                    'due_amount' => $newDueAmount,
-                    'payment_status' => $newPaymentStatus,
-                ]);
-
                 $remainingAmount -= $paymentForThisSale;
             }
 
             return $payment;
+        });
+    }
+
+    public function refundIndividualCredit(
+        Customer $customer,
+        float $amount,
+        string $paymentDate,
+        ?string $reference = null,
+        ?string $notes = null
+    ): CustomerPayment {
+        if ($amount <= 0) {
+            throw new \Exception('Refund amount must be greater than zero.');
+        }
+
+        $creditBalance = abs((float) app(UdharService::class)->getCustomerIndividualBalance($customer->id)['outstanding']);
+        if ($creditBalance <= 0 || $amount > $creditBalance) {
+            throw new \Exception('Refund amount cannot exceed the available customer credit.');
+        }
+
+        $sale = Sale::where('customer_id', $customer->id)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
+            ->confirmed()
+            ->orderBy('sale_date')
+            ->first();
+
+        if (!$sale) {
+            throw new \Exception('No individual sale found for this customer.');
+        }
+
+        return DB::transaction(function () use ($customer, $sale, $amount, $paymentDate, $reference, $notes) {
+            return CustomerPayment::create([
+                'customer_id' => $customer->id,
+                'sale_id' => $sale->id,
+                'account_type' => CustomerPayment::ACCOUNT_TYPE_INDIVIDUAL,
+                'account_family_id' => null,
+                'amount' => -$amount,
+                'payment_date' => $paymentDate,
+                'payment_method' => 'refund',
+                'reference_number' => $reference,
+                'notes' => $notes,
+                'received_by' => auth()->id(),
+            ]);
         });
     }
 
@@ -402,9 +433,9 @@ class CustomerPaymentService
                 $outstandingSales = Sale::where('family_id', $family->id)
                     ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
                     ->confirmed()
-                    ->whereRaw('total_amount - paid_amount > 0')
                     ->orderBy('sale_date', 'asc')
-                    ->get();
+                    ->get()
+                    ->filter(fn ($sale) => $sale->current_remaining_udhar > 0);
 
                 $remainingAmount = $amount;
 
@@ -425,17 +456,6 @@ class CustomerPaymentService
                         'reference_number' => $reference,
                         'notes' => $notes,
                         'received_by' => auth()->id(),
-                    ]);
-
-                    // Update the sale's paid_amount and due_amount
-                    $newPaidAmount = $sale->paid_amount + $paymentForThisSale;
-                    $newDueAmount = max(0, $sale->total_amount - $newPaidAmount);
-                    $newPaymentStatus = $newDueAmount <= 0 ? Sale::PAYMENT_STATUS_PAID : ($sale->paid_amount > 0 ? Sale::PAYMENT_STATUS_PARTIAL : Sale::PAYMENT_STATUS_UNPAID);
-
-                    $sale->update([
-                        'paid_amount' => $newPaidAmount,
-                        'due_amount' => $newDueAmount,
-                        'payment_status' => $newPaymentStatus,
                     ]);
 
                     $payments[] = $payment;
@@ -475,23 +495,53 @@ class CustomerPaymentService
                         'received_by' => auth()->id(),
                     ]);
 
-                    // Update the sale's paid_amount and due_amount
-                    $newPaidAmount = $sale->paid_amount + $alloc['amount'];
-                    $newDueAmount = max(0, $sale->total_amount - $newPaidAmount);
-                    $newPaymentStatus = $newDueAmount <= 0 ? Sale::PAYMENT_STATUS_PAID : ($sale->paid_amount > 0 ? Sale::PAYMENT_STATUS_PARTIAL : Sale::PAYMENT_STATUS_UNPAID);
-
-                    $sale->update([
-                        'paid_amount' => $newPaidAmount,
-                        'due_amount' => $newDueAmount,
-                        'payment_status' => $newPaymentStatus,
-                    ]);
-
                     $payments[] = $payment;
                 }
             }
 
             return $payments;
         });
+    }
+
+    public function adjustFamilyCredit($family, float $amount, string $paymentDate, ?string $reference = null, ?string $notes = null): CustomerPayment
+    {
+        if ($amount <= 0) {
+            throw new \Exception('Adjustment amount must be greater than zero.');
+        }
+
+        $familyBalance = (float) Sale::where('family_id', $family->id)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+            ->confirmed()
+            ->get()
+            ->sum(fn ($sale) => $sale->current_remaining_udhar);
+
+        $availableCredit = abs(min(0, $familyBalance));
+        if ($availableCredit <= 0 || $amount > $availableCredit) {
+            throw new \Exception('Adjustment amount cannot exceed the available family credit.');
+        }
+
+        $sale = Sale::where('family_id', $family->id)
+            ->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+            ->confirmed()
+            ->orderBy('sale_date')
+            ->first();
+
+        if (!$sale) {
+            throw new \Exception('No family sale found for this adjustment.');
+        }
+
+        return DB::transaction(fn () => CustomerPayment::create([
+            'customer_id' => $sale->customer_id,
+            'sale_id' => $sale->id,
+            'account_type' => CustomerPayment::ACCOUNT_TYPE_FAMILY,
+            'account_family_id' => $family->id,
+            'amount' => -$amount,
+            'payment_date' => $paymentDate,
+            'payment_method' => 'adjustment',
+            'reference_number' => $reference,
+            'notes' => $notes,
+            'received_by' => auth()->id(),
+        ]));
     }
 
     /**

@@ -12,6 +12,9 @@
                 <p class="text-muted small">View and manage all products in your inventory</p>
             </div>
             <div class="col-md-4 text-end">
+                <a href="{{ route('admin.reports.products.history') }}" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-clock-history"></i> Product History
+                </a>
                 <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
                     <i class="bi bi-plus-lg"></i> Add New Product
                 </a>
@@ -41,7 +44,7 @@
             <div class="card text-center">
                 <div class="card-body">
                     <h6 class="card-title text-muted mb-2">Avg. Margin</h6>
-                    <h3 class="text-info mb-0">{{ number_format($totals['total_margin'], 1) }}%</h3>
+                    <h3 class="text-info mb-0">Rs. {{ number_format($totals['total_margin'], 0) }}</h3>
                 </div>
             </div>
         </div>
@@ -162,11 +165,9 @@
                             <td>
                                 @if($product->purchase_price > 0)
                                     @php
-                                        $margin = (($product->sale_price - $product->purchase_price) / $product->purchase_price) * 100;
+                                        $margin = $product->sale_price - $product->purchase_price;
                                     @endphp
-                                    <span class="badge bg-{{ $margin >= 20 ? 'success' : ($margin >= 10 ? 'warning' : 'danger') }}">
-                                        {{ number_format($margin, 1) }}%
-                                    </span>
+                                    <strong class="text-{{ $margin >= 0 ? 'success' : 'danger' }}">Rs. {{ number_format($margin, 0) }}</strong>
                                 @else
                                     <span class="text-muted">—</span>
                                 @endif
@@ -180,11 +181,19 @@
                             </td>
                             <td class="text-center">
                                 <div class="btn-group" role="group">
-                                    <a href="{{ route('admin.products.edit', $product) }}" 
-                                       class="btn btn-sm btn-outline-primary" 
-                                       title="Edit">
+                                                <button type="button"
+                                                    class="btn btn-sm btn-outline-primary"
+                                                    title="Edit"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#editProductModal"
+                                                    data-update-url="{{ route('admin.products.update', $product) }}"
+                                                    data-name="{{ $product->name }}"
+                                                    data-unit="{{ $product->unit }}"
+                                                    data-purchase-price="{{ $product->purchase_price }}"
+                                                    data-sale-price="{{ $product->sale_price }}"
+                                                    data-minimum-stock-level="{{ $product->minimum_stock_level ?? 10 }}">
                                         <i class="bi bi-pencil"></i>
-                                    </a>
+                                                </button>
                                     <form action="{{ route('admin.reports.products.destroy', $product) }}" 
                                           method="POST" 
                                           style="display: inline;"
@@ -223,4 +232,66 @@
     </div>
 </div>
 
+<div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProductModalLabel">Edit Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editProductForm" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-product-name" class="form-label">Product Name <span class="text-danger">*</span></label>
+                        <input type="text" id="edit-product-name" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-product-unit" class="form-label">Unit <span class="text-danger">*</span></label>
+                        <select id="edit-product-unit" name="unit" class="form-select" required>
+                            @foreach($units as $value => $label)
+                                <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-product-purchase-price" class="form-label">Purchase Price (Rs.) <span class="text-danger">*</span></label>
+                        <input type="number" id="edit-product-purchase-price" name="purchase_price" class="form-control" min="0" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-product-sale-price" class="form-label">Sale Price (Rs.) <span class="text-danger">*</span></label>
+                        <input type="number" id="edit-product-sale-price" name="sale_price" class="form-control" min="0" step="0.01" required>
+                    </div>
+                    <div>
+                        <label for="edit-product-minimum-stock-level" class="form-label">Minimum Stock Level</label>
+                        <input type="number" id="edit-product-minimum-stock-level" name="minimum_stock_level" class="form-control" min="0" step="1">
+                        <small class="text-muted">Alert will show when stock falls below this level</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
+
+@push('scripts')
+<script>
+    document.getElementById('editProductModal')?.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const form = document.getElementById('editProductForm');
+
+        form.action = button.dataset.updateUrl;
+        document.getElementById('edit-product-name').value = button.dataset.name;
+        document.getElementById('edit-product-unit').value = button.dataset.unit;
+        document.getElementById('edit-product-purchase-price').value = button.dataset.purchasePrice;
+        document.getElementById('edit-product-sale-price').value = button.dataset.salePrice;
+        document.getElementById('edit-product-minimum-stock-level').value = button.dataset.minimumStockLevel;
+    });
+</script>
+@endpush

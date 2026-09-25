@@ -1,16 +1,239 @@
 @extends('layouts.admin')
 
+@push('styles')
+<style>
+    .sale-return-print-header {
+        display: none;
+    }
+
+    .sale-return-print-footer { display: none; }
+
+    .sale-return-print-meta {
+        display: none;
+    }
+
+    .sale-return-print-column-headings {
+        display: none;
+    }
+
+    @media print {
+        @page {
+            size: A4 portrait;
+            margin: 8mm;
+        }
+
+        html,
+        body {
+            height: auto !important;
+            min-height: 0 !important;
+        }
+
+        .sidebar,
+        .topbar,
+        .no-print {
+            display: none !important;
+        }
+
+        .content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+        }
+
+        .sale-return-page,
+        .sale-return-page .container-fluid {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .sale-return-page .card {
+            break-inside: avoid;
+            margin-bottom: 0.6rem !important;
+        }
+
+        .sale-return-page,
+        .sale-return-page * {
+            line-height: 1.2 !important;
+        }
+
+        .sale-return-page {
+            font-size: 12px !important;
+        }
+
+        .sale-return-print-header {
+            display: flex !important;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #000;
+            margin-bottom: 20px;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .sale-return-print-header .company-name,
+        .sale-return-print-header .print-title {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .sale-return-print-header .print-title-block {
+            text-align: right;
+        }
+
+        .sale-return-print-header .print-title-block small {
+            display: block;
+            font-size: 11px;
+            font-weight: 400;
+        }
+
+        .sale-return-print-footer {
+            display: block !important;
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            padding-top: 6px;
+            border-top: 1px solid #000;
+            text-align: center;
+            font-size: 11px;
+            color: #000 !important;
+        }
+
+        .sale-return-page .card-body {
+            padding: 0.55rem !important;
+        }
+
+        .sale-return-page .card-header {
+            padding: 0.45rem 0.55rem !important;
+        }
+
+        .sale-return-page .row {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+
+        .sale-return-info-card .card-header {
+            display: none !important;
+        }
+
+        .sale-return-print-meta {
+            display: flex !important;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #000;
+            padding: 0 0 0.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+        }
+
+        .sale-return-info-grid {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            column-gap: 3rem;
+            row-gap: 0.5rem;
+        }
+
+        .sale-return-print-column-headings {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            column-gap: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sale-return-print-column-headings h6 {
+            margin: 0;
+        }
+
+        .sale-return-info-grid > div {
+            width: auto !important;
+            max-width: none !important;
+            padding: 0 !important;
+        }
+
+        .sale-return-info-grid > div:nth-child(1) {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .sale-return-info-grid > div:nth-child(2) {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        .sale-return-info-grid > div:nth-child(3) {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .sale-return-info-grid > div:nth-child(4) {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .sale-return-info-grid > div:nth-child(5) {
+            grid-column: 1;
+            grid-row: 3;
+        }
+
+        .sale-return-info-grid > div:nth-child(6) {
+            grid-column: 1;
+            grid-row: 4;
+        }
+
+        .sale-return-page > .row > .col-lg-8,
+        .sale-return-page > .row > .col-lg-4 {
+            width: 100% !important;
+            max-width: none !important;
+            flex: 0 0 100% !important;
+        }
+
+        .sale-return-print-header {
+            display: flex !important;
+            align-items: flex-start;
+            justify-content: space-between;
+            border-bottom: 2px solid #000;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .sale-return-print-header h1,
+        .sale-return-print-header h2,
+        .sale-return-print-header p {
+            margin: 0;
+        }
+    }
+</style>
+@endpush
+
 @section('title', 'Return Details - ' . $return->return_number)
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid sale-return-page">
+    <div class="sale-return-print-header">
+        <div>
+            <div class="company-name">{{ $company?->name ?? 'DeraNexa' }}</div>
+            <div>{{ implode(' / ', array_filter([$company?->phone ?: '03239123800', $company?->additional_number])) }}</div>
+        </div>
+        <div class="print-title-block">
+            <div class="print-title">Sale Return</div>
+            <small>Return #: {{ $return->return_number }}</small>
+            <small>Date: {{ $return->return_date->format('d M Y') }}</small>
+        </div>
+    </div>
+
     {{-- Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
         <div>
             <h1 class="h3 mb-1">Return Details</h1>
             <p class="text-muted mb-0">{{ $return->return_number }}</p>
         </div>
         <div>
+            <button type="button" class="btn btn-primary me-2" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> Print Return
+            </button>
             <a href="{{ route('admin.sale-returns.index') }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-1"></i> Back to Returns
             </a>
@@ -21,7 +244,11 @@
         {{-- Main Content --}}
         <div class="col-lg-8">
             {{-- Return Information --}}
-            <div class="card mb-4">
+            <div class="card mb-4 sale-return-info-card">
+                <div class="sale-return-print-meta">
+                    <span><i class="bi bi-receipt me-1"></i> {{ $return->return_number }}</span>
+                    <span>{{ $return->status_label }}</span>
+                </div>
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Return Information</h5>
                     <span class="badge bg-{{ $return->status_badge }} fs-6">
@@ -29,7 +256,11 @@
                     </span>
                 </div>
                 <div class="card-body">
-                    <div class="row g-3">
+                    <div class="sale-return-print-column-headings">
+                        <h6>Original Sale</h6>
+                        <h6>Return Information</h6>
+                    </div>
+                    <div class="row g-3 sale-return-info-grid">
                         <div class="col-md-6">
                             <label class="text-muted small">Return Number</label>
                             <div class="fw-semibold">{{ $return->return_number }}</div>
@@ -101,7 +332,7 @@
             </div>
 
             {{-- Original Sale Payment Summary --}}
-            <div class="card mb-4">
+            <div class="card mb-4 no-print">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Original Sale Payment Summary</h5>
                 </div>
@@ -197,7 +428,7 @@
 
             {{-- Confirmation Alert --}}
             @if($return->canBeConfirmed())
-            <div class="card border-warning">
+            <div class="card border-warning no-print">
                 <div class="card-body">
                     <div class="alert alert-warning mb-3">
                         <h6 class="alert-heading">
@@ -258,7 +489,7 @@
             </div>
 
             {{-- Audit Information --}}
-            <div class="card mb-4">
+            <div class="card mb-4 no-print">
                 <div class="card-header bg-light">
                     <h6 class="mb-0">Audit Trail</h6>
                 </div>
@@ -293,7 +524,7 @@
             </div>
 
             {{-- Quick Actions --}}
-            <div class="card">
+            <div class="card no-print">
                 <div class="card-header bg-light">
                     <h6 class="mb-0">Quick Actions</h6>
                 </div>
@@ -316,6 +547,10 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="sale-return-print-footer">
+        Address: {{ $company?->address ?: 'Naivela Dera Ismail Khan' }}
     </div>
 </div>
 

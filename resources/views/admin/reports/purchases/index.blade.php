@@ -2,6 +2,107 @@
 
 @section('title', 'Purchase Report')
 
+@php
+    $company = \App\Models\Company::active()->first();
+@endphp
+
+@push('styles')
+<style>
+    .purchase-report-print-header,
+    .purchase-report-print-footer {
+        display: none;
+    }
+
+    @media print {
+        @page { size: A4 landscape; margin: 8mm; }
+
+        .sidebar,
+        .topbar,
+        .no-print {
+            display: none !important;
+        }
+
+        .content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+        }
+
+        .purchase-report-print-header {
+            display: flex !important;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #000;
+            margin-bottom: 20px;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .purchase-report-print-header .company-name,
+        .purchase-report-print-header .print-title {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .purchase-report-print-header .print-title-block {
+            text-align: right;
+        }
+
+        .purchase-report-print-header .print-title-block small {
+            display: block;
+            font-size: 11px;
+            font-weight: 400;
+        }
+
+        .purchase-report-print-footer {
+            display: block !important;
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            padding-top: 6px;
+            border-top: 1px solid #000;
+            text-align: center;
+            font-size: 11px;
+            color: #000 !important;
+        }
+
+        .container-fluid {
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        .purchase-print-hidden {
+            display: none !important;
+        }
+
+        .card {
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .card-body {
+            padding: 0 !important;
+        }
+
+        table {
+            font-size: 10px !important;
+        }
+
+        .pagination,
+        .d-flex.justify-content-between.align-items-center.mt-3 {
+            display: none !important;
+        }
+    }
+</style>
+@endpush
+
 @section('breadcrumbs')
     <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
     <li class="breadcrumb-item active">Purchase Report</li>
@@ -9,7 +110,18 @@
 
 @section('content')
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="purchase-report-print-header">
+        <div>
+            <div class="company-name">{{ $company?->name ?? 'DeraNexa' }}</div>
+            <div>{{ implode(' / ', array_filter([$company?->phone ?: '03239123800', $company?->additional_number])) }}</div>
+        </div>
+        <div class="print-title-block">
+            <div class="print-title">Purchase Report</div>
+            <small>Date: {{ now()->format('d M Y') }}</small>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
         <h1 class="h3 mb-0">Purchase Report</h1>
         <div>
             <button type="button" class="btn btn-info me-2" onclick="window.print()">
@@ -23,7 +135,7 @@
 
     {{-- Summary Cards --}}
     @if($totals && $totals->total_purchases > 0)
-    <div class="row mb-4">
+    <div class="row mb-4 no-print">
         <div class="col-md-4">
             <div class="card border-primary">
                 <div class="card-body">
@@ -73,7 +185,7 @@
     @endif
 
     {{-- Filters --}}
-    <div class="card mb-4">
+    <div class="card mb-4 no-print">
         <div class="card-header bg-light">
             <h5 class="card-title mb-0">
                 <i class="bi bi-funnel me-2"></i>Filters
@@ -180,13 +292,13 @@
                             <th>Purchase No.</th>
                             <th>Date</th>
                             <th>Supplier</th>
-                            <th>Warehouse</th>
-                            <th class="text-end">Total Amount</th>
-                            <th class="text-end">Paid</th>
-                            <th class="text-end">Payable</th>
-                            <th>Payment Status</th>
+                            <th class="purchase-print-hidden">Warehouse</th>
+                            <th>Total Amount</th>
+                            <th>Paid</th>
+                            <th>Payable</th>
+                            <th class="purchase-print-hidden">Payment Status</th>
                             <th>Created By</th>
-                            <th class="text-center">Actions</th>
+                            <th class="text-center purchase-print-hidden">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -210,11 +322,11 @@
                                     <br><small class="text-muted">{{ $purchase->supplier->phone }}</small>
                                 @endif
                             </td>
-                            <td>{{ $purchase->warehouse->name }}</td>
-                            <td class="text-end">Rs. {{ number_format($purchase->total_amount, 0) }}</td>
-                            <td class="text-end">Rs. {{ number_format($purchase->paid_amount, 0) }}</td>
-                            <td class="text-end">Rs. {{ number_format($purchase->total_amount - $purchase->paid_amount, 0) }}</td>
-                            <td>
+                            <td class="purchase-print-hidden">{{ $purchase->warehouse->name }}</td>
+                            <td>Rs. {{ number_format($purchase->total_amount, 0) }}</td>
+                            <td>Rs. {{ number_format($purchase->paid_amount, 0) }}</td>
+                            <td>Rs. {{ number_format($purchase->total_amount - $purchase->paid_amount, 0) }}</td>
+                            <td class="purchase-print-hidden">
                                 @if($purchase->payment_status === 'paid')
                                     <span class="badge bg-success">Paid</span>
                                 @elseif($purchase->payment_status === 'partial')
@@ -230,7 +342,7 @@
                                     <small class="text-muted">-</small>
                                 @endif
                             </td>
-                            <td class="text-center">
+                            <td class="text-center purchase-print-hidden">
                                 <a href="{{ route('admin.reports.purchases.show', $purchase) }}" 
                                    class="btn btn-sm btn-outline-primary"
                                    title="View Details">
@@ -262,6 +374,10 @@
             </div>
             @endif
         </div>
+    </div>
+
+    <div class="purchase-report-print-footer">
+        Printed on {{ now()->format('d M Y H:i A') }}
     </div>
 </div>
 

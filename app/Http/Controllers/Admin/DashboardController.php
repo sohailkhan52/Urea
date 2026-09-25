@@ -110,6 +110,9 @@ class DashboardController extends Controller
 
         $validated = $request->validate([
             'project_name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'additional_number' => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:500',
             'logo' => 'nullable|image|mimes:jpeg,png,gif,svg|max:2048',
         ]);
 
@@ -126,6 +129,9 @@ class DashboardController extends Controller
 
             // Update project name
             $company->name = $validated['project_name'];
+            $company->phone = $validated['phone'] ?? null;
+            $company->additional_number = $validated['additional_number'] ?? null;
+            $company->address = $validated['address'] ?? null;
 
             // Handle logo upload
             if ($request->hasFile('logo')) {

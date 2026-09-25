@@ -20,11 +20,6 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes - Home/Welcome
 Route::get('/', function () {
-    if (auth()->check()) {
-        // Authenticated users (admin) go to dashboard
-        return redirect()->route('admin.dashboard');
-    }
-    // Guests see welcome page
     return view('welcome');
 })->name('home');
 
@@ -163,7 +158,16 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         ->middleware('permission:suppliers.create');
 
     // Supplier Management
+    Route::get('/suppliers/{supplier}/history', [\App\Http\Controllers\Admin\SupplierController::class, 'history'])
+        ->name('suppliers.history')
+        ->middleware('permission:suppliers.view');
+
+    Route::delete('/suppliers/bulk-delete', [\App\Http\Controllers\Admin\SupplierController::class, 'bulkDestroy'])
+        ->name('suppliers.bulk-delete')
+        ->middleware('permission:suppliers.delete');
+
     Route::resource('suppliers', \App\Http\Controllers\Admin\SupplierController::class)
+        ->except(['show'])
         ->middleware('permission:suppliers.view');
 
     // AJAX: Create product inline
@@ -173,6 +177,7 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
 
     // Product Management
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)
+        ->except(['edit'])
         ->middleware('permission:products.view');
 
     // AJAX: Get all products (for single-page create form) - MUST come BEFORE resource routes
@@ -242,7 +247,12 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     // ============ PRODUCT REPORTS ============
     Route::prefix('reports/products')->name('reports.products.')->middleware('permission:products.view')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\ProductReportController::class, 'index'])->name('index');
+        Route::get('/history', [\App\Http\Controllers\Admin\ProductReportController::class, 'history'])->name('history');
+        Route::get('/{product}/history', [\App\Http\Controllers\Admin\ProductReportController::class, 'historyShow'])
+            ->whereNumber('product')
+            ->name('history.show');
         Route::delete('/{product}', [\App\Http\Controllers\Admin\ProductReportController::class, 'destroy'])
+            ->whereNumber('product')
             ->name('destroy')
             ->middleware('permission:products.delete');
         Route::get('/export', [\App\Http\Controllers\Admin\ProductReportController::class, 'export'])
@@ -415,9 +425,17 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         Route::post('/customer/{customer}/receive-payment', [\App\Http\Controllers\Admin\UdharController::class, 'receiveIndividualPayment'])
             ->name('receive-individual-payment')
             ->middleware('permission:sales.create');
+
+        Route::post('/customer/{customer}/refund', [\App\Http\Controllers\Admin\UdharController::class, 'refundIndividualPayment'])
+            ->name('refund-individual-payment')
+            ->middleware('permission:sales.create');
         
         Route::post('/family/{family}/receive-payment', [\App\Http\Controllers\Admin\UdharController::class, 'receiveFamilyPayment'])
             ->name('receive-family-payment')
+            ->middleware('permission:sales.create');
+
+        Route::post('/family/{family}/adjust-payment', [\App\Http\Controllers\Admin\UdharController::class, 'adjustFamilyPayment'])
+            ->name('adjust-family-payment')
             ->middleware('permission:sales.create');
         
         Route::post('/sales/{sale}/receive-payment', [\App\Http\Controllers\Admin\UdharController::class, 'receivePayment'])
@@ -432,6 +450,28 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
 
     // Customer Account Statements
     Route::prefix('customers')->name('customers.')->middleware('permission:sales.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\CustomerController::class, 'index'])
+            ->name('index');
+
+        Route::delete('/bulk-delete', [\App\Http\Controllers\Admin\CustomerController::class, 'bulkDestroy'])
+            ->name('bulk-delete')
+            ->middleware('permission:customers.delete');
+
+        Route::get('/{customer}/history', [\App\Http\Controllers\Admin\CustomerController::class, 'history'])
+            ->name('history');
+
+        Route::post('/', [\App\Http\Controllers\Admin\CustomerController::class, 'store'])
+            ->name('store')
+            ->middleware('permission:customers.create');
+
+        Route::put('/{customer}', [\App\Http\Controllers\Admin\CustomerController::class, 'update'])
+            ->name('update')
+            ->middleware('permission:customers.update');
+
+        Route::delete('/{customer}', [\App\Http\Controllers\Admin\CustomerController::class, 'destroy'])
+            ->name('destroy')
+            ->middleware('permission:customers.delete');
+
         Route::get('/{customer}/statement', [\App\Http\Controllers\Admin\CustomerAccountController::class, 'statement'])
             ->name('statement');
         

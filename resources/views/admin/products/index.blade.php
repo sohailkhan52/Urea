@@ -18,6 +18,16 @@
     </div>
 
     @if($products->count())
+        <div class="d-flex justify-content-end align-items-center mb-2">
+            <form action="{{ route('admin.products.index') }}" method="GET" class="d-flex align-items-center gap-2">
+                <label for="product-per-page" class="small text-muted mb-0">Per Page</label>
+                <select id="product-per-page" name="per_page" class="form-select form-select-sm" style="width: 82px;" onchange="this.form.submit()">
+                    @foreach([10, 25, 50, 100] as $option)
+                        <option value="{{ $option }}" @selected(request('per_page', 15) == $option)>{{ $option }}</option>
+                    @endforeach
+                </select>
+            </form>
+        </div>
         <div class="card">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
@@ -67,9 +77,16 @@
             </div>
         </div>
 
-        <nav aria-label="Page navigation">
-            {{ $products->links() }}
-        </nav>
+        <div class="row align-items-center g-2 mt-3">
+            <div class="col-md-6">
+                <small class="text-muted">Showing {{ $products->firstItem() ?? 0 }} to {{ $products->lastItem() ?? 0 }} of {{ $products->total() }} products</small>
+            </div>
+            <div class="col-md-6 d-flex justify-content-md-end">
+                <nav aria-label="Page navigation">
+                    {{ $products->links() }}
+                </nav>
+            </div>
+        </div>
     @else
         <div class="alert alert-info">
             No products found. <a href="{{ route('admin.products.create') }}">Create one now</a>

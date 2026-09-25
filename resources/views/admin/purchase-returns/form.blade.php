@@ -214,6 +214,13 @@ function updateItemRow(index) {
     const checkbox = document.querySelector(`[data-index="${index}"][type="checkbox"]`);
     const qtyInput = document.querySelector(`.return-qty[data-index="${index}"]`);
     const amountSpan = document.querySelector(`.return-amount[data-index="${index}"]`);
+    const row = checkbox.closest('tr');
+
+    // Submit only rows selected for return. Unselected rows have no quantity
+    // and should not be treated as incomplete return items by Laravel.
+    row.querySelectorAll('input[name^="items["]').forEach(input => {
+        input.disabled = !checkbox.checked;
+    });
     
     // Do NOT auto-fill the quantity - let user enter it manually
     // if (checkbox.checked && qtyInput.value == 0) {
@@ -251,11 +258,31 @@ function updateTotal() {
 
 // Validate form
 document.getElementById('returnForm').addEventListener('submit', function(e) {
-    const hasItems = Array.from(document.querySelectorAll('.return-qty')).some(input => parseFloat(input.value) > 0);
+    const selectedItems = Array.from(document.querySelectorAll('.item-checkbox:checked'));
+    const invalidSelectedItems = selectedItems.filter(checkbox => {
+        const index = checkbox.dataset.index;
+        const qtyInput = document.querySelector(`.return-qty[data-index="${index}"]`);
+        return parseFloat(qtyInput.value) <= 0;
+    });
+    const hasItems = invalidSelectedItems.length < selectedItems.length;
+
+    if (hasItems) {
+        invalidSelectedItems.forEach(checkbox => {
+            checkbox.closest('tr').querySelectorAll('input[name^="items["]').forEach(input => {
+                input.disabled = true;
+            });
+        });
+    }
+
     if (!hasItems) {
         e.preventDefault();
         alert('Please select at least one item to return');
     }
+});
+
+// Keep unchecked rows out of the initial form submission.
+document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+    updateItemRow(checkbox.dataset.index);
 });
 </script>
 @endsection

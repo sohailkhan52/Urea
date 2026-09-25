@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\PayableHistory;
+use App\Models\Purchase;
+use App\Models\PurchasePayment;
+use App\Models\PurchaseReturn;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 
@@ -11,15 +15,95 @@ class SupplierController extends Controller
     /**
      * Display a listing of suppliers.
      */
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('suppliers.view');
 
-        $suppliers = Supplier::orderBy('name')
-            ->paginate(15)
+        $search = trim((string) $request->input('search', ''));
+        $perPage = (int) $request->input('per_page', 10);
+        $perPage = in_array($perPage, [10, 25, 50, 100], true) ? $perPage : 10;
+
+        $query = Supplier::query();
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('company_name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%")
+                  ->orWhere('city', 'like', "%{$search}%");
+            });
+        }
+
+        $suppliers = $query->orderBy('name')
+            ->paginate($perPage)
             ->withQueryString();
 
-        return view('admin.suppliers.index', compact('suppliers'));
+        return view('admin.suppliers.index', compact('suppliers', 'search', 'perPage'));
+    }
+
+    /**
+     * Display all financial history for a supplier.
+     */
+    public function history(Supplier $supplier)
+    {
+        $this->authorize('suppliers.view');
+
+        $purchases = Purchase::where('supplier_id', $supplier->id)
+            ->where('status', Purchase::STATUS_CONFIRMED)
+            ->orderByDesc('purchase_date')
+            ->get();
+
+        $payments = PurchasePayment::where('supplier_id', $supplier->id)
+            ->with('purchase')
+            ->where('notes', 'like', '%purchase confirmation%')
+            ->orderByDesc('payment_date')
+            ->get();
+
+        $payablePayments = PurchasePayment::where('supplier_id', $supplier->id)
+            ->with('purchase')
+            ->where(function ($query) {
+                $query->whereNull('notes')
+                    ->orWhere('notes', 'not like', '%purchase confirmation%');
+            })
+            ->orderByDesc('payment_date')
+            ->get();
+
+        $payableHistory = PayableHistory::where('supplier_id', $supplier->id)
+            ->with(['purchase', 'payment'])
+            ->orderByDesc('transaction_date')
+            ->get();
+
+        $returns = PurchaseReturn::where('supplier_id', $supplier->id)
+            ->where('status', PurchaseReturn::STATUS_CONFIRMED)
+            ->with('purchase')
+            ->orderByDesc('return_date')
+            ->get();
+
+        $totalPurchases = (float) $purchases->sum('total_amount');
+        $totalPaid = (float) $purchases->sum('paid_amount');
+        $totalReturns = (float) $returns->sum('total_amount');
+        $totalPayable = max(0, $totalPurchases - $totalPaid);
+        $currentBalance = max(0, $totalPayable - $totalReturns);
+
+        $summary = compact(
+            'totalPurchases',
+            'totalPaid',
+            'totalPayable',
+            'totalReturns',
+            'currentBalance'
+        );
+
+        return view('admin.suppliers.history', compact(
+            'supplier',
+            'purchases',
+            'payments',
+            'payablePayments',
+            'payableHistory',
+            'returns',
+            'summary'
+        ));
     }
 
     /**
@@ -53,18 +137,8 @@ class SupplierController extends Controller
 
         $supplier = Supplier::create($validated);
 
-        return redirect()->route('admin.suppliers.show', $supplier)
+        return redirect()->route('admin.suppliers.index')
             ->with('success', 'Supplier created successfully.');
-    }
-
-    /**
-     * Display the specified supplier.
-     */
-    public function show(Supplier $supplier)
-    {
-        $this->authorize('suppliers.view');
-
-        return view('admin.suppliers.show', compact('supplier'));
     }
 
     /**
@@ -98,8 +172,27 @@ class SupplierController extends Controller
 
         $supplier->update($validated);
 
-        return redirect()->route('admin.suppliers.show', $supplier)
+        return redirect()->route('admin.suppliers.index')
             ->with('success', 'Supplier updated successfully.');
+    }
+
+    /**
+     * Remove multiple suppliers from storage.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $this->authorize('suppliers.delete');
+
+        $validated = $request->validate([
+            'supplier_ids' => 'required|array|min:1',
+            'supplier_ids.*' => 'integer|exists:suppliers,id',
+        ]);
+
+        $suppliers = Supplier::whereIn('id', $validated['supplier_ids'])->get();
+        $suppliers->each->delete();
+
+        return redirect()->route('admin.suppliers.index')
+            ->with('success', $suppliers->count() . ' supplier(s) deleted successfully.');
     }
 
     /**

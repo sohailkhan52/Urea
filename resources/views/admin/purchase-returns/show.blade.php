@@ -1,13 +1,133 @@
 @extends('layouts.admin')
 
+@section('title', 'Purchase Return - ' . $purchaseReturn->return_number)
+
+@push('styles')
+<style>
+    .purchase-return-print-header {
+        display: none;
+    }
+
+    .purchase-return-print-footer { display: none; }
+
+    @media print {
+        .sidebar,
+        .topbar,
+        .no-print {
+            display: none !important;
+        }
+
+        .content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+        }
+
+        .purchase-return-page,
+        .purchase-return-page .container-fluid {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .purchase-return-print-header {
+            display: flex !important;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #000;
+            margin-bottom: 20px;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .purchase-return-print-header .company-name,
+        .purchase-return-print-header .print-title {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .purchase-return-print-header .print-title-block {
+            text-align: right;
+        }
+
+        .purchase-return-print-header .print-title-block small {
+            display: block;
+            font-size: 11px;
+            font-weight: 400;
+        }
+
+        .purchase-return-print-footer {
+            display: block !important;
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            padding-top: 6px;
+            border-top: 1px solid #000;
+            text-align: center;
+            font-size: 11px;
+            color: #000 !important;
+        }
+
+        .purchase-return-page .card {
+            break-inside: avoid;
+        }
+
+        .purchase-return-info-grid {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 2rem;
+        }
+
+        .purchase-return-info-grid > div {
+            width: auto !important;
+            max-width: none !important;
+            flex: none !important;
+        }
+
+        .purchase-return-print-header {
+            display: flex !important;
+            align-items: flex-start;
+            justify-content: space-between;
+            border-bottom: 2px solid #000;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+        }
+
+        .purchase-return-print-header h1,
+        .purchase-return-print-header h2,
+        .purchase-return-print-header p {
+            margin: 0;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="container-fluid">
-    <div class="page-header">
+<div class="container-fluid purchase-return-page">
+    <div class="purchase-return-print-header">
+        <div>
+            <div class="company-name">{{ $company?->name ?? 'DeraNexa' }}</div>
+            <div>{{ implode(' / ', array_filter([$company?->phone ?: '03239123800', $company?->additional_number])) }}</div>
+        </div>
+        <div class="print-title-block">
+            <div class="print-title">Purchase Return</div>
+            <small>Return #: {{ $purchaseReturn->return_number }}</small>
+            <small>Date: {{ $purchaseReturn->return_date->format('d M Y') }}</small>
+        </div>
+    </div>
+
+    <div class="page-header no-print">
         <div class="row align-items-center">
             <div class="col-md-6">
                 <h1 class="page-title">Purchase Return Details</h1>
             </div>
             <div class="col-md-6 text-end">
+                <button type="button" class="btn btn-primary me-2" onclick="window.print()">
+                    <i class="bi bi-printer"></i> Print Return
+                </button>
                 <a href="{{ route('admin.purchase-returns.index') }}" class="btn btn-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Returns
                 </a>
@@ -27,7 +147,7 @@
                     </span>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row purchase-return-info-grid">
                         <div class="col-md-6">
                             <h6>Original Purchase</h6>
                             <p>
@@ -151,7 +271,7 @@
 
             <!-- Actions -->
             @if($purchaseReturn->isDraft())
-                <div class="card mb-4">
+                <div class="card mb-4 no-print">
                     <div class="card-header bg-warning bg-opacity-10">
                         <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Actions</h5>
                     </div>
@@ -189,6 +309,10 @@
                 </div>
             @endif
         </div>
+    </div>
+
+    <div class="purchase-return-print-footer">
+        Address: {{ $company?->address ?: 'Naivela Dera Ismail Khan' }}
     </div>
 </div>
 @endsection

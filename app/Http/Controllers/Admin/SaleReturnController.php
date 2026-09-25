@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Sale;
 use App\Models\SaleReturn;
 use App\Models\Warehouse;
@@ -378,7 +379,11 @@ class SaleReturnController extends Controller
             'payment_status' => $paymentStatus,
         ];
 
-        return view('admin.sale-returns.show', compact('return', 'paymentInfo'));
+        return view('admin.sale-returns.show', [
+            'return' => $return,
+            'paymentInfo' => $paymentInfo,
+            'company' => Company::first(),
+        ]);
     }
 
     /**
