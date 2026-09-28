@@ -7,6 +7,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        try {
+            if (localStorage.getItem('adminSidebarOpen') === 'false') {
+                document.documentElement.classList.add('sidebar-collapsed');
+            }
+        } catch (error) {
+            // Keep the default sidebar state if browser storage is unavailable.
+        }
+    </script>
 
     <title>@yield('title', 'Dashboard') - {{ \App\Models\Company::first()?->name ?? 'DeraNexa' }}</title>
 
@@ -34,6 +43,7 @@
     <style>
         :root {
             --sidebar-width: 260px;
+            --sidebar-collapsed-width: 72px;
             --topbar-height: 60px;
         }
 
@@ -72,6 +82,46 @@
             z-index: 1040;
         }
 
+        @media (min-width: 769px) {
+            .sidebar-collapsed .sidebar {
+                width: var(--sidebar-collapsed-width);
+            }
+
+            .sidebar-collapsed .main-wrapper {
+                margin-left: var(--sidebar-collapsed-width);
+                width: calc(100% - var(--sidebar-collapsed-width));
+            }
+
+            .sidebar-collapsed .sidebar-brand h4,
+            .sidebar-collapsed .nav-section-title,
+            .sidebar-collapsed .nav-link-wrapper,
+            .sidebar-collapsed .nav-link-text-en,
+            .sidebar-collapsed .nav-link-text-ur,
+            .sidebar-collapsed .nav-dropdown-indicator {
+                display: none;
+            }
+
+            .sidebar-collapsed .sidebar-brand {
+                padding: 20px 4px;
+            }
+
+            .sidebar-collapsed .sidebar-nav .nav-link {
+                justify-content: center;
+                padding: 12px 0;
+            }
+
+            .sidebar-collapsed .sidebar-nav .nav-link i {
+                margin-right: 0;
+            }
+
+            .sidebar-collapsed .sidebar-nav .dropdown-menu {
+                position: fixed !important;
+                left: var(--sidebar-collapsed-width) !important;
+                width: 220px;
+                z-index: 1050;
+            }
+        }
+
         /* Mobile backdrop overlay */
         @media (max-width: 768px) {
             .sidebar-backdrop {
@@ -98,6 +148,7 @@
         }
 
         .sidebar-brand {
+            position: relative;
             padding: 20px;
             text-align: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -387,12 +438,54 @@
 
         /* Toggle Sidebar Button */
         .toggle-sidebar {
-            display: none;
+            display: block;
             background: none;
             border: none;
             font-size: 1.5rem;
             color: #2c3e50;
             cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            margin-right: 0.5rem;
+        }
+
+        .sidebar-edge-toggle {
+            display: none;
+        }
+
+        @media (min-width: 769px) {
+            .toggle-sidebar {
+                display: none;
+            }
+
+            .sidebar-edge-toggle {
+                position: fixed;
+                top: calc(var(--topbar-height) / 2);
+                left: calc(var(--sidebar-width) - 18px);
+                z-index: 1060;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                margin: 0;
+                transform: translateY(-50%);
+                border: 1px solid #d0d7de;
+                border-radius: 50%;
+                background: #fff;
+                color: #2c3e50;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+                transition: left 0.3s ease, color 0.2s ease, background-color 0.2s ease;
+            }
+
+            .sidebar-edge-toggle:hover {
+                color: #0d6efd;
+                background: #f8f9fa;
+            }
+
+            .sidebar-collapsed .sidebar-edge-toggle {
+                left: calc(var(--sidebar-collapsed-width) - 18px);
+            }
         }
 
         /* Responsive */
@@ -427,7 +520,21 @@
             }
 
             .toggle-sidebar {
+                position: static;
                 display: block;
+                width: auto;
+                height: auto;
+                padding: 0.25rem 0.5rem;
+                margin-right: 0.5rem;
+                transform: none;
+                border: none;
+                border-radius: 0;
+                background: none;
+                box-shadow: none;
+            }
+
+            .sidebar-edge-toggle {
+                display: none;
             }
 
             .sidebar-brand h4 {
@@ -642,9 +749,6 @@
                 width: calc(100% - var(--sidebar-width));
             }
 
-            .toggle-sidebar {
-                display: none;
-            }
         }
 
         /* Utilities */
@@ -1049,13 +1153,16 @@
 
     <!-- Sidebar Backdrop (Mobile overlay) -->
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <button type="button" class="toggle-sidebar sidebar-edge-toggle" onclick="toggleSidebar()" aria-controls="sidebar" aria-expanded="true" aria-label="Close sidebar" title="Close sidebar">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </button>
 
     <!-- Main Content Wrapper -->
     <div class="main-wrapper">
         <!-- Top Navbar -->
         <nav class="topbar">
-            <button class="toggle-sidebar" onclick="toggleSidebar()">
-                <i class="bi bi-list"></i>
+            <button type="button" class="toggle-sidebar" onclick="toggleSidebar()" aria-controls="sidebar" aria-expanded="true" aria-label="Close sidebar" title="Toggle sidebar">
+                <i class="bi bi-chevron-left"></i>
             </button>
 
             <a href="{{ url('/') }}" class="btn btn-outline-secondary btn-sm me-2" title="Go to Home Page">
@@ -1218,15 +1325,55 @@
     <script>
         const sidebar = document.getElementById('sidebar');
         const backdrop = document.getElementById('sidebarBackdrop');
+        const sidebarToggles = document.querySelectorAll('.toggle-sidebar');
+        const sidebarStateKey = 'adminSidebarOpen';
+        let lastSidebarViewportIsMobile = window.innerWidth <= 768;
+
+        function isSidebarOpen() {
+            return window.innerWidth <= 768
+                ? sidebar.classList.contains('show')
+                : !document.body.classList.contains('sidebar-collapsed');
+        }
+
+        function updateSidebarToggle() {
+            const isOpen = isSidebarOpen();
+            sidebarToggles.forEach(function(toggle) {
+                toggle.setAttribute('aria-expanded', String(isOpen));
+                toggle.setAttribute('aria-label', isOpen ? 'Close sidebar' : 'Open sidebar');
+                toggle.title = isOpen ? 'Close sidebar' : 'Open sidebar';
+                toggle.querySelector('i').className = isOpen ? 'bi bi-arrow-left-circle' : 'bi bi-arrow-right-circle';
+            });
+        }
+
+        function setSidebarOpen(isOpen, persist = true) {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('show', isOpen);
+            } else {
+                document.body.classList.toggle('sidebar-collapsed', !isOpen);
+            }
+
+            if (persist) {
+                localStorage.setItem(sidebarStateKey, String(isOpen));
+            }
+
+            updateSidebarToggle();
+        }
 
         function toggleSidebar() {
-            sidebar.classList.toggle('show');
+            setSidebarOpen(!isSidebarOpen());
         }
+
+        const savedSidebarState = localStorage.getItem(sidebarStateKey);
+        setSidebarOpen(
+            savedSidebarState === null ? window.innerWidth > 768 : savedSidebarState === 'true',
+            savedSidebarState !== null
+        );
+        document.documentElement.classList.remove('sidebar-collapsed');
 
         // Close sidebar when clicking on backdrop
         if (backdrop) {
             backdrop.addEventListener('click', function() {
-                sidebar.classList.remove('show');
+                setSidebarOpen(false);
             });
         }
 
@@ -1234,15 +1381,23 @@
         document.querySelectorAll('.sidebar-nav a:not([aria-expanded])').forEach(link => {
             link.addEventListener('click', function() {
                 if (window.innerWidth <= 768) {
-                    sidebar.classList.remove('show');
+                    setSidebarOpen(false);
                 }
             });
         });
 
         // Close sidebar when window resizes to desktop size
         window.addEventListener('resize', function() {
-            if (window.innerWidth > 768) {
-                sidebar.classList.remove('show');
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile !== lastSidebarViewportIsMobile) {
+                lastSidebarViewportIsMobile = isMobile;
+                const savedState = localStorage.getItem(sidebarStateKey);
+                setSidebarOpen(
+                    savedState === null ? !isMobile : savedState === 'true',
+                    savedState !== null
+                );
+            } else {
+                updateSidebarToggle();
             }
         });
 
@@ -1259,7 +1414,7 @@
                 const isToggleButton = event.target.closest('.toggle-sidebar');
                 
                 if (!isClickInsideSidebar && !isToggleButton && sidebar.classList.contains('show')) {
-                    sidebar.classList.remove('show');
+                    setSidebarOpen(false);
                 }
             }
         });
@@ -1275,6 +1430,12 @@
 
         // Save sidebar scroll position before navigation
         document.querySelectorAll('.sidebar-nav a').forEach(function(link) {
+            const label = link.querySelector('.nav-link-text-en')?.textContent.trim();
+            if (label) {
+                link.title = label;
+                link.setAttribute('aria-label', label);
+            }
+
             link.addEventListener('click', function() {
                 sessionStorage.setItem('sidebarScrollPosition', sidebar.scrollTop);
             });
