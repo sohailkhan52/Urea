@@ -11,10 +11,10 @@
     </div>
 
     {{-- Management Quick Links --}}
-    <div class="row mb-5">
+    <div class="row mb-5 management-cards-row">
         
         <!-- Purchases Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-6 col-md-6 col-xl-3 mb-4">
             <a href="{{ route('admin.purchases.index') }}" class="text-decoration-none">
                 <div class="card management-card h-100 border-0 shadow-sm" style="cursor: pointer; transition: all 0.3s ease; border-left: 4px solid #198754 !important;">
                     <div class="card-body">
@@ -31,7 +31,7 @@
                         </div>
                         <div class="mt-3 pt-3 border-top">
                             <small class="text-muted">
-                                <i class="bi bi-arrow-right me-1"></i>View All Purchases
+                                <i class="bi bi-arrow-right me-1"></i>View Purchases
                             </small>
                         </div>
                     </div>
@@ -41,7 +41,7 @@
 
 
         <!-- Sales Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-6 col-md-6 col-xl-3 mb-4">
             <a href="{{ route('admin.sales.index') }}" class="text-decoration-none">
                 <div class="card management-card h-100 border-0 shadow-sm" style="cursor: pointer; transition: all 0.3s ease; border-left: 4px solid #e3165b !important;">
                     <div class="card-body">
@@ -58,7 +58,7 @@
                         </div>
                         <div class="mt-3 pt-3 border-top">
                             <small class="text-muted">
-                                <i class="bi bi-arrow-right me-1"></i>View All Sales
+                                <i class="bi bi-arrow-right me-1"></i>View Sales
                             </small>
                         </div>
                     </div>
@@ -68,7 +68,7 @@
 
 
         <!-- Payables Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-6 col-md-6 col-xl-3 mb-4">
             <a href="{{ route('admin.supplier-payables.index') }}" class="text-decoration-none">
                 <div class="card management-card h-100 border-0 shadow-sm" style="cursor: pointer; transition: all 0.3s ease; border-left: 4px solid #dc3545 !important;">
                     <div class="card-body">
@@ -95,7 +95,7 @@
 
           
         <!-- Udhar (Credit) Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-6 col-md-6 col-xl-3 mb-4">
             <a href="{{ route('admin.udhar.index') }}" class="text-decoration-none">
                 <div class="card management-card h-100 border-0 shadow-sm" style="cursor: pointer; transition: all 0.3s ease; border-left: 4px solid #ffc107 !important;">
                     <div class="card-body">
@@ -112,7 +112,7 @@
                         </div>
                         <div class="mt-3 pt-3 border-top">
                             <small class="text-muted">
-                                <i class="bi bi-arrow-right me-1"></i>View Udhar Details
+                                <i class="bi bi-arrow-right me-1"></i>View Udhar
                             </small>
                         </div>
                     </div>
@@ -135,6 +135,65 @@
 
         .management-card .card-body {
             padding: 1.5rem;
+        }
+
+        @media (max-width: 575.98px) {
+            .management-cards-row {
+                justify-content: space-between;
+                overflow: hidden;
+                scrollbar-width: none;
+            }
+
+            .management-cards-row::-webkit-scrollbar,
+            .management-cards-row > div::-webkit-scrollbar,
+            .management-cards-row a::-webkit-scrollbar,
+            .management-card::-webkit-scrollbar {
+                display: none;
+            }
+
+            .management-cards-row > div {
+                flex: 0 0 44%;
+                max-width: 44%;
+                padding-right: 4px;
+                padding-left: 4px;
+                overflow: hidden;
+                scrollbar-width: none;
+            }
+
+            .management-cards-row a,
+            .management-card {
+                display: block;
+                overflow: hidden;
+                scrollbar-width: none;
+            }
+
+            .management-card .card-body {
+                padding: 0.55rem;
+            }
+
+            .management-card .card-body > .d-flex > div:last-child {
+                font-size: 1.4rem !important;
+            }
+
+            .management-card .text-muted.small {
+                font-size: 0.68rem;
+                line-height: 1.2;
+            }
+
+            .management-card .h4 {
+                font-size: 0.68rem;
+                white-space: nowrap;
+                letter-spacing: -0.04em;
+            }
+
+            .management-card .mt-3 {
+                margin-top: 0.75rem !important;
+                padding-top: 0.75rem !important;
+            }
+
+            .management-card small {
+                font-size: 0.65rem;
+            }
         }
     </style>
 

@@ -82,69 +82,44 @@
             z-index: 1040;
         }
 
-        @media (min-width: 769px) {
-            .sidebar-collapsed .sidebar {
-                width: var(--sidebar-collapsed-width);
-            }
-
-            .sidebar-collapsed .main-wrapper {
-                margin-left: var(--sidebar-collapsed-width);
-                width: calc(100% - var(--sidebar-collapsed-width));
-            }
-
-            .sidebar-collapsed .sidebar-brand h4,
-            .sidebar-collapsed .nav-section-title,
-            .sidebar-collapsed .nav-link-wrapper,
-            .sidebar-collapsed .nav-link-text-en,
-            .sidebar-collapsed .nav-link-text-ur,
-            .sidebar-collapsed .nav-dropdown-indicator {
-                display: none;
-            }
-
-            .sidebar-collapsed .sidebar-brand {
-                padding: 20px 4px;
-            }
-
-            .sidebar-collapsed .sidebar-nav .nav-link {
-                justify-content: center;
-                padding: 12px 0;
-            }
-
-            .sidebar-collapsed .sidebar-nav .nav-link i {
-                margin-right: 0;
-            }
-
-            .sidebar-collapsed .sidebar-nav .dropdown-menu {
-                position: fixed !important;
-                left: var(--sidebar-collapsed-width) !important;
-                width: 220px;
-                z-index: 1050;
-            }
+        .sidebar-collapsed .sidebar {
+            width: var(--sidebar-collapsed-width);
         }
 
-        /* Mobile backdrop overlay */
-        @media (max-width: 768px) {
-            .sidebar-backdrop {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 1039;
-                opacity: 0;
-                visibility: hidden;
-                transition: opacity 0.3s, visibility 0.3s;
-                pointer-events: none;
-            }
+        .sidebar-collapsed .main-wrapper {
+            margin-left: var(--sidebar-collapsed-width);
+            width: calc(100% - var(--sidebar-collapsed-width));
+        }
 
-            .sidebar.show ~ .sidebar-backdrop {
-                display: block;
-                opacity: 1;
-                visibility: visible;
-                pointer-events: auto;
-            }
+        .sidebar-collapsed .sidebar-brand h4,
+        .sidebar-collapsed .nav-section-title,
+        .sidebar-collapsed .nav-link-wrapper,
+        .sidebar-collapsed .nav-link-text-en,
+        .sidebar-collapsed .nav-link-text-ur,
+        .sidebar-collapsed .nav-dropdown-indicator {
+            display: none;
+        }
+
+        .sidebar-collapsed .sidebar-brand {
+            padding: 20px 4px;
+        }
+
+        .sidebar-collapsed .sidebar-nav .nav-link {
+            justify-content: center;
+            padding: 12px 0;
+        }
+
+        .sidebar-collapsed .sidebar-nav .nav-link i {
+            margin-right: 0;
+        }
+
+        .sidebar-collapsed .sidebar-nav .dropdown-menu {
+            position: fixed !important;
+            left: var(--sidebar-collapsed-width) !important;
+            width: 220px;
+            z-index: 1070;
+            background: #1f2d3a !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35) !important;
         }
 
         .sidebar-brand {
@@ -265,7 +240,7 @@
 
         .sidebar-nav .dropdown-menu {
             border: none;
-            background: rgba(0, 0, 0, 0.3);
+            background: #1f2d3a;
             padding: 5px 0;
             position: relative !important;
             float: none !important;
@@ -301,8 +276,8 @@
         }
 
         .sidebar-nav .dropdown-menu .dropdown-item.active {
-            background: rgba(52, 152, 219, 0.3);
-            color: #3498db;
+            background: #1769aa;
+            color: #fff;
         }
 
         /* Main Content Area */
@@ -452,7 +427,7 @@
             display: none;
         }
 
-        @media (min-width: 769px) {
+        @media (min-width: 1025px) {
             .toggle-sidebar {
                 display: none;
             }
@@ -489,10 +464,14 @@
         }
 
         /* Responsive */
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             :root {
                 --sidebar-width: 260px;
                 --topbar-height: 60px;
+            }
+
+            .topbar > .toggle-sidebar {
+                display: none;
             }
 
             .sidebar {
@@ -501,40 +480,48 @@
                 left: 0;
                 height: 100vh;
                 width: var(--sidebar-width);
-                margin-left: calc(-1 * var(--sidebar-width));
+                margin-left: 0;
                 z-index: 1041;
             }
 
-            .sidebar.show {
-                margin-left: 0;
-                box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            .sidebar-collapsed .sidebar {
+                width: var(--sidebar-collapsed-width);
             }
 
             .main-wrapper {
+                margin-left: var(--sidebar-collapsed-width);
+                width: calc(100% - var(--sidebar-collapsed-width));
+                overflow-x: hidden;
+            }
+
+            .sidebar-overlay-open .main-wrapper {
                 margin-left: 0;
                 width: 100%;
             }
 
-            .topbar {
-                margin-left: 0;
-            }
-
-            .toggle-sidebar {
-                position: static;
-                display: block;
-                width: auto;
-                height: auto;
-                padding: 0.25rem 0.5rem;
-                margin-right: 0.5rem;
-                transform: none;
-                border: none;
-                border-radius: 0;
-                background: none;
-                box-shadow: none;
-            }
-
             .sidebar-edge-toggle {
-                display: none;
+                position: fixed;
+                top: calc(var(--topbar-height) / 2);
+                left: calc(var(--sidebar-width) - 18px);
+                z-index: 1060;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                margin: 0;
+                transform: translateY(-50%);
+                border: 1px solid #d0d7de;
+                border-radius: 50%;
+                background: #fff;
+                color: #2c3e50;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+                transition: left 0.3s ease, color 0.2s ease, background-color 0.2s ease;
+            }
+
+            .sidebar-collapsed .sidebar-edge-toggle {
+                left: calc(var(--sidebar-collapsed-width) - 18px);
             }
 
             .sidebar-brand h4 {
@@ -558,6 +545,13 @@
             .sidebar-nav .dropdown-menu .dropdown-item {
                 padding: 8px 15px 8px 40px;
                 font-size: 0.85rem;
+            }
+
+            .sidebar-nav .nav-dropdown.open .dropdown-menu {
+                max-height: calc(100dvh - 24px);
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                -webkit-overflow-scrolling: touch;
             }
 
             .page-header {
@@ -1151,8 +1145,6 @@
         </nav>
     </aside>
 
-    <!-- Sidebar Backdrop (Mobile overlay) -->
-    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <button type="button" class="toggle-sidebar sidebar-edge-toggle" onclick="toggleSidebar()" aria-controls="sidebar" aria-expanded="true" aria-label="Close sidebar" title="Close sidebar">
         <i class="bi bi-chevron-left" aria-hidden="true"></i>
     </button>
@@ -1324,15 +1316,13 @@
 
     <script>
         const sidebar = document.getElementById('sidebar');
-        const backdrop = document.getElementById('sidebarBackdrop');
         const sidebarToggles = document.querySelectorAll('.toggle-sidebar');
         const sidebarStateKey = 'adminSidebarOpen';
-        let lastSidebarViewportIsMobile = window.innerWidth <= 768;
+        const isDashboardRoute = @json(request()->routeIs('admin.dashboard'));
+        let lastSidebarViewportIsMobile = window.innerWidth <= 1024;
 
         function isSidebarOpen() {
-            return window.innerWidth <= 768
-                ? sidebar.classList.contains('show')
-                : !document.body.classList.contains('sidebar-collapsed');
+            return !document.body.classList.contains('sidebar-collapsed');
         }
 
         function updateSidebarToggle() {
@@ -1346,11 +1336,8 @@
         }
 
         function setSidebarOpen(isOpen, persist = true) {
-            if (window.innerWidth <= 768) {
-                sidebar.classList.toggle('show', isOpen);
-            } else {
-                document.body.classList.toggle('sidebar-collapsed', !isOpen);
-            }
+            document.body.classList.toggle('sidebar-collapsed', !isOpen);
+            document.body.classList.toggle('sidebar-overlay-open', window.innerWidth <= 1024 && isOpen);
 
             if (persist) {
                 localStorage.setItem(sidebarStateKey, String(isOpen));
@@ -1363,32 +1350,33 @@
             setSidebarOpen(!isSidebarOpen());
         }
 
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.nav-dropdown')) {
+                document.querySelectorAll('.nav-dropdown.open').forEach(function(navDropdown) {
+                    navDropdown.classList.remove('open');
+                    navDropdown.querySelector('.dropdown-toggle')?.setAttribute('aria-expanded', 'false');
+                });
+            }
+
+            if (window.innerWidth > 1024 || !isSidebarOpen()
+                || sidebar.contains(event.target) || event.target.closest('.sidebar-edge-toggle')) {
+                return;
+            }
+
+            setSidebarOpen(false);
+        });
+
         const savedSidebarState = localStorage.getItem(sidebarStateKey);
+        const shouldStartCollapsed = window.innerWidth <= 1024 && isDashboardRoute;
         setSidebarOpen(
-            savedSidebarState === null ? window.innerWidth > 768 : savedSidebarState === 'true',
-            savedSidebarState !== null
+            shouldStartCollapsed ? false : (savedSidebarState === null ? window.innerWidth > 1024 : savedSidebarState === 'true'),
+            shouldStartCollapsed || savedSidebarState !== null
         );
         document.documentElement.classList.remove('sidebar-collapsed');
 
-        // Close sidebar when clicking on backdrop
-        if (backdrop) {
-            backdrop.addEventListener('click', function() {
-                setSidebarOpen(false);
-            });
-        }
-
-        // Close sidebar when clicking on a nav link (mobile)
-        document.querySelectorAll('.sidebar-nav a:not([aria-expanded])').forEach(link => {
-            link.addEventListener('click', function() {
-                if (window.innerWidth <= 768) {
-                    setSidebarOpen(false);
-                }
-            });
-        });
-
-        // Close sidebar when window resizes to desktop size
+        // Use the compact icon rail on mobile and tablet-sized viewports.
         window.addEventListener('resize', function() {
-            const isMobile = window.innerWidth <= 768;
+            const isMobile = window.innerWidth <= 1024;
             if (isMobile !== lastSidebarViewportIsMobile) {
                 lastSidebarViewportIsMobile = isMobile;
                 const savedState = localStorage.getItem(sidebarStateKey);
@@ -1398,24 +1386,6 @@
                 );
             } else {
                 updateSidebarToggle();
-            }
-        });
-
-        // Close sidebar when clicking on main-wrapper (mobile)
-        document.addEventListener('click', function(event) {
-            if (window.innerWidth <= 768) {
-                // Don't close sidebar if clicking inside a modal
-                const isClickInsideModal = event.target.closest('.modal');
-                if (isClickInsideModal) {
-                    return;
-                }
-
-                const isClickInsideSidebar = sidebar.contains(event.target);
-                const isToggleButton = event.target.closest('.toggle-sidebar');
-                
-                if (!isClickInsideSidebar && !isToggleButton && sidebar.classList.contains('show')) {
-                    setSidebarOpen(false);
-                }
             }
         });
 
@@ -1438,6 +1408,10 @@
 
             link.addEventListener('click', function() {
                 sessionStorage.setItem('sidebarScrollPosition', sidebar.scrollTop);
+
+                if (window.innerWidth <= 1024 && link.getAttribute('href') !== '#') {
+                    setSidebarOpen(false);
+                }
             });
         });
 
@@ -1468,17 +1442,26 @@
                 const nextState = !isExpanded;
                 toggle.setAttribute('aria-expanded', String(nextState));
                 navDropdown?.classList.toggle('open', nextState);
+
+                if (nextState && window.innerWidth <= 1024) {
+                    const menu = navDropdown?.querySelector('.dropdown-menu');
+                    if (menu && document.body.classList.contains('sidebar-collapsed')) {
+                        menu.style.top = '12px';
+                        menu.style.bottom = 'auto';
+
+                        requestAnimationFrame(function() {
+                            const viewportPadding = 12;
+                            const availableHeight = Math.min(menu.scrollHeight, window.innerHeight - viewportPadding * 2);
+                            const triggerTop = toggle.getBoundingClientRect().top;
+                            const maxTop = window.innerHeight - availableHeight - viewportPadding;
+                            const menuTop = Math.max(viewportPadding, Math.min(triggerTop, maxTop));
+
+                            menu.style.maxHeight = availableHeight + 'px';
+                            menu.style.top = menuTop + 'px';
+                        });
+                    }
+                }
             });
-        });
-
-        document.querySelectorAll('.nav-dropdown').forEach(function(navDropdown) {
-            const activeItem = navDropdown.querySelector('.nav-link.active, .dropdown-item.active');
-            const toggle = navDropdown.querySelector('.dropdown-toggle');
-
-            if (activeItem && toggle) {
-                toggle.setAttribute('aria-expanded', 'true');
-                navDropdown.classList.add('open');
-            }
         });
 
         // Mobile Select Dropdown Fix - Close on selection
