@@ -4,6 +4,10 @@
 
 @push('styles')
 <style>
+    @media (max-width: 575.98px) {
+        .purchase-mobile-search::placeholder { font-size: 0.85em; }
+    }
+
     @media (min-width: 768px) and (max-width: 1024px) {
         .purchase-filter-row > .purchase-filter-field {
             flex: 0 0 33.333333%;
@@ -33,10 +37,11 @@
                     <div class="col-md-3 purchase-filter-field">
                         <label for="purchases_search" class="form-label">Search</label>
                         <input type="search" 
-                               class="form-control" 
+                               class="form-control purchase-mobile-search"
                                id="purchases_search" 
                                name="search" 
                                value="{{ request('search') }}"
+                               data-mobile-placeholder="Search by PO..."
                                placeholder="Search by PO number or supplier"
                                autocomplete="off"
                                autocorrect="off"
@@ -244,3 +249,23 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mobileSearchQuery = window.matchMedia('(max-width: 575.98px)');
+        const searchInput = document.getElementById('purchases_search');
+        if (!searchInput) return;
+
+        const desktopPlaceholder = searchInput.placeholder;
+        const syncPlaceholder = () => {
+            searchInput.placeholder = mobileSearchQuery.matches
+                ? searchInput.dataset.mobilePlaceholder
+                : desktopPlaceholder;
+        };
+
+        syncPlaceholder();
+        mobileSearchQuery.addEventListener('change', syncPlaceholder);
+    });
+</script>
+@endpush

@@ -1,5 +1,13 @@
 @extends('layouts.admin')
 
+@push('styles')
+<style>
+    @media (max-width: 575.98px) {
+        .purchase-mobile-search::placeholder { font-size: 0.85em; }
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <div class="page-header">
@@ -64,7 +72,8 @@
                                         <div class="input-group">
                                             <input type="text" 
                                                    id="supplierSearch" 
-                                                   class="form-control" 
+                                                   class="form-control purchase-mobile-search"
+                                                   data-mobile-placeholder="Search supplier by..."
                                                    placeholder="Search supplier by name, company, or phone..."
                                                    autocomplete="off">
                                             <button class="btn btn-outline-secondary" type="button" id="clearSupplier">
@@ -123,7 +132,8 @@
                                     <div class="purchase-search-wrapper" id="productSearchWrapper">
                                         <input type="text" 
                                                id="productSearch" 
-                                               class="form-control" 
+                                               class="form-control purchase-mobile-search"
+                                               data-mobile-placeholder="Search by name..."
                                                placeholder="Search by name, SKU, or barcode..."
                                                autocomplete="off">
 
@@ -568,6 +578,20 @@
 
     // ========== INITIALIZATION ==========
     document.addEventListener('DOMContentLoaded', function() {
+        const mobileSearchQuery = window.matchMedia('(max-width: 575.98px)');
+        const syncMobileSearchPlaceholders = () => {
+            document.querySelectorAll('[data-mobile-placeholder]').forEach(input => {
+                if (!input.dataset.desktopPlaceholder) {
+                    input.dataset.desktopPlaceholder = input.placeholder;
+                }
+                input.placeholder = mobileSearchQuery.matches
+                    ? input.dataset.mobilePlaceholder
+                    : input.dataset.desktopPlaceholder;
+            });
+        };
+        syncMobileSearchPlaceholders();
+        mobileSearchQuery.addEventListener('change', syncMobileSearchPlaceholders);
+
         // Display recent items immediately (from localStorage)
         displayRecentSuppliers();
         displayRecentProducts();

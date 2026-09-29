@@ -10,6 +10,59 @@
 
     .purchase-detail-print-footer { display: none; }
 
+    @media screen and (max-width: 576px) {
+        .purchase-detail-page { padding-right: 0.75rem; padding-left: 0.75rem; }
+        .purchase-detail-info-card > .card-header h5 { font-size: 1rem; white-space: nowrap; }
+        .purchase-detail-toolbar {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 0.75rem;
+        }
+        .purchase-detail-toolbar h1 { font-size: clamp(1.4rem, 6vw, 1.75rem); line-height: 1.2; }
+        .purchase-detail-toolbar .breadcrumb { flex-wrap: wrap; row-gap: 0.15rem; }
+        .purchase-detail-toolbar .breadcrumb-item.active { overflow-wrap: anywhere; }
+        .purchase-detail-actions {
+            display: grid;
+            width: 100%;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem;
+        }
+        .purchase-detail-actions > .btn {
+            display: inline-flex;
+            min-width: 0;
+            min-height: 2.5rem;
+            align-items: center;
+            justify-content: center;
+            padding: 0.4rem 0.55rem;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            border-radius: 0.375rem !important;
+        }
+        .purchase-detail-inline-meta {
+            display: grid;
+            grid-template-columns: minmax(5.4rem, 5.8rem) minmax(0, 1fr);
+            align-items: baseline;
+            column-gap: 0.5rem;
+            row-gap: 0.15rem;
+        }
+        .purchase-detail-inline-meta > small:first-child {
+            display: block !important;
+            margin: 0 !important;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        .purchase-detail-inline-meta > p {
+            grid-column: 2;
+            min-width: 0;
+            font-size: 0.72rem;
+            line-height: 1.35;
+        }
+        .purchase-detail-inline-meta > p strong { font-size: 0.72rem; white-space: nowrap; }
+        .purchase-detail-inline-meta > small:last-child:not(:first-child) { grid-column: 2; }
+        .purchase-detail-info-grid { --bs-gutter-y: 0.75rem; }
+    }
+
     @media print {
         @page { size: A4 portrait; margin: 8mm; }
 
@@ -60,7 +113,7 @@
     </div>
 
     <div class="mb-4 no-print">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center purchase-detail-toolbar">
             <div>
                 <h1 class="h3 mb-0">Purchase Order Details</h1>
                 <nav aria-label="breadcrumb">
@@ -70,7 +123,7 @@
                     </ol>
                 </nav>
             </div>
-            <div class="btn-group">
+            <div class="btn-group purchase-detail-actions">
                 @can('purchases.view')
                 <button type="button" class="btn btn-primary" onclick="window.print()" title="Print Purchase Order">
                     <i class="bi bi-printer me-1"></i> Print
@@ -102,7 +155,6 @@
                     <div class="row align-items-center">
                         <div class="col">
                             <h5 class="mb-0">
-                                <i class="bi bi-file-earmark-text me-2"></i>
                                 {{ $purchase->purchase_number }}
                             </h5>
                         </div>
@@ -131,22 +183,19 @@
                             </div>
                             @endif
                         </div>
-                        <div class="col-md-6 no-print">
+                        <div class="col-md-6 no-print purchase-detail-inline-meta">
                             <small class="text-muted d-block mb-2">Warehouse</small>
                             <p class="mb-0">
-                                <strong>
-                                    <i class="bi bi-building me-1"></i>
-                                    {{ $purchase->warehouse->name }}
-                                </strong>
+                                <strong>{{ $purchase->warehouse->name }}</strong>
                             </p>
                         </div>
-                        <div class="col-md-6 no-print">
+                        <div class="col-md-6 no-print purchase-detail-inline-meta">
                             <small class="text-muted d-block mb-2">Purchase Date</small>
                             <p class="mb-0">
                                 <strong>{{ $purchase->purchase_date->format('M d, Y') }}</strong>
                             </p>
                         </div>
-                        <div class="col-md-6 no-print">
+                        <div class="col-md-6 no-print purchase-detail-inline-meta">
                             <small class="text-muted d-block mb-2">Created</small>
                             <p class="mb-0">
                                 <strong>{{ $purchase->created_at->format('M d, Y h:i A') }}</strong>
@@ -154,7 +203,7 @@
                             <small class="text-muted">By: {{ $purchase->creator->name }}</small>
                         </div>
                         @if($purchase->isConfirmed())
-                        <div class="col-md-6 no-print">
+                        <div class="col-md-6 no-print purchase-detail-inline-meta">
                             <small class="text-muted d-block mb-2">Confirmed</small>
                             <p class="mb-0">
                                 <strong>{{ $purchase->confirmed_at->format('M d, Y h:i A') }}</strong>
@@ -332,6 +381,25 @@
                         </div>
                     </div>
 
+                    <hr class="my-3">
+
+                    <div>
+                        <h6 class="card-title text-info mb-2">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Quick Stats
+                        </h6>
+                        <div class="small">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Total Items:</span>
+                                <strong>{{ $purchase->items()->count() }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Total Quantity:</span>
+                                <strong>{{ $purchase->items()->sum('quantity') }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="alert alert-{{ $purchase->paid_amount == 0 ? 'warning' : ($purchase->paid_amount >= $purchase->total_amount ? 'success' : 'info') }}" style="display: none;">
                         <small>
                             <strong>Payment Status:</strong><br>
@@ -411,25 +479,6 @@
             </div>
             @endif
 
-            {{-- Key Info --}}
-            <div class="card mt-3 border-info no-print">
-                <div class="card-body">
-                    <h6 class="card-title text-info">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Quick Stats
-                    </h6>
-                    <div class="small">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Total Items:</span>
-                            <strong>{{ $purchase->items()->count() }}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Total Quantity:</span>
-                            <strong>{{ $purchase->items()->sum('quantity') }}</strong>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
