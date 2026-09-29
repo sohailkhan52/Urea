@@ -277,6 +277,7 @@
         </div>
         <div class="card-body">
             <form action="{{ route('admin.reports.sales.index') }}" method="GET" id="filterForm" autocomplete="off">
+                <input type="hidden" name="per_page" value="{{ $perPage }}">
                 <div class="row g-3">
                     {{-- Search --}}
                     <div class="col-md-3">
@@ -378,6 +379,22 @@
                 </div>
             </form>
         </div>
+    </div>
+
+    <div class="d-flex justify-content-end align-items-center mb-2">
+        <form action="{{ route('admin.reports.sales.index') }}" method="GET" class="d-flex align-items-center gap-2">
+            @foreach(request()->except(['page', 'per_page']) as $key => $value)
+                @if(is_scalar($value))
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endif
+            @endforeach
+            <label for="sales-report-per-page" class="small text-muted mb-0">Per Page</label>
+            <select id="sales-report-per-page" name="per_page" class="form-select form-select-sm" style="width: 82px;" onchange="this.form.submit()">
+                @foreach([10, 25, 50, 100] as $option)
+                    <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
+                @endforeach
+            </select>
+        </form>
     </div>
 
     {{-- Sales Report Table --}}
@@ -509,10 +526,7 @@
             </div>
 
             {{-- Pagination --}}
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div>
-                    Showing {{ $sales->firstItem() ?? 0 }} to {{ $sales->lastItem() ?? 0 }} of {{ $sales->total() }} sales
-                </div>
+            <div class="d-flex justify-content-end align-items-center mt-3">
                 <div>
                     {{ $sales->links() }}
                 </div>

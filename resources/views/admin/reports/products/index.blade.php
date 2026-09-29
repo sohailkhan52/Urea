@@ -67,6 +67,7 @@
         </div>
         <div class="card-body">
             <form method="GET" action="{{ route('admin.reports.products.index') }}" class="row g-3">
+                <input type="hidden" name="per_page" value="{{ $perPage }}">
                 <!-- Search -->
                 <div class="col-md-4">
                     <label for="search" class="form-label small">Search by Name or SKU</label>
@@ -105,6 +106,22 @@
                 </div>
             </form>
         </div>
+    </div>
+
+    <div class="d-flex justify-content-end align-items-center mb-2">
+        <form action="{{ route('admin.reports.products.index') }}" method="GET" class="d-flex align-items-center gap-2">
+            @foreach(request()->except(['page', 'per_page']) as $key => $value)
+                @if(is_scalar($value))
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endif
+            @endforeach
+            <label for="products-report-per-page" class="small text-muted mb-0">Per Page</label>
+            <select id="products-report-per-page" name="per_page" class="form-select form-select-sm" style="width: 82px;" onchange="this.form.submit()">
+                @foreach([10, 25, 50, 100] as $option)
+                    <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
+                @endforeach
+            </select>
+        </form>
     </div>
 
     <!-- Products Table -->
@@ -220,13 +237,8 @@
     </div>
 
     <!-- Pagination -->
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <p class="text-muted small">
-                Showing {{ $products->firstItem() ?? 0 }} to {{ $products->lastItem() ?? 0 }} of {{ $products->total() }} products
-            </p>
-        </div>
-        <div class="col-md-6 text-end">
+    <div class="d-flex justify-content-end mt-4">
+        <div class="text-end">
             {{ $products->links() }}
         </div>
     </div>

@@ -8,7 +8,7 @@
                 <h1 class="page-title">Create New Purchase</h1>
             </div>
             <div class="col-md-4 text-end">
-                <a href="{{ route('admin.purchases.index') }}" class="btn btn-secondary">
+                <a href="{{ route('admin.purchases.index') }}" class="btn btn-secondary d-none d-sm-inline-block">
                     <i class="bi bi-arrow-left"></i> Back to Purchases
                 </a>
             </div>
@@ -37,17 +37,27 @@
             <!-- LEFT COLUMN: Supplier & Products -->
             <div class="col-lg-8">
                 <!-- SUPPLIER SECTION -->
-                <div class="card mb-4">
+                <div class="card mb-4 supplier-autocomplete-card">
                     <div class="card-header">
                         <h5 class="mb-0">
                             <i class="bi bi-building"></i> Select Supplier
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-10">
+                        <div class="d-none d-md-flex justify-content-end mb-2">
+                            <button type="button" class="btn btn-primary purchase-search-action supplier-new-action" data-bs-toggle="modal" data-bs-target="#newSupplierModal">
+                                <i class="bi bi-plus-lg"></i> <span>New Supplier</span>
+                            </button>
+                        </div>
+                        <div class="row supplier-search-row">
+                            <div class="col-12 supplier-search-column">
                                 <div class="form-group mb-0">
-                                    <label for="supplier_id" class="form-label">Supplier <span class="text-danger">*</span></label>
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <label for="supplier_id" class="form-label mb-0">Supplier <span class="text-danger">*</span></label>
+                                        <button type="button" class="btn btn-primary purchase-search-action supplier-new-action d-md-none" data-bs-toggle="modal" data-bs-target="#newSupplierModal">
+                                            <i class="bi bi-plus-lg"></i> <span>New Supplier</span>
+                                        </button>
+                                    </div>
                                     <input type="hidden" id="supplier_id" name="supplier_id" value="{{ old('supplier_id') }}" required>
                                     
                                     <div class="purchase-search-wrapper" id="supplierSearchWrapper">
@@ -81,11 +91,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-primary w-100 mt-4" data-bs-toggle="modal" data-bs-target="#newSupplierModal">
-                                    <i class="bi bi-plus-lg"></i> New Supplier
-                                </button>
-                            </div>
                         </div>
 
                         <input type="hidden" id="warehouse_id" name="warehouse_id" value="{{ $defaultWarehouse->id }}")>
@@ -94,17 +99,27 @@
                 </div>
 
                 <!-- PRODUCT SEARCH SECTION -->
-                <div class="card mb-4">
+                <div class="card mb-4 product-autocomplete-card">
                     <div class="card-header">
                         <h5 class="mb-0">
                             <i class="bi bi-search"></i> Search & Add Products
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-9">
+                        <div class="d-none d-md-flex justify-content-end mb-2">
+                            <button type="button" class="btn btn-primary purchase-search-action product-new-action" data-bs-toggle="modal" data-bs-target="#newProductModal">
+                                <i class="bi bi-plus-lg"></i> <span>New Product</span>
+                            </button>
+                        </div>
+                        <div class="row product-search-row">
+                            <div class="col-12 product-search-column">
                                 <div class="form-group mb-0">
-                                    <label for="productSearch" class="form-label">Search Product</label>
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <label for="productSearch" class="form-label mb-0">Search Product</label>
+                                        <button type="button" class="btn btn-primary purchase-search-action product-new-action d-md-none" data-bs-toggle="modal" data-bs-target="#newProductModal">
+                                            <i class="bi bi-plus-lg"></i> <span>New Product</span>
+                                        </button>
+                                    </div>
                                     <div class="purchase-search-wrapper" id="productSearchWrapper">
                                         <input type="text" 
                                                id="productSearch" 
@@ -125,11 +140,6 @@
                                     </div>
 
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <button type="button" class="btn btn-primary w-100 mt-4" data-bs-toggle="modal" data-bs-target="#newProductModal">
-                                    <i class="bi bi-plus-lg"></i> New Product
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -197,14 +207,14 @@
 
                         <!-- Discount Section -->
                         <div class="row mb-3">
-                            <div class="col-6">
+                            <div class="col-12 col-lg-6 mb-2 mb-lg-0">
                                 <label for="discountType" class="form-label">Discount Type</label>
                                 <select id="discountType" class="form-select form-select-sm" onchange="updateDiscount()">
                                     <option value="amount">Amount (Rs.)</option>
                                     <option value="percentage">Percentage (%)</option>
                                 </select>
                             </div>
-                            <div class="col-6">
+                            <div class="col-12 col-lg-6">
                                 <label for="discount" class="form-label">Discount</label>
                                 <input type="number" 
                                        id="discount" 
@@ -287,7 +297,7 @@
                         </div>
 
                         <!-- Remaining Payable -->
-                        <div class="mb-3 p-3 bg-warning bg-opacity-10 rounded">
+                        <div class="mb-3 p-3 bg-warning bg-opacity-10 rounded d-none">
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Remaining Payable:</span>
                                 <strong class="text-warning">Rs. <span id="remaining_payable">0</span></strong>
@@ -311,11 +321,11 @@
                         </div>
 
                         <!-- Submit Buttons -->
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                        <div class="d-grid gap-2 purchase-submit-actions">
+                            <button type="submit" class="btn btn-success btn-lg mobile-purchase-action" id="submitBtn">
                                 <i class="bi bi-check-circle"></i> Save & Confirm Purchase
                             </button>
-                            <a href="{{ route('admin.purchases.index') }}" class="btn btn-secondary">
+                            <a href="{{ route('admin.purchases.index') }}" class="btn btn-secondary mobile-purchase-action">
                                 <i class="bi bi-x-lg"></i> Cancel
                             </a>
                         </div>
@@ -473,7 +483,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="product_unit" class="form-label">Unit <span class="text-danger">*</span></label>
-                                <select class="form-select" 
+                                <select class="form-select three-option-scroll-select" 
                                         id="product_unit" 
                                         name="unit"
                                         required>
@@ -1084,8 +1094,8 @@
         const grid = document.getElementById('productGrid');
         grid.innerHTML = '';
 
-        // Show a manageable number of matching products in the dropdown.
-        const limited = products.slice(0, 15);
+        // Show all matches; the dropdown scrolls after five visible results.
+        const limited = products;
 
         if (limited.length === 0) {
             const empty = document.createElement('div');
@@ -1565,6 +1575,70 @@
         overflow: visible;
     }
 
+    @media (min-width: 768px) {
+        .supplier-search-column .purchase-search-wrapper,
+        .product-search-column .purchase-search-wrapper {
+            width: 65%;
+        }
+    }
+
+    .purchase-search-action {
+        display: inline-flex;
+        width: auto;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.95rem;
+        line-height: 1.25;
+        white-space: nowrap;
+    }
+
+    .supplier-new-action {
+        padding: 0.5rem 0.85rem;
+        font-size: 1rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .purchase-search-action {
+            padding: 0.15rem 0.35rem;
+            font-size: 0.65rem;
+            gap: 0.2rem;
+        }
+
+        .supplier-new-action {
+            padding: 0.18rem 0.4rem;
+            font-size: 0.68rem;
+        }
+
+        .purchase-submit-actions .mobile-purchase-action {
+            padding: 0.3rem 0.55rem;
+            font-size: 0.8rem;
+            line-height: 1.25;
+        }
+    }
+
+    @media (max-width: 1024px) {
+        .supplier-autocomplete-card,
+        .supplier-autocomplete-card .card-body,
+        .supplier-autocomplete-card .supplier-search-row,
+        .supplier-autocomplete-card .supplier-search-column,
+        .supplier-autocomplete-card .form-group,
+        .product-autocomplete-card,
+        .product-autocomplete-card .card-body,
+        .product-autocomplete-card .product-search-row,
+        .product-autocomplete-card .product-search-column,
+        .product-autocomplete-card .form-group {
+            overflow: visible !important;
+        }
+
+        .supplier-autocomplete-card:focus-within,
+        .product-autocomplete-card:focus-within {
+            position: relative;
+            z-index: 1060;
+        }
+    }
+
     .purchase-search-dropdown {
         position: absolute;
         top: calc(100% + 4px);
@@ -1591,6 +1665,28 @@
 
     .purchase-search-dropdown .list-group-item:last-child {
         border-bottom: 0;
+    }
+
+    #productDropdown {
+        max-height: 242px;
+    }
+
+    #productGrid > .list-group-item {
+        height: 48px;
+        min-height: 48px;
+        overflow: hidden;
+    }
+
+    #productGrid > .list-group-item > .fw-semibold {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #productGrid > .list-group-item > small {
+        flex-shrink: 0;
+        white-space: nowrap;
     }
 
     #recentSuppliers,
@@ -1642,6 +1738,117 @@
 
     .modal-backdrop {
         z-index: 9998 !important;
+    }
+
+    @media (max-width: 1024px) {
+        #newSupplierModal .modal-dialog {
+            width: min(92vw, 620px);
+            max-width: none;
+            margin: 0.5rem auto;
+        }
+
+        #newSupplierModal .modal-content {
+            max-height: calc(100dvh - 1rem);
+        }
+
+        #newSupplierModal .modal-header,
+        #newSupplierModal .modal-footer {
+            padding: 0.65rem 0.85rem;
+        }
+
+        #newSupplierModal .modal-title {
+            font-size: 1.1rem;
+        }
+
+        #newSupplierModal .modal-body {
+            padding: 0.75rem 0.85rem;
+            overflow-y: auto;
+        }
+
+        #newSupplierModal .modal-body .mb-3 {
+            margin-bottom: 0.65rem !important;
+        }
+
+        #newSupplierModal .form-label,
+        #newSupplierModal .form-control,
+        #newSupplierModal .btn {
+            font-size: 0.9rem;
+        }
+
+        #newSupplierModal .form-control {
+            min-height: 38px;
+            padding: 0.35rem 0.6rem;
+        }
+
+        #newSupplierModal textarea.form-control {
+            min-height: 58px;
+        }
+
+        #newSupplierModal .modal-footer .btn {
+            padding: 0.35rem 0.65rem;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        #newSupplierModal .modal-dialog {
+            width: calc(100vw - 1rem);
+        }
+
+        #newSupplierModal .modal-title {
+            font-size: 1rem;
+        }
+
+        #newSupplierModal .form-label,
+        #newSupplierModal .form-control,
+        #newSupplierModal .btn {
+            font-size: 0.85rem;
+        }
+
+        #newProductModal .modal-dialog {
+            width: calc(100vw - 1rem);
+            max-width: none;
+            margin: 0.5rem auto;
+        }
+
+        #newProductModal .modal-content {
+            max-height: calc(100dvh - 1rem);
+        }
+
+        #newProductModal .modal-header,
+        #newProductModal .modal-footer {
+            padding: 0.55rem 0.75rem;
+        }
+
+        #newProductModal .modal-title {
+            font-size: 1rem;
+        }
+
+        #newProductModal .modal-body {
+            padding: 0.65rem 0.75rem;
+            overflow-y: auto;
+        }
+
+        #newProductModal .modal-body .mb-3 {
+            margin-bottom: 0.55rem !important;
+        }
+
+        #newProductModal .form-label,
+        #newProductModal .form-control,
+        #newProductModal .form-select,
+        #newProductModal .btn,
+        #newProductModal small {
+            font-size: 0.82rem;
+        }
+
+        #newProductModal .form-control,
+        #newProductModal .form-select {
+            min-height: 36px;
+            padding: 0.3rem 0.55rem;
+        }
+
+        #newProductModal .modal-footer .btn {
+            padding: 0.3rem 0.55rem;
+        }
     }
 
     /* Prevent autocomplete from showing */

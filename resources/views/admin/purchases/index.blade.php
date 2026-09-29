@@ -2,6 +2,22 @@
 
 @section('title', 'Purchases')
 
+@push('styles')
+<style>
+    @media (min-width: 768px) and (max-width: 1024px) {
+        .purchase-filter-row > .purchase-filter-field {
+            flex: 0 0 33.333333%;
+            max-width: 33.333333%;
+        }
+
+        .purchase-filter-row > .purchase-filter-actions {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -12,8 +28,9 @@
     <div class="card mb-4">
         <div class="card-body">
             <form action="{{ route('admin.purchases.index') }}" method="GET" autocomplete="off">
-                <div class="row g-3">
-                    <div class="col-md-3">
+                <input type="hidden" name="per_page" value="{{ $perPage }}">
+                <div class="row g-3 purchase-filter-row">
+                    <div class="col-md-3 purchase-filter-field">
                         <label for="purchases_search" class="form-label">Search</label>
                         <input type="search" 
                                class="form-control" 
@@ -26,7 +43,7 @@
                                autocapitalize="off"
                                spellcheck="false">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-2 purchase-filter-field">
                         <label for="supplier_id" class="form-label">Supplier</label>
                         <select class="form-select" id="supplier_id" name="supplier_id">
                             <option value="">All Suppliers</option>
@@ -38,7 +55,7 @@
                         </select>
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-md-2 purchase-filter-field">
                         <label for="status" class="form-label">Status</label>
                         <select class="form-select" id="status" name="status">
                             <option value="">All Statuses</option>
@@ -47,7 +64,7 @@
                             <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                         </select>
                     </div>
-                    <div class="col-md-3 d-flex align-items-end gap-2">
+                    <div class="col-md-3 d-flex align-items-end gap-2 purchase-filter-actions">
                         <button type="submit" class="btn btn-secondary flex-grow-1">
                             <i class="bi bi-funnel me-1"></i> Filter
                         </button>
@@ -58,6 +75,22 @@
                 </div>
             </form>
         </div>
+    </div>
+
+    <div class="d-flex justify-content-end align-items-center mb-2">
+        <form action="{{ route('admin.purchases.index') }}" method="GET" class="d-flex align-items-center gap-2">
+            @foreach(request()->except(['page', 'per_page']) as $key => $value)
+                @if(is_scalar($value))
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endif
+            @endforeach
+            <label for="purchases-per-page" class="small text-muted mb-0">Per Page</label>
+            <select id="purchases-per-page" name="per_page" class="form-select form-select-sm" style="width: 82px;" onchange="this.form.submit()">
+                @foreach([10, 25, 50, 100] as $option)
+                    <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
+                @endforeach
+            </select>
+        </form>
     </div>
 
     {{-- Purchases Table --}}

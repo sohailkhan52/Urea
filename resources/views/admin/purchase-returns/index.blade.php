@@ -19,6 +19,7 @@
     <div class="card mb-4">
         <div class="card-body">
             <form method="GET" action="{{ route('admin.purchase-returns.index') }}" class="row g-3">
+                <input type="hidden" name="per_page" value="{{ $perPage }}">
                 <div class="col-md-3">
                     <input type="text" 
                            name="search" 
@@ -52,6 +53,22 @@
                 </div>
             </form>
         </div>
+    </div>
+
+    <div class="d-flex justify-content-end align-items-center mb-2">
+        <form action="{{ route('admin.purchase-returns.index') }}" method="GET" class="d-flex align-items-center gap-2">
+            @foreach(request()->except(['page', 'per_page']) as $key => $value)
+                @if(is_scalar($value))
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endif
+            @endforeach
+            <label for="purchase-returns-per-page" class="small text-muted mb-0">Per Page</label>
+            <select id="purchase-returns-per-page" name="per_page" class="form-select form-select-sm" style="width: 82px;" onchange="this.form.submit()">
+                @foreach([10, 25, 50, 100] as $option)
+                    <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
+                @endforeach
+            </select>
+        </form>
     </div>
 
     <!-- Returns Table -->

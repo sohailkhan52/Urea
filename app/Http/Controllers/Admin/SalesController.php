@@ -97,7 +97,12 @@ class SalesController extends Controller
             }
         }
 
-        $sales = $query->orderBy('sale_date', 'desc')->latest('created_at')->paginate(10)->withQueryString();
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+
+        $sales = $query->orderBy('sale_date', 'desc')->latest('created_at')->paginate($perPage)->withQueryString();
 
         // Get warehouses the user can see
         $warehouses = $user->isSuperAdmin()
@@ -117,7 +122,7 @@ class SalesController extends Controller
                 ->get();
         }
 
-        return view('admin.sales.index', compact('sales', 'customers', 'warehouses'));
+        return view('admin.sales.index', compact('sales', 'customers', 'warehouses', 'perPage'));
     }
 
     /**

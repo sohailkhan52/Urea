@@ -78,10 +78,7 @@
         </div>
 
         <div class="row align-items-center g-2 mt-3">
-            <div class="col-md-6">
-                <small class="text-muted">Showing {{ $products->firstItem() ?? 0 }} to {{ $products->lastItem() ?? 0 }} of {{ $products->total() }} products</small>
-            </div>
-            <div class="col-md-6 d-flex justify-content-md-end">
+            <div class="col-12 d-flex justify-content-end">
                 <nav aria-label="Page navigation">
                     {{ $products->links() }}
                 </nav>

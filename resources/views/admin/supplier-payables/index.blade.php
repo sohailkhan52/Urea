@@ -81,6 +81,7 @@
     <div class="card mb-4">
         <div class="card-body">
             <form action="{{ route('admin.supplier-payables.index') }}" method="GET" autocomplete="off">
+                <input type="hidden" name="per_page" value="{{ $perPage }}">
                 <div class="row g-3">
                     <div class="col-md-8">
                         <label for="search" class="form-label">Search</label>
@@ -106,6 +107,22 @@
                 </div>
             </form>
         </div>
+    </div>
+
+    <div class="d-flex justify-content-end align-items-center mb-2">
+        <form action="{{ route('admin.supplier-payables.index') }}" method="GET" class="d-flex align-items-center gap-2">
+            @foreach(request()->except(['page', 'per_page']) as $key => $value)
+                @if(is_scalar($value))
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endif
+            @endforeach
+            <label for="supplier-payables-per-page" class="small text-muted mb-0">Per Page</label>
+            <select id="supplier-payables-per-page" name="per_page" class="form-select form-select-sm" style="width: 82px;" onchange="this.form.submit()">
+                @foreach([10, 25, 50, 100] as $option)
+                    <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
+                @endforeach
+            </select>
+        </form>
     </div>
 
     <!-- Supplier Payables Table -->
@@ -159,6 +176,9 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+                <div class="d-flex justify-content-end align-items-center mt-3 flex-wrap gap-2">
+                    {{ $suppliers->links() }}
                 </div>
             @else
                 <div class="text-center py-5">

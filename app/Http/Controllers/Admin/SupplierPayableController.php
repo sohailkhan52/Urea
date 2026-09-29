@@ -20,23 +20,16 @@ class SupplierPayableController extends Controller
         $user = auth()->user();
         $request = request();
         $search = $request->input('search', '');
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
         
         // Get all confirmed purchases
         $purchasesQuery = Purchase::where('status', 'confirmed');
         
         if (!$user->isSuperAdmin()) {
             $warehouseIds = $user->warehouses()->pluck('warehouses.id')->toArray();
-            if (empty($warehouseIds)) {
-                return view('admin.supplier-payables.index', [
-                    'suppliers' => collect(),
-                    'summary' => [
-                        'total_outstanding' => 0,
-                        'total_purchases' => 0,
-                        'total_paid' => 0,
-                        'supplier_count' => 0,
-                    ]
-                ]);
-            }
             $purchasesQuery->whereIn('warehouse_id', $warehouseIds);
         }
         
@@ -58,7 +51,7 @@ class SupplierPayableController extends Controller
         $supplierIds = $allPurchases->pluck('supplier_id')->unique()->toArray();
         
         // Get suppliers and calculate their payables
-        $suppliers = collect();
+        $allSuppliers = collect();
         
         if (!empty($supplierIds)) {
             $allSuppliers = Supplier::whereIn('id', $supplierIds)
@@ -109,26 +102,26 @@ class SupplierPayableController extends Controller
                 })->values();
             }
             
-            // Paginate the results (10 per page)
-            $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
-            $perPage = 10;
-            $suppliers = new \Illuminate\Pagination\LengthAwarePaginator(
-                $allSuppliers->forPage($page, $perPage)->values(),
-                $allSuppliers->count(),
-                $perPage,
-                $page,
-                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
-            );
         }
+
+        $supplierCount = $allSuppliers->count();
+        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+        $suppliers = new \Illuminate\Pagination\LengthAwarePaginator(
+            $allSuppliers->forPage($page, $perPage)->values(),
+            $supplierCount,
+            $perPage,
+            $page,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+        );
         
         $summary = [
             'total_outstanding' => $totalOutstanding,
             'total_purchases' => $totalPurchases,
             'total_paid' => $totalPaid,
-            'supplier_count' => $suppliers->count(),
+            'supplier_count' => $supplierCount,
         ];
         
-        return view('admin.supplier-payables.index', compact('suppliers', 'summary', 'search'));
+        return view('admin.supplier-payables.index', compact('suppliers', 'summary', 'search', 'perPage'));
     }
     
     /**

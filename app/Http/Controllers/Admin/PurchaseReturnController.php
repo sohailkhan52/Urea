@@ -59,9 +59,14 @@ class PurchaseReturnController extends Controller
             });
         }
 
-        $returns = $query->paginate(10);
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
 
-        return view('admin.purchase-returns.index', compact('returns'));
+        $returns = $query->paginate($perPage)->withQueryString();
+
+        return view('admin.purchase-returns.index', compact('returns', 'perPage'));
     }
 
     /**

@@ -97,14 +97,19 @@ class SaleReturnController extends Controller
             $query->where('return_date', '<=', $request->date_to);
         }
 
-        $returns = $query->orderBy('return_date', 'desc')->latest('created_at')->paginate(10)->withQueryString();
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+
+        $returns = $query->orderBy('return_date', 'desc')->latest('created_at')->paginate($perPage)->withQueryString();
 
         // Get warehouses the user can see
         $warehouses = $user->isSuperAdmin()
             ? Warehouse::active()->orderBy('name')->get()
             : $user->warehouses()->where('status', 'active')->orderBy('name')->get();
 
-        return view('admin.sale-returns.index', compact('returns', 'warehouses'));
+        return view('admin.sale-returns.index', compact('returns', 'warehouses', 'perPage'));
     }
 
     /**

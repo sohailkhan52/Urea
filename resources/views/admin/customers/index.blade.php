@@ -224,10 +224,7 @@
                 @endforeach
 
                 <div class="row align-items-center g-2 p-3">
-                    <div class="col-md-6">
-                        <small class="text-muted">Showing {{ $customers->firstItem() ?? 0 }} to {{ $customers->lastItem() ?? 0 }} of {{ $customers->total() }} customers</small>
-                    </div>
-                    <div class="col-md-6 d-flex justify-content-md-end">
+                    <div class="col-12 d-flex justify-content-end">
                         {{ $customers->links() }}
                     </div>
                 </div>

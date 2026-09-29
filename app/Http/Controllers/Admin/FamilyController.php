@@ -14,12 +14,18 @@ class FamilyController extends Controller
     /**
      * Display all families
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $families = Family::orderBy('name')->paginate(20);
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+
+        $families = Family::orderBy('name')->paginate($perPage)->withQueryString();
         
         return view('admin.families.index', [
             'families' => $families,
+            'perPage' => $perPage,
         ]);
     }
 

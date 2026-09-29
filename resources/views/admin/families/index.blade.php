@@ -17,6 +17,22 @@
         </div>
     </div>
 
+    <div class="d-flex justify-content-end align-items-center mb-2">
+        <form action="{{ route('admin.families.index') }}" method="GET" class="d-flex align-items-center gap-2">
+            @foreach(request()->except(['page', 'per_page']) as $key => $value)
+                @if(is_scalar($value))
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endif
+            @endforeach
+            <label for="families-per-page" class="small text-muted mb-0">Per Page</label>
+            <select id="families-per-page" name="per_page" class="form-select form-select-sm" style="width: 82px;" onchange="this.form.submit()">
+                @foreach([10, 25, 50, 100] as $option)
+                    <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
+                @endforeach
+            </select>
+        </form>
+    </div>
+
     {{-- Families Table --}}
     <div class="card">
         <div class="card-header">
@@ -85,9 +101,9 @@
                 </div>
 
                 {{-- Pagination --}}
-                <nav aria-label="Pagination">
+                <div class="d-flex justify-content-end align-items-center flex-wrap gap-2">
                     {{ $families->links() }}
-                </nav>
+                </div>
             @else
                 <div class="alert alert-info mb-0">
                     <i class="bi bi-info-circle me-2"></i> No families created yet. Click "Add New Family" to create one.

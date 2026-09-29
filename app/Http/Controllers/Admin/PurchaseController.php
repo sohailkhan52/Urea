@@ -75,7 +75,12 @@ class PurchaseController extends Controller
             $query->where('status', $request->status);
         }
 
-        $purchases = $query->orderBy('purchase_date', 'desc')->latest('created_at')->paginate(10)->withQueryString();
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+
+        $purchases = $query->orderBy('purchase_date', 'desc')->latest('created_at')->paginate($perPage)->withQueryString();
 
         // Get warehouses the user can see
         $warehouses = $user->isSuperAdmin()
@@ -84,7 +89,7 @@ class PurchaseController extends Controller
 
         $suppliers = Supplier::active()->orderBy('name')->get();
 
-        return view('admin.purchases.index', compact('purchases', 'suppliers', 'warehouses'));
+        return view('admin.purchases.index', compact('purchases', 'suppliers', 'warehouses', 'perPage'));
     }
 
     /**

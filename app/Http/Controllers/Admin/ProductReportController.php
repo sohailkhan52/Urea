@@ -50,7 +50,11 @@ class ProductReportController extends Controller
             $query->orderBy($sortBy, $sortOrder);
         }
 
-        $products = $query->paginate($request->input('per_page', 15))->withQueryString();
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+        $products = $query->paginate($perPage)->withQueryString();
 
         // Get available units
         $units = Product::getUnits();
@@ -69,7 +73,7 @@ class ProductReportController extends Controller
                 }),
         ];
 
-        return view('admin.reports.products.index', compact('products', 'units', 'totals'));
+        return view('admin.reports.products.index', compact('products', 'units', 'totals', 'perPage'));
     }
 
     public function history(Request $request): View

@@ -1512,10 +1512,14 @@
         // Mobile Select Dropdown Fix - Close on selection
         document.addEventListener('DOMContentLoaded', function() {
             const isMobileView = window.innerWidth <= 768;
-            
-            if (isMobileView) {
-                const selectElements = document.querySelectorAll('select');
-                selectElements.forEach((select, index) => {
+
+            const selectElements = document.querySelectorAll('select');
+            selectElements.forEach((select, index) => {
+                    const isThreeOptionSelect = select.classList.contains('three-option-scroll-select');
+                    if (!isMobileView && !isThreeOptionSelect) {
+                        return;
+                    }
+
                     // Create wrapper for custom dropdown
                     const wrapper = document.createElement('div');
                     wrapper.className = 'mobile-select-wrapper';
@@ -1549,7 +1553,7 @@
                         listContainer.style.top = (btnRect.bottom + 2) + 'px';
                         listContainer.style.left = btnRect.left + 'px';
                         listContainer.style.width = btnRect.width + 'px';
-                        listContainer.style.maxHeight = '60vh';
+                        listContainer.style.maxHeight = isThreeOptionSelect ? '180px' : '60vh';
                         listContainer.style.overflow = 'auto';
                         listContainer.style.zIndex = '10000';
                         listContainer.style.background = 'white';
@@ -1683,8 +1687,7 @@
                             }
                         }
                     });
-                });
-            }
+            });
         });
 
     </script>

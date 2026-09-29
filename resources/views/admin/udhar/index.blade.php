@@ -49,13 +49,13 @@
     <ul class="nav nav-tabs mb-3">
         <li class="nav-item">
             <a class="nav-link {{ $activeTab === 'customers' ? 'active' : '' }}" 
-               href="{{ route('admin.udhar.index', array_merge(request()->except('tab'), ['tab' => 'customers'])) }}">
+               href="{{ route('admin.udhar.index', array_merge(request()->except(['tab', 'page']), ['tab' => 'customers'])) }}">
                 <i class="bi bi-person me-2"></i>Individual Customers
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link {{ $activeTab === 'families' ? 'active' : '' }}" 
-               href="{{ route('admin.udhar.index', array_merge(request()->except('tab'), ['tab' => 'families'])) }}">
+               href="{{ route('admin.udhar.index', array_merge(request()->except(['tab', 'page']), ['tab' => 'families'])) }}">
                 <i class="bi bi-diagram-3 me-2"></i>Family Accounts
             </a>
         </li>
@@ -67,6 +67,14 @@
             <form action="{{ route('admin.udhar.index') }}" method="GET">
                 <input type="hidden" name="tab" value="{{ $activeTab }}">
                 <div class="row g-3">
+                    <div class="col-md-2">
+                        <label for="udhar-per-page" class="form-label small">Per Page</label>
+                        <select id="udhar-per-page" name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
+                            @foreach([10, 25, 50, 100] as $option)
+                                <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div class="col-md-3">
                         <label class="form-label small">Search</label>
                         <input type="text" class="form-control form-control-sm" name="search" 
@@ -89,6 +97,7 @@
                     <div class="col-md-2">
                         <label class="form-label small">Display</label>
                         <div class="form-check mt-2">
+                            <input type="hidden" name="only_outstanding" value="0">
                             <input class="form-check-input" type="checkbox" name="only_outstanding" value="1"
                                    {{ ($filters['only_outstanding'] ?? true) ? 'checked' : '' }}>
                             <label class="form-check-label small">Only Outstanding</label>
@@ -107,6 +116,7 @@
                     <div class="col-md-2">
                         <label class="form-label small">Display</label>
                         <div class="form-check mt-2">
+                            <input type="hidden" name="only_outstanding" value="0">
                             <input class="form-check-input" type="checkbox" name="only_outstanding" value="1"
                                    {{ ($filters['only_outstanding'] ?? true) ? 'checked' : '' }}>
                             <label class="form-check-label small">Only Outstanding</label>
@@ -181,7 +191,9 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-3">{{ $families->appends(request()->query())->links() }}</div>
+                <div class="d-flex justify-content-end align-items-center mt-3 flex-wrap gap-2">
+                    {{ $families->appends(request()->query())->links() }}
+                </div>
                 @else
                 <div class="text-center py-5">
                     <i class="bi bi-inbox fs-1 text-muted"></i>
@@ -251,7 +263,9 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-3">{{ $customers->appends(request()->query())->links() }}</div>
+                <div class="d-flex justify-content-end align-items-center mt-3 flex-wrap gap-2">
+                    {{ $customers->appends(request()->query())->links() }}
+                </div>
                 @else
                 <div class="text-center py-5">
                     <i class="bi bi-inbox fs-1 text-muted"></i>

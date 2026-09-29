@@ -32,6 +32,10 @@ class UdharController extends Controller
 
         $user = auth()->user();
         $activeTab = $request->input('tab', 'customers'); // Default to customers tab
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
         
         // Check if warehouse filter should be shown
         $multiWarehouseService = app(\App\Services\MultiWarehouseFeatureService::class);
@@ -67,9 +71,8 @@ class UdharController extends Controller
             // Family accounts view
             $familiesCollection = $this->udharService->getFamilyUdharSummary($filters);
             
-            // Paginate families (10 per page)
+            // Paginate families using the selected page size
             $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
-            $perPage = 10;
             $families = new \Illuminate\Pagination\LengthAwarePaginator(
                 $familiesCollection->forPage($page, $perPage)->values(),
                 $familiesCollection->count(),
@@ -101,16 +104,16 @@ class UdharController extends Controller
                 'totalUdhar',
                 'totalSales',
                 'totalPaid',
-                'accountsCount'
+                'accountsCount',
+                'perPage'
             ));
 
         } else {
             // Individual customer accounts view (default)
             $customersCollection = $this->udharService->getIndividualUdharSummary($filters);
             
-            // Paginate customers (10 per page)
+            // Paginate customers using the selected page size
             $page = \Illuminate\Pagination\Paginator::resolveCurrentPage();
-            $perPage = 10;
             $customers = new \Illuminate\Pagination\LengthAwarePaginator(
                 $customersCollection->forPage($page, $perPage)->values(),
                 $customersCollection->count(),
@@ -142,7 +145,8 @@ class UdharController extends Controller
                 'totalUdhar',
                 'totalSales',
                 'totalPaid',
-                'accountsCount'
+                'accountsCount',
+                'perPage'
             ));
         }
     }

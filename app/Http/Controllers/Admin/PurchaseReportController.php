@@ -82,8 +82,11 @@ class PurchaseReportController extends Controller
         $query->orderBy('purchase_date', 'desc')->latest('created_at');
 
         // ========== PAGINATION ==========
-        // Use withQueryString() to preserve filters across pages
-        $purchases = $query->paginate(20)->withQueryString();
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+        $purchases = $query->paginate($perPage)->withQueryString();
 
         // ========== CALCULATE SUMMARY TOTALS (based on filtered results) ==========
         // Build totals query with same filters as main query
@@ -154,7 +157,8 @@ class PurchaseReportController extends Controller
             'totals',
             'suppliers',
             'warehouses',
-            'creators'
+            'creators',
+            'perPage'
         ));
     }
 

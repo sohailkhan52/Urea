@@ -193,6 +193,7 @@
         </div>
         <div class="card-body">
             <form action="{{ route('admin.reports.purchases.index') }}" method="GET" id="filterForm">
+                <input type="hidden" name="per_page" value="{{ $perPage }}">
                 <div class="row g-3">
                     {{-- Search --}}
                     <div class="col-md-3">
@@ -278,6 +279,22 @@
         </div>
     </div>
 
+    <div class="d-flex justify-content-end align-items-center mb-2">
+        <form action="{{ route('admin.reports.purchases.index') }}" method="GET" class="d-flex align-items-center gap-2">
+            @foreach(request()->except(['page', 'per_page']) as $key => $value)
+                @if(is_scalar($value))
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endif
+            @endforeach
+            <label for="purchases-report-per-page" class="small text-muted mb-0">Per Page</label>
+            <select id="purchases-report-per-page" name="per_page" class="form-select form-select-sm" style="width: 82px;" onchange="this.form.submit()">
+                @foreach([10, 25, 50, 100] as $option)
+                    <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
+                @endforeach
+            </select>
+        </form>
+    </div>
+
     {{-- Purchases Report Table --}}
     <div class="card">
         <div class="card-body">
@@ -356,10 +373,7 @@
             </div>
 
             {{-- Pagination --}}
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div>
-                    Showing {{ $purchases->firstItem() ?? 0 }} to {{ $purchases->lastItem() ?? 0 }} of {{ $purchases->total() }} purchases
-                </div>
+            <div class="d-flex justify-content-end align-items-center mt-3">
                 <div>
                     {{ $purchases->links() }}
                 </div>
