@@ -72,7 +72,6 @@
             position: fixed;
             top: 0;
             left: 0;
-            height: 100vh;
             width: var(--sidebar-width);
             background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
             color: #ecf0f1;
@@ -428,8 +427,21 @@
         }
 
         @media (min-width: 1025px) {
+            .sidebar {
+                height: 100vh;
+                height: 100dvh;
+                max-height: 100dvh;
+            }
+
             .toggle-sidebar {
                 display: none;
+            }
+
+            .sidebar-collapsed .sidebar-nav .nav-dropdown.open .dropdown-menu {
+                max-height: calc(100dvh - 24px);
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                -webkit-overflow-scrolling: touch;
             }
 
             .sidebar-edge-toggle {
@@ -548,6 +560,11 @@
             }
 
             .sidebar-nav .nav-dropdown.open .dropdown-menu {
+                height: auto;
+                max-height: 500px;
+            }
+
+            .sidebar-collapsed .sidebar-nav .nav-dropdown.open .dropdown-menu {
                 max-height: calc(100dvh - 24px);
                 overflow-y: auto;
                 overscroll-behavior: contain;
@@ -763,6 +780,19 @@
         }
 
         @media (max-width: 768px) {
+            .profile-dropdown-toggle {
+                padding: 0.25rem !important;
+            }
+
+            .profile-dropdown-toggle::after,
+            .profile-dropdown-name {
+                display: none !important;
+            }
+
+            .profile-dropdown-image {
+                margin-right: 0 !important;
+            }
+
             .table-responsive {
                 display: block;
                 overflow-x: auto;
@@ -899,6 +929,8 @@
 
             .sidebar,
             .topbar,
+            .toggle-sidebar,
+            .sidebar-edge-toggle,
             .no-print,
             .no-print * {
                 display: none !important;
@@ -1180,13 +1212,13 @@
 
             <div class="topbar-right">
                 <div class="dropdown">
-                    <button class="btn btn-link text-dark text-decoration-none dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                    <button class="btn btn-link text-dark text-decoration-none dropdown-toggle d-flex align-items-center profile-dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         {{-- @noinspection PhpUndefinedClassInspection --}}
                         <img src="{{ Auth::user()->profile_image_url }}" 
                              alt="{{ Auth::user()->name }}" 
-                             class="rounded-circle me-2" 
+                                class="rounded-circle me-2 profile-dropdown-image" 
                              style="width: 35px; height: 35px; object-fit: cover;">
-                        <span>{{ Auth::user()->name }}</span>
+                            <span class="profile-dropdown-name">{{ Auth::user()->name }}</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
@@ -1336,6 +1368,19 @@
         }
 
         function setSidebarOpen(isOpen, persist = true) {
+            if (isOpen && !isSidebarOpen()) {
+                document.querySelectorAll('.sidebar-nav .nav-dropdown.open').forEach(function(navDropdown) {
+                    navDropdown.classList.remove('open');
+                    navDropdown.querySelector('.dropdown-toggle')?.setAttribute('aria-expanded', 'false');
+                });
+
+                document.querySelectorAll('.sidebar-nav .dropdown-menu').forEach(function(menu) {
+                    menu.style.removeProperty('top');
+                    menu.style.removeProperty('bottom');
+                    menu.style.removeProperty('max-height');
+                });
+            }
+
             document.body.classList.toggle('sidebar-collapsed', !isOpen);
             document.body.classList.toggle('sidebar-overlay-open', window.innerWidth <= 1024 && isOpen);
 
@@ -1443,7 +1488,7 @@
                 toggle.setAttribute('aria-expanded', String(nextState));
                 navDropdown?.classList.toggle('open', nextState);
 
-                if (nextState && window.innerWidth <= 1024) {
+                if (nextState) {
                     const menu = navDropdown?.querySelector('.dropdown-menu');
                     if (menu && document.body.classList.contains('sidebar-collapsed')) {
                         menu.style.top = '12px';

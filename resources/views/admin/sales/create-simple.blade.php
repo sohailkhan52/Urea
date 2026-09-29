@@ -107,11 +107,13 @@
 
                             <label class="form-label">Or Select Existing Customer</label>
 
-                            <select id="existingCustomerSelect" class="form-select">
-
-                                <option value="">-- Search & Select Customer --</option>
-
-                            </select>
+                            <div class="sale-search-wrapper" id="customerSearchWrapper">
+                                <input type="text" id="customerSearch" class="form-control" placeholder="Search customer by name or phone..." autocomplete="off">
+                                <div id="customerDropdown" class="sale-search-dropdown list-group" style="display: none;"></div>
+                                <select id="existingCustomerSelect" class="form-select d-none" aria-hidden="true" tabindex="-1">
+                                    <option value="">-- Search & Select Customer --</option>
+                                </select>
+                            </div>
 
                         </div>
 
@@ -163,7 +165,10 @@
 
                             <div class="col-md-9">
 
-                                <select id="family_id" name="family_id" class="form-select">
+                                <div class="sale-search-wrapper" id="familySearchWrapper">
+                                    <input type="text" id="familySearch" class="form-control" placeholder="Search or select family..." autocomplete="off">
+                                    <div id="familyDropdown" class="sale-search-dropdown" style="display: none;"></div>
+                                    <select id="family_id" name="family_id" class="form-select d-none" aria-hidden="true" tabindex="-1">
 
                                     <option value="">-- Select Family --</option>
 
@@ -173,7 +178,8 @@
 
                                     @endforeach
 
-                                </select>
+                                    </select>
+                                </div>
 
                             </div>
 
@@ -215,7 +221,7 @@
 
                     <div class="card-body">
 
-                        <div class="mb-3" style="position: relative;">
+                        <div class="mb-3 sale-search-wrapper" id="productSearchWrapper">
 
                             <input type="text" 
 
@@ -227,40 +233,11 @@
 
                                    autocomplete="off">
 
-                            <div id="productDropdown" 
-
-                                 class="position-absolute bg-white border rounded-bottom mt-1 w-100" 
-
-                                 style="display: none; max-height: 250px; overflow-y: auto; z-index: 1000; top: 38px;">
-
-                            </div>
+                            <div id="productDropdown" class="sale-search-dropdown" style="display: none;"></div>
 
                         </div>
 
                         
-
-                        <div>
-
-                            <label class="form-label small text-muted mb-2">Quick Add:</label>
-
-                            <div id="existingProducts" class="d-flex flex-wrap gap-2">
-
-                                @foreach($productsWithStock ?? [] as $product)
-
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" 
-                                            @if(($product->stock ?? 0) <= 0) disabled title="Out of stock" @endif
-                                            onclick="addProduct({{ $product->id }}, '{{ $product->name }}', {{ $product->stock ?? 0 }}, {{ $product->sale_price ?? 0 }}, '{{ $product->unit ?? 'Piece' }}')">
-
-                                        {{ $product->name }}
-
-                                    </button>
-
-                                @endforeach
-
-                            </div>
-
-                        </div>
-
                     </div>
 
                 </div>
@@ -539,6 +516,54 @@
 
 @endsection
 
+@push('styles')
+<style>
+    .sale-search-wrapper {
+        position: relative;
+    }
+
+    .sale-search-dropdown {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        z-index: 1050;
+        max-height: 320px;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .sale-search-dropdown .list-group-item {
+        border-left: 0;
+        border-right: 0;
+        padding: 0.75rem 1.25rem;
+        line-height: 1.35;
+    }
+
+    .sale-search-dropdown .list-group-item:first-child {
+        border-top: 0;
+    }
+
+    .sale-search-dropdown .list-group-item:last-child {
+        border-bottom: 0;
+    }
+
+    .sale-search-dropdown .list-group-item-action:hover,
+    .sale-search-dropdown .list-group-item-action:focus {
+        background-color: #f8f9fa;
+    }
+
+    .sale-search-dropdown .list-group-item:disabled {
+        color: #6c757d;
+        background-color: #f8f9fa;
+        opacity: 0.75;
+    }
+</style>
+@endpush
+
 @push('scripts')
 
 <script>
@@ -546,6 +571,7 @@
 let saleItems = {};
 
 let allCustomers = [];
+const allSaleProducts = @json($productsWithStock ?? []);
 
 // Load customers on page load
 
@@ -578,20 +604,19 @@ function loadAllCustomers() {
         allCustomers = data;
 
         const select = document.getElementById('existingCustomerSelect');
+        select.innerHTML = '<option value="">-- Search & Select Customer --</option>';
 
-        data.forEach(c => {
-
+        data.forEach(customer => {
             const option = document.createElement('option');
-
-            option.value = c.id;
-
-            option.textContent = `${c.name}${c.phone ? ' - ' + c.phone : ''}`;
-
-            option.dataset.phone = c.phone || '';
-
+            option.value = customer.id;
+            option.textContent = `${customer.name}${customer.phone ? ' - ' + customer.phone : ''}`;
+            option.dataset.phone = customer.phone || '';
             select.appendChild(option);
-
         });
+
+        if (document.activeElement === document.getElementById('customerSearch')) {
+            renderCustomerDropdown(document.getElementById('customerSearch').value);
+        }
 
         console.log('Loaded', data.length, 'customers');
 
@@ -601,25 +626,116 @@ function loadAllCustomers() {
 
 }
 
-// Handle dropdown selection
+function renderCustomerDropdown(searchTerm = '') {
+    const dropdown = document.getElementById('customerDropdown');
+    const normalizedTerm = searchTerm.trim().toLowerCase();
+    const matches = allCustomers.filter(customer =>
+        (customer.name || '').toLowerCase().includes(normalizedTerm) ||
+        (customer.phone || '').toLowerCase().includes(normalizedTerm) ||
+        (customer.email || '').toLowerCase().includes(normalizedTerm)
+    );
 
-document.getElementById('existingCustomerSelect')?.addEventListener('change', function() {
-
-    if (this.value) {
-
-        const option = this.options[this.selectedIndex];
-
-        selectCustomer(this.value, option.text.split(' -')[0].trim(), option.dataset.phone);
-
+    dropdown.innerHTML = '';
+    if (matches.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'list-group-item text-muted';
+        empty.textContent = allCustomers.length ? 'No customers found' : 'Loading customers...';
+        dropdown.appendChild(empty);
+    } else {
+        matches.slice(0, 30).forEach(customer => {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'list-group-item list-group-item-action text-start';
+            const name = document.createElement('span');
+            name.className = 'd-block fw-semibold';
+            name.textContent = customer.name || '';
+            option.appendChild(name);
+            if (customer.phone) {
+                const phone = document.createElement('small');
+                phone.className = 'd-block text-muted';
+                phone.textContent = customer.phone;
+                option.appendChild(phone);
+            }
+            option.addEventListener('click', () => selectCustomer(customer.id, customer.name, customer.phone));
+            dropdown.appendChild(option);
+        });
     }
 
+    dropdown.style.display = 'block';
+}
+
+const customerSearch = document.getElementById('customerSearch');
+customerSearch.addEventListener('focus', () => renderCustomerDropdown(customerSearch.value));
+customerSearch.addEventListener('input', () => {
+    const selectedCustomer = allCustomers.find(customer => customer.id == document.getElementById('customer_id').value);
+    if (selectedCustomer && customerSearch.value.trim() !== selectedCustomer.name) {
+        document.getElementById('customer_id').value = '';
+        document.getElementById('existingCustomerSelect').value = '';
+        document.getElementById('selectedCustomerCard').style.display = 'none';
+        document.getElementById('family_id').value = '';
+        document.getElementById('familySearch').value = '';
+        document.getElementById('familyInfo').style.display = 'none';
+    }
+    renderCustomerDropdown(customerSearch.value);
 });
+
+document.getElementById('familySearch').addEventListener('focus', function() {
+    renderFamilyDropdown(this.value);
+});
+document.getElementById('familySearch').addEventListener('input', function() {
+    const familySelect = document.getElementById('family_id');
+    const selectedFamily = familySelect.options[familySelect.selectedIndex];
+    if (familySelect.value && selectedFamily.text !== this.value.trim()) {
+        familySelect.value = '';
+        document.getElementById('familyInfo').style.display = 'none';
+    }
+    renderFamilyDropdown(this.value);
+});
+
+function renderFamilyDropdown(searchTerm = '') {
+    const dropdown = document.getElementById('familyDropdown');
+    const select = document.getElementById('family_id');
+    const normalizedTerm = searchTerm.trim().toLowerCase();
+    const options = Array.from(select.options).filter(option =>
+        option.value && option.text.toLowerCase().includes(normalizedTerm)
+    );
+
+    dropdown.innerHTML = '';
+    if (options.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'list-group-item text-muted';
+        empty.textContent = 'No families found';
+        dropdown.appendChild(empty);
+    } else {
+        options.slice(0, 30).forEach(family => {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'list-group-item list-group-item-action text-start';
+            option.textContent = family.text;
+            option.addEventListener('click', () => {
+                select.value = family.value;
+                document.getElementById('familySearch').value = family.text;
+                dropdown.style.display = 'none';
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            dropdown.appendChild(option);
+        });
+    }
+
+    dropdown.style.display = 'block';
+}
 
 // Select customer
 
 function selectCustomer(id, name, phone) {
 
     document.getElementById('customer_id').value = id;
+
+    document.getElementById('existingCustomerSelect').value = id;
+
+    document.getElementById('customerSearch').value = name;
+
+    document.getElementById('customerDropdown').style.display = 'none';
 
     document.getElementById('walkin_name').value = '';
 
@@ -635,6 +751,7 @@ function selectCustomer(id, name, phone) {
     const customer = allCustomers.find(c => c.id == id);
     if (customer && customer.family_id) {
         document.getElementById('family_id').value = customer.family_id;
+        document.getElementById('familySearch').value = document.querySelector(`#family_id option[value="${customer.family_id}"]`)?.textContent || '';
         document.getElementById('family_id').dispatchEvent(new Event('change'));
     }
 
@@ -650,8 +767,11 @@ function clearCustomer() {
 
     document.getElementById('existingCustomerSelect').value = '';
 
+    document.getElementById('customerSearch').value = '';
+
     // Also clear family
     document.getElementById('family_id').value = '';
+    document.getElementById('familySearch').value = '';
     document.getElementById('familyInfo').style.display = 'none';
 
 }
@@ -664,11 +784,15 @@ document.getElementById('family_id')?.addEventListener('change', function() {
 
         const selectedOption = this.options[this.selectedIndex];
 
+        document.getElementById('familySearch').value = selectedOption.text;
+
         document.getElementById('familyName').textContent = selectedOption.text;
 
         document.getElementById('familyInfo').style.display = 'block';
 
     } else {
+
+        document.getElementById('familySearch').value = '';
 
         document.getElementById('familyInfo').style.display = 'none';
 
@@ -676,76 +800,54 @@ document.getElementById('family_id')?.addEventListener('change', function() {
 
 });
 
-// Product search
+// Search all products already loaded for this warehouse on focus and as the user types.
+function searchSaleProducts(query = '') {
+    const dropdown = document.getElementById('productDropdown');
+    const normalizedTerm = query.trim().toLowerCase();
+    const products = allSaleProducts.filter(product =>
+        (product.name || '').toLowerCase().includes(normalizedTerm) ||
+        (product.sku || '').toLowerCase().includes(normalizedTerm)
+    );
 
-document.getElementById('productSearch').addEventListener('input', function(e) {
+    dropdown.innerHTML = '';
+    if (!products.length) {
+        const empty = document.createElement('div');
+        empty.className = 'list-group-item text-muted';
+        empty.textContent = 'No products found';
+        dropdown.appendChild(empty);
+    } else {
+        products.forEach(product => {
+            const option = document.createElement('button');
+            const stock = Number(product.stock || 0);
+            option.type = 'button';
+            option.className = 'list-group-item list-group-item-action text-start';
+            option.disabled = stock <= 0;
 
-    const query = e.target.value.trim();
+            const name = document.createElement('span');
+            name.className = 'd-block fw-semibold';
+            name.textContent = product.name || '';
+            option.appendChild(name);
 
-    if (query.length < 1) {
-
-        document.getElementById('productDropdown').style.display = 'none';
-
-        return;
-
+            const meta = document.createElement('small');
+            meta.className = 'd-block text-muted';
+            meta.textContent = [product.sku, product.unit || 'Piece', `Stock: ${stock}`, `Rs. ${Number(product.sale_price || 0).toLocaleString()}`].filter(Boolean).join(' · ');
+            option.appendChild(meta);
+            option.addEventListener('click', () => addProduct(product.id, product.name, stock, product.sale_price, product.unit || 'Piece'));
+            dropdown.appendChild(option);
+        });
     }
 
-    // Check if customer is selected
-    const customerId = document.getElementById('customer_id').value.trim();
-    const walkinName = document.getElementById('walkin_name').value.trim();
-    
-    if (!customerId && !walkinName) {
-        focusSaleField(document.getElementById('walkin_name'));
-        document.getElementById('productSearch').value = '';
-        return;
-    }
+    dropdown.style.display = 'block';
+}
 
-    
+const productSearch = document.getElementById('productSearch');
+productSearch.addEventListener('focus', () => searchSaleProducts(productSearch.value.trim()));
+productSearch.addEventListener('input', () => searchSaleProducts(productSearch.value.trim()));
 
-    const warehouseId = document.querySelector('input[name="warehouse_id"]').value;
-
-    
-
-    fetch(`/admin/products/search?search=${encodeURIComponent(query)}&warehouse_id=${warehouseId}`)
-
-        .then(res => res.json())
-
-        .then(data => {
-
-            const dropdown = document.getElementById('productDropdown');
-
-            if (data.length > 0) {
-
-                dropdown.innerHTML = data.map(p => `
-
-                    <div class="p-2 border-bottom" style="cursor: pointer; transition: background-color 0.2s;"
-
-                         onmouseover="this.style.backgroundColor='#f8f9fa';" onmouseout="this.style.backgroundColor='white';"
-
-                         onclick="addProduct(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.stock || p.available_stock || 0}, ${p.sale_price || 0}, '${p.unit || 'Piece'}')">
-
-                        <strong>${p.name}</strong> 
-
-                        <span class="badge bg-secondary me-1">${p.unit || 'Piece'}</span>
-
-                        <span class="badge bg-info float-end">Stock: ${p.stock || p.available_stock || 0}</span>
-
-                    </div>
-
-                `).join('');
-
-                dropdown.style.display = 'block';
-
-            } else {
-
-                dropdown.style.display = 'none';
-
-            }
-
-        })
-
-        .catch(err => console.error(err));
-
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('#customerSearchWrapper')) document.getElementById('customerDropdown').style.display = 'none';
+    if (!event.target.closest('#familySearchWrapper')) document.getElementById('familyDropdown').style.display = 'none';
+    if (!event.target.closest('#productSearchWrapper')) document.getElementById('productDropdown').style.display = 'none';
 });
 
 // Add product
@@ -1082,6 +1184,8 @@ document.getElementById('saveFamilyBtn')?.addEventListener('click', function() {
             select.appendChild(option);
 
             select.value = family.id;
+
+            document.getElementById('familySearch').value = family.name;
 
             select.dispatchEvent(new Event('change'));
 

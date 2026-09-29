@@ -50,26 +50,28 @@
                                     <label for="supplier_id" class="form-label">Supplier <span class="text-danger">*</span></label>
                                     <input type="hidden" id="supplier_id" name="supplier_id" value="{{ old('supplier_id') }}" required>
                                     
-                                    <div class="input-group">
-                                        <input type="text" 
-                                               id="supplierSearch" 
-                                               class="form-control" 
-                                               placeholder="Search supplier by name, company, or phone..."
-                                               autocomplete="off">
-                                        <button class="btn btn-outline-secondary" type="button" id="clearSupplier">
-                                            <i class="bi bi-x-lg"></i>
-                                        </button>
+                                    <div class="purchase-search-wrapper" id="supplierSearchWrapper">
+                                        <div class="input-group">
+                                            <input type="text" 
+                                                   id="supplierSearch" 
+                                                   class="form-control" 
+                                                   placeholder="Search supplier by name, company, or phone..."
+                                                   autocomplete="off">
+                                            <button class="btn btn-outline-secondary" type="button" id="clearSupplier">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </div>
+
+                                        <!-- Supplier dropdown list -->
+                                        <div id="supplierDropdown" class="purchase-search-dropdown" style="display: none;">
+                                            <div class="list-group" id="supplierGrid"></div>
+                                        </div>
                                     </div>
                                     
                                     <!-- Recent Used Suppliers -->
                                     <div id="recentSuppliers" class="mt-2" style="display: none;">
                                         <small class="text-muted">Recently Used:</small>
                                         <div class="d-flex flex-wrap gap-2 mt-1" id="recentSuppliersList"></div>
-                                    </div>
-
-                                    <!-- Supplier dropdown list -->
-                                    <div id="supplierDropdown" class="mt-4" style="display: none; max-height: 400px; overflow-y: auto; margin-top: 1.5rem !important;">
-                                        <div class="row g-2" id="supplierGrid"></div>
                                     </div>
 
                                     <!-- Selected supplier info -->
@@ -103,11 +105,18 @@
                             <div class="col-md-9">
                                 <div class="form-group mb-0">
                                     <label for="productSearch" class="form-label">Search Product</label>
-                                    <input type="text" 
-                                           id="productSearch" 
-                                           class="form-control" 
-                                           placeholder="Search by name, SKU, or barcode..."
-                                           autocomplete="off">
+                                    <div class="purchase-search-wrapper" id="productSearchWrapper">
+                                        <input type="text" 
+                                               id="productSearch" 
+                                               class="form-control" 
+                                               placeholder="Search by name, SKU, or barcode..."
+                                               autocomplete="off">
+
+                                        <!-- Product dropdown list -->
+                                        <div id="productDropdown" class="purchase-search-dropdown" style="display: none;">
+                                            <div class="list-group" id="productGrid"></div>
+                                        </div>
+                                    </div>
                                     
                                     <!-- Recent Used Products -->
                                     <div id="recentProducts" class="mt-2" style="display: none;">
@@ -115,10 +124,6 @@
                                         <div class="d-flex flex-wrap gap-2 mt-1" id="recentProductsList"></div>
                                     </div>
 
-                                    <!-- Product dropdown grid -->
-                                    <div id="productDropdown" class="mt-4" style="display: none; max-height: 400px; overflow-y: auto; margin-top: 1.5rem !important;">
-                                        <div class="row g-2" id="productGrid"></div>
-                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -590,6 +595,10 @@
                 }
                 
                 displayRecentSuppliers();
+                const supplierSearch = document.getElementById('supplierSearch');
+                if (document.activeElement === supplierSearch) {
+                    supplierSearch.dispatchEvent(new Event('input', { bubbles: true }));
+                }
             })
             .catch(error => console.error('Error loading suppliers:', error));
     }
@@ -621,6 +630,10 @@
                 }
                 
                 displayRecentProducts();
+                const productSearch = document.getElementById('productSearch');
+                if (document.activeElement === productSearch) {
+                    productSearch.dispatchEvent(new Event('input', { bubbles: true }));
+                }
             })
             .catch(error => console.error('Error loading products:', error));
     }
@@ -789,7 +802,7 @@
             displaySupplierResults(filtered);
             // Hide recent items when filtering
             document.getElementById('recentSuppliers').style.display = 'none';
-            supplierDropdown.style.display = filtered.length > 0 ? 'block' : 'none';
+            supplierDropdown.style.display = 'block';
         });
 
         clearSupplierBtn.addEventListener('click', function() {
@@ -834,15 +847,15 @@
             displayProductResults(filtered);
             // Hide recent items when filtering
             document.getElementById('recentProducts').style.display = 'none';
-            productDropdown.style.display = filtered.length > 0 ? 'block' : 'none';
+            productDropdown.style.display = 'block';
         });
 
         // Close dropdowns on outside click
         document.addEventListener('click', function(event) {
-            if (!event.target.closest('#supplierSearch') && !event.target.closest('#supplierDropdown')) {
+            if (!event.target.closest('#supplierSearchWrapper')) {
                 supplierDropdown.style.display = 'none';
             }
-            if (!event.target.closest('#productSearch') && !event.target.closest('#productDropdown')) {
+            if (!event.target.closest('#productSearchWrapper')) {
                 productDropdown.style.display = 'none';
             }
         });
@@ -868,43 +881,41 @@
         const grid = document.getElementById('supplierGrid');
         grid.innerHTML = '';
 
-        // Limit to 15 suppliers (most recent)
-        const limited = suppliers.slice(0, 15);
+        // Show all matching suppliers; the dropdown itself is scrollable.
+        const limited = suppliers;
+
+        if (limited.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'list-group-item text-muted';
+            empty.textContent = 'No suppliers found';
+            grid.appendChild(empty);
+            return;
+        }
 
         limited.forEach(supplier => {
-            const col = document.createElement('div');
-            col.className = 'col-lg-4 col-md-6 col-sm-12'; // 3 items per row on large screens
-            col.innerHTML = `
-                <div class="card cursor-pointer supplier-card" style="cursor: pointer; border: 2px solid #e0e0e0; transition: all 0.2s; background: #fff; height: auto;">
-                    <div class="card-body p-2" style="min-height: auto;">
-                        <div>
-                            <h6 class="mb-1 fw-bold" style="word-break: break-word; color: #333; font-size: 14px;">
-                                ${supplier.name}
-                            </h6>
-                            ${supplier.company_name ? `<p class="mb-0 text-muted" style="font-size: 12px;"><strong>Company:</strong> ${supplier.company_name}</p>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            col.addEventListener('click', function(e) {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'list-group-item list-group-item-action';
+
+            const name = document.createElement('span');
+            name.className = 'd-block fw-semibold';
+            name.textContent = supplier.name || '';
+            option.appendChild(name);
+
+            const details = [supplier.company_name, supplier.phone].filter(Boolean).join(' · ');
+            if (details) {
+                const meta = document.createElement('small');
+                meta.className = 'd-block text-muted';
+                meta.textContent = details;
+                option.appendChild(meta);
+            }
+
+            option.addEventListener('click', function(e) {
                 e.preventDefault();
                 selectSupplier(supplier);
             });
-            
-            col.addEventListener('mouseover', function() {
-                this.querySelector('.supplier-card').style.boxShadow = '0 4px 12px rgba(0,123,255,0.2)';
-                this.querySelector('.supplier-card').style.borderColor = '#007bff';
-                this.querySelector('.supplier-card').style.transform = 'translateY(-2px)';
-            });
-            
-            col.addEventListener('mouseout', function() {
-                this.querySelector('.supplier-card').style.boxShadow = 'none';
-                this.querySelector('.supplier-card').style.borderColor = '#e0e0e0';
-                this.querySelector('.supplier-card').style.transform = 'translateY(0)';
-            });
-            
-            grid.appendChild(col);
+
+            grid.appendChild(option);
         });
     }
 
@@ -1073,43 +1084,38 @@
         const grid = document.getElementById('productGrid');
         grid.innerHTML = '';
 
-        // Limit to 15 products (most recent)
+        // Show a manageable number of matching products in the dropdown.
         const limited = products.slice(0, 15);
 
+        if (limited.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'list-group-item text-muted';
+            empty.textContent = 'No products found';
+            grid.appendChild(empty);
+            return;
+        }
+
         limited.forEach(product => {
-            const col = document.createElement('div');
-            col.className = 'col-lg-4 col-md-6 col-sm-12'; // 3 items per row on large screens
-            col.innerHTML = `
-                <div class="card cursor-pointer product-card" style="cursor: pointer; border: 2px solid #e0e0e0; transition: all 0.2s; background: #fff; height: auto;">
-                    <div class="card-body p-2" style="min-height: auto;">
-                        <div>
-                            <h6 class="mb-1 fw-bold" style="word-break: break-word; color: #333; font-size: 14px;">
-                                ${product.name}
-                            </h6>
-                            <p class="mb-0 text-success" style="font-size: 12px;"><strong>Price:</strong> Rs. ${parseFloat(product.purchase_price).toFixed(0)}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            col.addEventListener('click', function(e) {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+
+            const name = document.createElement('span');
+            name.className = 'fw-semibold';
+            name.textContent = product.name || '';
+            option.appendChild(name);
+
+            const price = document.createElement('small');
+            price.className = 'text-muted ms-3';
+            price.textContent = `Rs. ${Number(product.purchase_price || 0).toLocaleString()}`;
+            option.appendChild(price);
+
+            option.addEventListener('click', function(e) {
                 e.preventDefault();
                 addProductToItems(product);
             });
-            
-            col.addEventListener('mouseover', function() {
-                this.querySelector('.product-card').style.boxShadow = '0 4px 12px rgba(0,123,255,0.2)';
-                this.querySelector('.product-card').style.borderColor = '#007bff';
-                this.querySelector('.product-card').style.transform = 'translateY(-2px)';
-            });
-            
-            col.addEventListener('mouseout', function() {
-                this.querySelector('.product-card').style.boxShadow = 'none';
-                this.querySelector('.product-card').style.borderColor = '#e0e0e0';
-                this.querySelector('.product-card').style.transform = 'translateY(0)';
-            });
-            
-            grid.appendChild(col);
+
+            grid.appendChild(option);
         });
     }
 
@@ -1552,6 +1558,44 @@
 
     .list-group-item:hover {
         background-color: #f8f9fa;
+    }
+
+    .purchase-search-wrapper {
+        position: relative;
+        overflow: visible;
+    }
+
+    .purchase-search-dropdown {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        z-index: 1050;
+        max-height: 320px;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .purchase-search-dropdown .list-group-item {
+        border-left: 0;
+        border-right: 0;
+        text-align: left;
+    }
+
+    .purchase-search-dropdown .list-group-item:first-child {
+        border-top: 0;
+    }
+
+    .purchase-search-dropdown .list-group-item:last-child {
+        border-bottom: 0;
+    }
+
+    #recentSuppliers,
+    #recentProducts {
+        display: none !important;
     }
 
     .table-responsive {

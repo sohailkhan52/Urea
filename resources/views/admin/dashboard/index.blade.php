@@ -137,11 +137,29 @@
             padding: 1.5rem;
         }
 
+        @media (min-width: 576px) and (max-width: 1024px) {
+            .management-cards-row,
+            .management-cards-row > div,
+            .management-cards-row a,
+            .management-card {
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+
+            .management-cards-row::-webkit-scrollbar,
+            .management-cards-row > div::-webkit-scrollbar,
+            .management-cards-row a::-webkit-scrollbar,
+            .management-card::-webkit-scrollbar {
+                display: none;
+            }
+        }
+
         @media (max-width: 575.98px) {
             .management-cards-row {
                 justify-content: space-between;
                 overflow: hidden;
                 scrollbar-width: none;
+                margin-bottom: 1rem !important;
             }
 
             .management-cards-row::-webkit-scrollbar,
@@ -152,10 +170,11 @@
             }
 
             .management-cards-row > div {
-                flex: 0 0 44%;
-                max-width: 44%;
+                flex: 0 0 47%;
+                max-width: 47%;
                 padding-right: 4px;
                 padding-left: 4px;
+                margin-bottom: 0.1rem !important;
                 overflow: hidden;
                 scrollbar-width: none;
             }
@@ -168,11 +187,21 @@
             }
 
             .management-card .card-body {
+                position: relative;
                 padding: 0.55rem;
             }
 
             .management-card .card-body > .d-flex > div:last-child {
-                font-size: 1.4rem !important;
+                position: absolute;
+                top: 0.45rem;
+                right: 0.45rem;
+                font-size: 1rem !important;
+            }
+
+            .management-card .card-body > .d-flex > div:first-child {
+                flex: 1 1 auto;
+                min-width: 0;
+                padding-right: 1rem;
             }
 
             .management-card .text-muted.small {
@@ -194,12 +223,107 @@
             .management-card small {
                 font-size: 0.65rem;
             }
+
+            .dashboard-stats-row .card-body {
+                position: relative;
+            }
+
+            .dashboard-stats-row {
+                --bs-gutter-x: 0.75rem;
+                margin-bottom: 1rem !important;
+            }
+
+            .dashboard-stats-row > div {
+                margin-bottom: 0.1rem !important;
+            }
+
+            .dashboard-section-row {
+                margin-bottom: 0.25rem !important;
+            }
+
+            .dashboard-section-row .card {
+                margin-bottom: 0.25rem !important;
+            }
+
+            .dashboard-stats-row .card-body > .d-flex > div:first-child {
+                padding-right: 1.75rem;
+            }
+
+            .dashboard-stats-row .card-body > .d-flex > i {
+                position: absolute;
+                top: 0.4rem;
+                right: 0.4rem;
+                font-size: 1.35rem !important;
+            }
+
+            .project-settings-card .card-header {
+                padding: 0.65rem 0.85rem;
+            }
+
+            .project-settings-card .card-header h5 {
+                font-size: 1rem;
+            }
+
+            .project-settings-card .card-body {
+                padding: 0.85rem;
+            }
+
+            .project-settings-form .form-label {
+                margin-bottom: 0.3rem;
+                font-size: 0.9rem;
+            }
+
+            .project-settings-form .form-label i {
+                margin-right: 0.35rem !important;
+            }
+
+            .project-settings-form .form-label.mt-3 {
+                margin-top: 0.75rem !important;
+            }
+
+            .project-settings-form .form-control {
+                min-height: 38px;
+                padding: 0.375rem 0.6rem;
+                font-size: 0.9rem;
+            }
+
+            .project-settings-form textarea.form-control {
+                min-height: 60px;
+            }
+
+            .project-settings-form > .row > div {
+                margin-bottom: 0.75rem !important;
+            }
+
+            .project-settings-form .text-muted {
+                font-size: 0.78rem;
+                line-height: 1.45;
+            }
+
+            #logoPreviewWrapper {
+                width: 72px !important;
+                height: 72px !important;
+            }
+
+            .project-settings-actions {
+                gap: 0.5rem !important;
+            }
+
+            .project-settings-actions .btn {
+                padding: 0.4rem 0.65rem;
+                font-size: 0.82rem;
+                white-space: nowrap;
+            }
+
+            .project-settings-actions .btn i {
+                margin-right: 0.35rem !important;
+            }
         }
     </style>
 
     {{-- Today's Statistics --}}
-    <div class="row mb-4">
-        <div class="col-md-6 col-lg-3 mb-3">
+    <div class="row mb-4 dashboard-stats-row">
+        <div class="col-6 col-md-6 col-lg-3 mb-3">
             <div class="card border-left-primary">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -213,7 +337,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3 mb-3">
+        <div class="col-6 col-md-6 col-lg-3 mb-3">
             <div class="card border-left-success">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -227,7 +351,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3 mb-3">
+        <div class="col-6 col-md-6 col-lg-3 mb-3">
             <div class="card border-left-info">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -241,7 +365,7 @@
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3 mb-3">
+        <div class="col-6 col-md-6 col-lg-3 mb-3">
             <div class="card border-left-warning">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -264,7 +388,7 @@
 
     {{-- Low Stock Alert --}}
     @if($lowStockItems->count() > 0)
-    <div class="row mb-4">
+    <div class="row mb-4 dashboard-section-row">
         <div class="col-12">
             <div class="card border-warning">
                 <div class="card-header bg-warning text-dark">
@@ -302,7 +426,7 @@
 
     {{-- No Low Stock Items Message --}}
     @if($lowStockItems->count() == 0)
-    <div class="row mb-4">
+    <div class="row mb-4 dashboard-section-row">
         <div class="col-12">
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 <i class="bi bi-check-circle me-2"></i> <strong>Great!</strong> No products with low stock (1-9 units).
@@ -313,7 +437,7 @@
     @endif
     {{-- Out of Stock Alert --}}
     @if($outOfStockItems->count() > 0)
-    <div class="row mb-4">
+    <div class="row mb-4 dashboard-section-row">
         <div class="col-12">
             <div class="card border-danger">
                 <div class="card-header bg-danger text-white">
@@ -350,14 +474,14 @@
     @endif
 
     {{-- Project Settings --}}
-    <div class="row mb-4">
+    <div class="row mb-4 dashboard-section-row">
         <div class="col-12">
-            <div class="card border-info">
+            <div class="card border-info project-settings-card">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0"><i class="bi bi-gear me-2"></i> Project Settings</h5>
                 </div>
                 <div class="card-body">
-                    <form id="projectSettingsForm" method="POST" action="{{ route('admin.dashboard.update-settings') }}" enctype="multipart/form-data">
+                    <form id="projectSettingsForm" class="project-settings-form" method="POST" action="{{ route('admin.dashboard.update-settings') }}" enctype="multipart/form-data">
                         @csrf
                         
                         <div class="row">
@@ -450,7 +574,7 @@
                             </div>
                         </div>
 
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 project-settings-actions">
                             <button type="submit" class="btn btn-info">
                                 <i class="bi bi-save me-2"></i> Save Settings
                             </button>
