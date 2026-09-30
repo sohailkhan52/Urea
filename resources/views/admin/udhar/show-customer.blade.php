@@ -17,6 +17,119 @@
         display: none;
     }
 
+    @media (max-width: 767.98px) {
+        .individual-account-card,
+        .individual-account-card *,
+        .individual-account-card::before,
+        .individual-account-card::after,
+        .individual-account-card *::before,
+        .individual-account-card *::after {
+            animation: none !important;
+            transition: none !important;
+            transform: none !important;
+            will-change: auto !important;
+        }
+
+        .individual-account-summary {
+            margin-bottom: .75rem !important;
+        }
+
+        .individual-account-summary > [class*="col-"] {
+            display: flex;
+            flex: 0 0 100%;
+            align-items: baseline;
+            max-width: 100%;
+            gap: .3rem;
+            margin-bottom: .35rem;
+        }
+
+        .individual-account-summary p {
+            margin-bottom: 0 !important;
+            font-size: .95rem !important;
+        }
+
+        .individual-account-summary p::after {
+            content: ':';
+        }
+
+        .individual-account-summary h4 {
+            margin-bottom: 0 !important;
+            font-size: 1rem;
+            line-height: 1.25;
+        }
+
+        .individual-account-action {
+            padding: .35rem .65rem !important;
+            font-size: .85rem !important;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .family-accounts-title {
+            font-size: 1rem;
+            line-height: 1.2;
+        }
+
+        .family-accounts-title .badge {
+            font-size: .7rem;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 1199.98px) {
+        body.modal-open .sidebar-edge-toggle {
+            display: none !important;
+        }
+
+        .customer-payment-dialog {
+            width: calc(100% - 2rem);
+            max-width: 500px;
+            margin: .5rem auto;
+        }
+
+        .customer-payment-dialog .modal-content {
+            max-height: calc(100dvh - 1rem);
+        }
+
+        .customer-payment-dialog form {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .customer-payment-dialog .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: .75rem 1rem;
+        }
+
+        .customer-payment-dialog .modal-header,
+        .customer-payment-dialog .modal-footer {
+            flex-shrink: 0;
+            padding: .65rem 1rem;
+        }
+
+        .customer-payment-dialog .modal-title {
+            font-size: 1.15rem;
+        }
+
+        .customer-payment-dialog .form-label {
+            margin-bottom: .25rem;
+            font-size: .95rem;
+        }
+
+        .customer-payment-dialog .mb-3 {
+            margin-bottom: .65rem !important;
+        }
+
+        .customer-payment-dialog .form-control {
+            min-height: 38px;
+            padding: .4rem .65rem;
+            font-size: .95rem;
+        }
+    }
+
     @media print {
         @page { size: 165mm 210mm; margin: 8mm; }
 
@@ -144,7 +257,7 @@
     </div>
 
     {{-- INDIVIDUAL ACCOUNT --}}
-    <div class="card mb-4 border-info">
+    <div class="card mb-4 border-info individual-account-card">
         <div class="card-header bg-info text-white no-print">
             <h5 class="mb-0">
                 <i class="bi bi-person-circle me-2"></i>INDIVIDUAL ACCOUNT
@@ -152,7 +265,7 @@
             </h5>
         </div>
         <div class="card-body">
-            <div class="row mb-4 no-print">
+            <div class="row mb-4 no-print individual-account-summary">
                 <div class="col-md-3">
                     <p class="text-muted mb-1 small">Total Sales</p>
                     <h4 class="mb-0">Rs. {{ number_format($individualAccount['total_sales'], 0) }}</h4>
@@ -177,13 +290,13 @@
 
             @if($individualAccount['outstanding'] > 0)
             <div class="mb-4 no-print">
-                <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#individualPaymentModal">
+                <button type="button" class="btn btn-success btn-lg individual-account-action" data-bs-toggle="modal" data-bs-target="#individualPaymentModal">
                     <i class="bi bi-cash-coin me-2"></i> Record Cash Payment
                 </button>
             </div>
             @elseif($individualAccount['outstanding'] < 0)
             <div class="mb-4 no-print">
-                <button type="button" class="btn btn-warning btn-lg" data-bs-toggle="modal" data-bs-target="#individualRefundModal">
+                <button type="button" class="btn btn-warning btn-lg individual-account-action" data-bs-toggle="modal" data-bs-target="#individualRefundModal">
                     <i class="bi bi-arrow-counterclockwise me-2"></i> Refund Credit
                 </button>
             </div>
@@ -265,9 +378,9 @@
 
     {{-- FAMILY ACCOUNTS SECTION --}}
     @if(count($familyAccounts) > 0)
-    <div class="card border-primary">
+    <div class="card border-primary no-print">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">
+            <h5 class="mb-0 family-accounts-title">
                 <i class="bi bi-diagram-3 me-2"></i>FAMILY ACCOUNTS (For Reference Only)
                 <span class="badge bg-light text-primary ms-2">Family</span>
             </h5>
@@ -294,7 +407,7 @@
 </div>
 
 <div class="modal fade" id="individualPaymentModal" tabindex="-1" aria-labelledby="individualPaymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered customer-payment-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="individualPaymentModalLabel">Record Cash Payment</h5>
@@ -336,7 +449,7 @@
 </div>
 
 <div class="modal fade" id="individualRefundModal" tabindex="-1" aria-labelledby="individualRefundModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered customer-payment-dialog">
         <div class="modal-content">
             <div class="modal-header"><h5 class="modal-title" id="individualRefundModalLabel">Refund Customer Credit</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
             <form id="individualRefundForm">

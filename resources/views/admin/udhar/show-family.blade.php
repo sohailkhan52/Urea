@@ -17,6 +17,232 @@
         display: none;
     }
 
+    @media (max-width: 767.98px) {
+        body.modal-open .sidebar-edge-toggle {
+            display: none !important;
+        }
+
+        .family-payment-dialog {
+            width: calc(100% - 1rem);
+            max-width: 360px;
+            margin: .5rem auto;
+        }
+
+        .family-payment-dialog .modal-content {
+            max-height: calc(100dvh - 1rem);
+        }
+
+        .family-payment-dialog form {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .family-payment-dialog .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: .65rem .85rem;
+        }
+
+        .family-payment-dialog .modal-header,
+        .family-payment-dialog .modal-footer {
+            flex-shrink: 0;
+            padding: .6rem .85rem;
+        }
+
+        .family-payment-dialog .modal-title {
+            font-size: 1.1rem;
+        }
+
+        .family-payment-dialog .form-label {
+            margin-bottom: .25rem;
+            font-size: .9rem;
+        }
+
+        .family-payment-dialog .mb-3 {
+            margin-bottom: .55rem !important;
+        }
+
+        .family-payment-dialog .form-control {
+            min-height: 36px;
+            padding: .35rem .6rem;
+            font-size: .9rem;
+        }
+
+        .family-payment-dialog .modal-footer .btn {
+            padding: .35rem .6rem;
+            font-size: .85rem;
+        }
+
+        .family-page-heading {
+            align-items: center !important;
+            gap: .5rem;
+        }
+
+        .family-page-heading > div:first-child {
+            min-width: 0;
+        }
+
+        .family-page-title {
+            font-size: 1.25rem;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+
+        .family-page-heading p {
+            font-size: .85rem;
+            line-height: 1.2;
+        }
+
+        .family-page-actions {
+            flex: 0 0 auto;
+            gap: .35rem !important;
+        }
+
+        .family-page-actions .btn {
+            padding: .35rem .5rem;
+            font-size: .8rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .family-summary-card-header {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: .5rem;
+            padding: .55rem .7rem;
+        }
+
+        .family-summary-title {
+            min-width: 0;
+            margin-bottom: 0;
+            font-size: .9rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .family-summary-title .badge {
+            font-size: .7rem;
+        }
+
+        .family-summary-action {
+            flex: 0 0 auto;
+            align-self: flex-end;
+            padding: .3rem .45rem;
+            font-size: .72rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .family-summary-action .bi {
+            margin-right: .2rem !important;
+        }
+
+        .family-summary-card,
+        .family-summary-card *,
+        .family-summary-card::before,
+        .family-summary-card::after,
+        .family-summary-card *::before,
+        .family-summary-card *::after {
+            animation: none !important;
+            transition: none !important;
+            transform: none !important;
+            will-change: auto !important;
+        }
+
+        .family-summary-metrics {
+            margin-bottom: .75rem !important;
+        }
+
+        .family-summary-metrics > [class*="col-"] {
+            display: flex;
+            flex: 0 0 100%;
+            align-items: baseline;
+            justify-content: flex-start !important;
+            flex-wrap: nowrap;
+            max-width: 100%;
+            gap: .3rem;
+            margin-bottom: .35rem;
+        }
+
+        .family-summary-metrics p {
+            flex: 0 0 auto;
+            margin-bottom: 0 !important;
+            font-size: .95rem !important;
+            white-space: nowrap;
+        }
+
+        .family-summary-metrics p::after {
+            content: ':';
+        }
+
+        .family-summary-metrics h4 {
+            flex: 0 0 auto;
+            margin-bottom: 0 !important;
+            margin-left: 0 !important;
+            font-size: 1rem;
+            line-height: 1.25;
+            white-space: nowrap;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 1199.98px) {
+        body.modal-open .sidebar-edge-toggle {
+            display: none !important;
+        }
+
+        .family-payment-dialog {
+            width: calc(100% - 2rem);
+            max-width: 480px;
+            margin: .5rem auto;
+        }
+
+        .family-payment-dialog .modal-content {
+            max-height: calc(100dvh - 1rem);
+        }
+
+        .family-payment-dialog form {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .family-payment-dialog .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: .75rem 1rem;
+        }
+
+        .family-payment-dialog .modal-header,
+        .family-payment-dialog .modal-footer {
+            flex-shrink: 0;
+            padding: .65rem 1rem;
+        }
+
+        .family-payment-dialog .modal-title {
+            font-size: 1.15rem;
+        }
+
+        .family-payment-dialog .form-label {
+            margin-bottom: .25rem;
+            font-size: .95rem;
+        }
+
+        .family-payment-dialog .mb-3 {
+            margin-bottom: .65rem !important;
+        }
+
+        .family-payment-dialog .form-control {
+            min-height: 38px;
+            padding: .4rem .65rem;
+            font-size: .95rem;
+        }
+    }
+
     @media print {
         @page { size: A4 landscape; margin: 8mm; }
 
@@ -141,12 +367,12 @@
     </div>
 
     <div class="mb-4 no-print">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center family-page-heading">
             <div>
-                <h1 class="h3 mb-0">{{ $family->name }}</h1>
+                <h1 class="h3 mb-0 family-page-title">{{ $family->name }}</h1>
                 <p class="text-muted mb-0">Family Account</p>
             </div>
-            <div class="d-flex gap-2 no-print">
+            <div class="d-flex gap-2 no-print family-page-actions">
                 <button type="button" class="btn btn-primary" onclick="window.print()" title="Print family account">
                     <i class="bi bi-printer me-1"></i> Print
                 </button>
@@ -158,15 +384,15 @@
     </div>
 
     {{-- FAMILY ACCOUNT SUMMARY --}}
-    <div class="card mb-4 border-primary">
+    <div class="card mb-4 border-primary family-summary-card">
         <div class="card-header bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
+            <div class="d-flex justify-content-between align-items-center family-summary-card-header">
+                <h5 class="mb-0 family-summary-title">
                     <i class="bi bi-diagram-3 me-2"></i>FAMILY ACCOUNT
                     <span class="badge bg-light text-primary ms-2">Family</span>
                 </h5>
                 @if($familyAccount['outstanding'] != 0)
-                <button type="button" class="btn btn-success no-print" data-bs-toggle="modal" data-bs-target="#familyPaymentModal">
+                <button type="button" class="btn btn-success no-print family-summary-action" data-bs-toggle="modal" data-bs-target="#familyPaymentModal">
                     <i class="bi bi-cash-coin me-1"></i>
                     {{ $familyAccount['outstanding'] > 0 ? 'Record Cash Payment' : 'Adjust Payment' }}
                 </button>
@@ -174,13 +400,13 @@
             </div>
         </div>
         <div class="card-body">
-            <div class="row mb-4 no-print">
+            <div class="row mb-4 no-print family-summary-metrics">
                 <div class="col-md-2">
                     <p class="text-muted mb-1 small">Family Members</p>
                     <h4 class="mb-0">{{ $familyAccount['members_count'] }}</h4>
                 </div>
                 <div class="col-md-2">
-                    <p class="text-muted mb-1 small">Total Sales</p>
+                    <p class="text-muted mb-1 small">Total Sale</p>
                     <h4 class="mb-0">Rs. {{ number_format($familyAccount['total_sales'], 0) }}</h4>
                 </div>
                 <div class="col-md-2">
@@ -192,7 +418,7 @@
                     <h4 class="mb-0 text-success">Rs. {{ number_format($familyAccount['total_paid'], 0) }}</h4>
                 </div>
                 <div class="col-md-2">
-                    <p class="text-muted mb-1 small">Outstanding Family Udhar</p>
+                    <p class="text-muted mb-1 small"><span class="d-none d-md-inline">Outstanding Family Udhar</span><span class="d-md-none">Outstanding Family</span></p>
                     <h4 class="mb-0 text-danger">Rs. {{ number_format($familyAccount['outstanding'], 0) }}</h4>
                 </div>
                 <div class="col-md-2">
@@ -292,7 +518,7 @@
 </div>
 
 <div class="modal fade" id="familyPaymentModal" tabindex="-1" aria-labelledby="familyPaymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered family-payment-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="familyPaymentModalLabel">{{ $familyAccount['outstanding'] > 0 ? 'Record Cash Payment' : 'Adjust Payment' }}</h5>

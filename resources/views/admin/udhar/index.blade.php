@@ -3,14 +3,298 @@
 @section('title', 'Udhar Management')
 
 @section('content')
+<style>
+    .udhar-payment-dialog {
+        max-width: 420px;
+    }
+
+    body.modal-open .sidebar-edge-toggle {
+        z-index: 1040;
+    }
+
+    @media (max-width: 767.98px) {
+        .udhar-payment-dialog {
+            width: calc(100% - 1rem);
+            max-width: 360px;
+            margin: .5rem auto;
+        }
+
+        .udhar-payment-dialog .modal-content {
+            max-height: calc(100dvh - 1rem);
+        }
+
+        .udhar-payment-dialog form {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .udhar-payment-dialog .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: .65rem .85rem;
+        }
+
+        .udhar-payment-dialog .modal-header,
+        .udhar-payment-dialog .modal-footer {
+            flex-shrink: 0;
+            padding: .6rem .85rem;
+        }
+
+        .udhar-payment-dialog .modal-title {
+            font-size: 1.1rem;
+        }
+
+        .udhar-payment-dialog .form-label {
+            margin-bottom: .25rem;
+            font-size: .9rem;
+        }
+
+        .udhar-payment-dialog .mb-3 {
+            margin-bottom: .55rem !important;
+        }
+
+        .udhar-payment-dialog .form-control {
+            min-height: 36px;
+            padding: .35rem .6rem;
+            font-size: .9rem;
+        }
+
+        .udhar-page-heading h1 {
+            font-size: 1.4rem;
+        }
+
+        .udhar-page-heading p {
+            font-size: .9rem;
+        }
+
+        .udhar-summary-row > .col-md-3 {
+            display: flex;
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .udhar-summary-row {
+            row-gap: .5rem;
+        }
+
+        .udhar-summary-row .card {
+            width: 100%;
+            height: 95px;
+            margin-bottom: 0;
+            transition: none !important;
+            animation: none !important;
+            transform: none !important;
+        }
+
+        .udhar-summary-row .card-body {
+            padding: .75rem;
+        }
+
+        .udhar-summary-row .card-body p {
+            font-size: .75rem;
+            line-height: 1.25;
+        }
+
+        .udhar-summary-row .card-body h3 {
+            font-size: 1.3rem;
+            line-height: 1.2;
+        }
+
+        .udhar-summary-row .card-body h3.udhar-summary-amount {
+            font-size: .75rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .udhar-tablet-tabs {
+            flex-wrap: nowrap;
+        }
+
+        .udhar-tablet-tabs .nav-item {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .udhar-tablet-tabs .nav-link {
+            padding: .5rem .1rem;
+            font-size: .7rem;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .udhar-tablet-tabs .nav-link i {
+            margin-right: .2rem !important;
+            font-size: .75rem;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 1199.98px) {
+        .udhar-summary-row {
+            align-items: stretch;
+        }
+
+        .udhar-summary-row > .col-md-3 {
+            display: flex;
+        }
+
+        .udhar-summary-row .card {
+            width: 100%;
+            height: 100%;
+            transition: none !important;
+            animation: none !important;
+            transform: none !important;
+            will-change: auto !important;
+        }
+
+        .udhar-summary-row .card,
+        .udhar-summary-row .card *,
+        .udhar-summary-row .card::before,
+        .udhar-summary-row .card::after,
+        .udhar-summary-row .card *::before,
+        .udhar-summary-row .card *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+
+        .udhar-summary-row .card:hover {
+            transform: none !important;
+        }
+
+        .udhar-summary-row .card-body p {
+            font-size: .9rem;
+            line-height: 1.25;
+        }
+
+        .udhar-summary-row .card-body h3 {
+            font-size: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .udhar-summary-row .card-body h3.udhar-summary-amount {
+            font-size: 1.35rem;
+        }
+
+        .udhar-tablet-tabs {
+            flex-wrap: nowrap;
+        }
+
+        .udhar-tablet-tabs .nav-link {
+            white-space: nowrap;
+        }
+
+        .udhar-filter-row {
+            display: grid;
+            grid-template-columns: minmax(110px, 1fr) minmax(180px, 2fr) minmax(160px, 1.5fr) minmax(150px, 1.5fr);
+            row-gap: 1rem;
+            margin: 0;
+            --bs-gutter-y: 0;
+        }
+
+        .udhar-filter-row.has-warehouse {
+            grid-template-columns: minmax(100px, 1fr) minmax(160px, 1.8fr) minmax(120px, 1.2fr) minmax(140px, 1.5fr) minmax(150px, 1.5fr);
+        }
+
+        .udhar-filter-row > [class*="col-"] {
+            width: auto;
+            max-width: none;
+            padding-right: .5rem;
+            padding-left: .5rem;
+        }
+
+        .udhar-filter-row .form-select,
+        .udhar-filter-row .form-control {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .udhar-filter-display .form-check-label {
+            white-space: nowrap;
+        }
+
+        .udhar-filter-actions {
+            flex-wrap: nowrap;
+        }
+
+        .udhar-filter-actions .btn {
+            flex: 1 1 auto;
+            white-space: nowrap;
+        }
+
+        .udhar-payment-dialog {
+            width: calc(100% - 2rem);
+            max-width: 420px;
+            margin: .75rem auto;
+        }
+
+        .udhar-payment-dialog .modal-content {
+            max-height: calc(100dvh - 1.5rem);
+        }
+
+        .udhar-payment-dialog form {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .udhar-payment-dialog .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: .75rem 1rem;
+        }
+
+        .udhar-payment-dialog .modal-header,
+        .udhar-payment-dialog .modal-footer {
+            flex-shrink: 0;
+            padding: .65rem 1rem;
+        }
+
+        .udhar-payment-dialog .modal-title {
+            font-size: 1.15rem;
+        }
+
+        .udhar-payment-dialog .form-label {
+            margin-bottom: .25rem;
+            font-size: .95rem;
+        }
+
+        .udhar-payment-dialog .mb-3 {
+            margin-bottom: .65rem !important;
+        }
+
+        .udhar-payment-dialog .form-control {
+            min-height: 38px;
+            padding: .4rem .65rem;
+            font-size: .95rem;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 991.98px) {
+        .udhar-filter-row,
+        .udhar-filter-row.has-warehouse {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .udhar-filter-actions {
+            grid-column: 1 / -1;
+            justify-content: flex-end;
+        }
+    }
+</style>
 <div class="container-fluid">
-    <div class="mb-4">
+    <div class="mb-4 udhar-page-heading">
         <h1 class="h3 mb-0">Udhar Management</h1>
         <p class="text-muted mb-0">Track individual customer and family outstanding balances</p>
     </div>
 
     {{-- Summary Cards --}}
-    <div class="row mb-4">
+    <div class="row mb-4 udhar-summary-row">
         <div class="col-md-3">
             <div class="card border-primary">
                 <div class="card-body">
@@ -23,7 +307,7 @@
             <div class="card border-info">
                 <div class="card-body">
                     <p class="text-muted mb-1 small">Total Sales</p>
-                    <h3 class="mb-0">Rs. {{ number_format($totalSales, 0) }}</h3>
+                    <h3 class="mb-0 udhar-summary-amount">Rs. {{ number_format($totalSales, 0) }}</h3>
                 </div>
             </div>
         </div>
@@ -31,7 +315,7 @@
             <div class="card border-success">
                 <div class="card-body">
                     <p class="text-muted mb-1 small">Total Paid</p>
-                    <h3 class="mb-0 text-success">Rs. {{ number_format($totalPaid, 0) }}</h3>
+                    <h3 class="mb-0 text-success udhar-summary-amount">Rs. {{ number_format($totalPaid, 0) }}</h3>
                 </div>
             </div>
         </div>
@@ -39,14 +323,14 @@
             <div class="card border-danger">
                 <div class="card-body">
                     <p class="text-muted mb-1 small">Outstanding Udhar</p>
-                    <h3 class="mb-0 text-danger">Rs. {{ number_format($totalUdhar, 0) }}</h3>
+                    <h3 class="mb-0 text-danger udhar-summary-amount">Rs. {{ number_format($totalUdhar, 0) }}</h3>
                 </div>
             </div>
         </div>
     </div>
 
     {{-- Tabs --}}
-    <ul class="nav nav-tabs mb-3">
+    <ul class="nav nav-tabs mb-3 udhar-tablet-tabs">
         <li class="nav-item">
             <a class="nav-link {{ $activeTab === 'customers' ? 'active' : '' }}" 
                href="{{ route('admin.udhar.index', array_merge(request()->except(['tab', 'page']), ['tab' => 'customers'])) }}">
@@ -66,7 +350,7 @@
         <div class="card-body">
             <form action="{{ route('admin.udhar.index') }}" method="GET">
                 <input type="hidden" name="tab" value="{{ $activeTab }}">
-                <div class="row g-3">
+                <div class="row g-3 udhar-filter-row {{ $showWarehouseFilter ? 'has-warehouse' : '' }}">
                     <div class="col-md-2">
                         <label for="udhar-per-page" class="form-label small">Per Page</label>
                         <select id="udhar-per-page" name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -94,7 +378,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-2 udhar-filter-display">
                         <label class="form-label small">Display</label>
                         <div class="form-check mt-2">
                             <input type="hidden" name="only_outstanding" value="0">
@@ -103,7 +387,7 @@
                             <label class="form-check-label small">Only Outstanding</label>
                         </div>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end gap-2">
+                    <div class="col-md-2 d-flex align-items-end gap-2 udhar-filter-actions">
                         <button type="submit" class="btn btn-primary btn-sm">
                             <i class="bi bi-funnel"></i> Filter
                         </button>
@@ -113,7 +397,7 @@
                     </div>
                     @else
                     {{-- Single warehouse - simplified filter --}}
-                    <div class="col-md-2">
+                    <div class="col-md-2 udhar-filter-display">
                         <label class="form-label small">Display</label>
                         <div class="form-check mt-2">
                             <input type="hidden" name="only_outstanding" value="0">
@@ -122,7 +406,7 @@
                             <label class="form-check-label small">Only Outstanding</label>
                         </div>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end gap-2">
+                    <div class="col-md-2 d-flex align-items-end gap-2 udhar-filter-actions">
                         <button type="submit" class="btn btn-primary btn-sm">
                             <i class="bi bi-funnel"></i> Filter
                         </button>
@@ -278,7 +562,7 @@
 </div>
 
 <div class="modal fade" id="familyPaymentModal" tabindex="-1" aria-labelledby="familyPaymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable udhar-payment-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="familyPaymentModalLabel">Record Cash Payment</h5>
@@ -308,7 +592,7 @@
                     </div>
                     <div>
                         <label class="form-label">Notes (Optional)</label>
-                        <textarea name="notes" class="form-control" rows="2" placeholder="Add any notes..."></textarea>
+                        <textarea name="notes" class="form-control" rows="1" placeholder="Add any notes..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -321,7 +605,7 @@
 </div>
 
 <div class="modal fade" id="individualPaymentModal" tabindex="-1" aria-labelledby="individualPaymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable udhar-payment-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="individualPaymentModalLabel">Record Cash Payment</h5>
@@ -350,7 +634,7 @@
                     </div>
                     <div>
                         <label class="form-label">Notes (Optional)</label>
-                        <textarea name="notes" class="form-control" rows="2" placeholder="Add any notes..."></textarea>
+                        <textarea name="notes" class="form-control" rows="1" placeholder="Add any notes..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
