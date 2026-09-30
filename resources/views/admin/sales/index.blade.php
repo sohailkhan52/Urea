@@ -2,9 +2,49 @@
 
 @section('title', 'Sales')
 
+@push('styles')
+<style>
+    .sales-page-header {
+        gap: 1rem;
+    }
+
+    @media (max-width: 575.98px) {
+        .sales-page-header {
+            align-items: stretch !important;
+            flex-direction: column;
+        }
+
+        .sales-page-header .btn {
+            width: 100%;
+        }
+
+        .sales-mobile-search::placeholder {
+            font-size: 0.85em;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 1024px) {
+        .sales-filter-row > .sales-filter-field {
+            flex: 0 0 25%;
+            max-width: 25%;
+        }
+
+        .sales-filter-row > .sales-filter-actions {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+    }
+
+    .sales-filter-actions .btn,
+    .sales-table th {
+        white-space: nowrap;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 sales-page-header">
         <h1 class="h3 mb-0">Sales Management</h1>
         @can('sales.create')
         <a href="{{ route('admin.sales.create') }}" class="btn btn-primary">
@@ -18,21 +58,22 @@
         <div class="card-body">
             <form action="{{ route('admin.sales.index') }}" method="GET" autocomplete="off">
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
-                <div class="row g-3">
-                    <div class="col-md-3">
+                <div class="row g-3 sales-filter-row">
+                    <div class="col-12 col-md-3 col-xl-3 sales-filter-field">
                         <label for="sales_search" class="form-label">Search</label>
                         <input type="search" 
-                               class="form-control" 
+                               class="form-control sales-mobile-search" 
                                id="sales_search" 
                                name="search" 
                                value="{{ request('search') }}"
+                               data-mobile-placeholder="Search by invoice..."
                                placeholder="Search by invoice number or customer"
                                autocomplete="off"
                                autocorrect="off"
                                autocapitalize="off"
                                spellcheck="false">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-12 col-md-3 col-xl-2 sales-filter-field">
                         <label for="customer_id" class="form-label">Customer</label>
                         <select class="form-select" id="customer_id" name="customer_id">
                             <option value="">All Customers</option>
@@ -44,7 +85,7 @@
                         </select>
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-12 col-md-3 col-xl-2 sales-filter-field">
                         <label for="status" class="form-label">Status</label>
                         <select class="form-select" id="status" name="status">
                             <option value="">All Statuses</option>
@@ -53,7 +94,7 @@
                             <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-12 col-md-3 col-xl-2 sales-filter-field">
                         <label for="payment_status" class="form-label">Payment</label>
                         <select class="form-select" id="payment_status" name="payment_status">
                             <option value="">All Statuses</option>
@@ -62,14 +103,12 @@
                             <option value="paid" {{ request('payment_status') === 'paid' ? 'selected' : '' }}>Paid</option>
                         </select>
                     </div>
-                    <div class="col-md-1 d-flex align-items-end gap-2">
+                    <div class="col-12 col-xl-3 d-flex align-items-end gap-2 sales-filter-actions">
                         <button type="submit" class="btn btn-secondary flex-grow-1">
                             <i class="bi bi-funnel me-1"></i> Filter
                         </button>
-                    </div>
-                    <div class="col-md-12 d-flex align-items-end">
-                        <a href="{{ route('admin.sales.index') }}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-x-circle me-1"></i> Clear All Filters
+                        <a href="{{ route('admin.sales.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i> Clear
                         </a>
                     </div>
                 </div>
@@ -98,7 +137,7 @@
         <div class="card-body">
             @if($sales->count() > 0)
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle sales-table">
                     <thead>
                         <tr>
                             <th>Invoice #</th>
@@ -278,3 +317,23 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('sales_search');
+        if (!searchInput) return;
+
+        const mobileSearchQuery = window.matchMedia('(max-width: 575.98px)');
+        const desktopPlaceholder = searchInput.placeholder;
+        const syncPlaceholder = () => {
+            searchInput.placeholder = mobileSearchQuery.matches
+                ? searchInput.dataset.mobilePlaceholder
+                : desktopPlaceholder;
+        };
+
+        syncPlaceholder();
+        mobileSearchQuery.addEventListener('change', syncPlaceholder);
+    });
+</script>
+@endpush

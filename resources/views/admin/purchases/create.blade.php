@@ -1132,17 +1132,19 @@
         limited.forEach(product => {
             const option = document.createElement('button');
             option.type = 'button';
-            option.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            option.className = 'list-group-item list-group-item-action text-start';
 
             const name = document.createElement('span');
-            name.className = 'fw-semibold';
+            name.className = 'd-block fw-semibold';
             name.textContent = product.name || '';
             option.appendChild(name);
 
-            const price = document.createElement('small');
-            price.className = 'text-muted ms-3';
-            price.textContent = `Rs. ${Number(product.purchase_price || 0).toLocaleString()}`;
-            option.appendChild(price);
+            if (product.sku) {
+                const sku = document.createElement('small');
+                sku.className = 'd-block text-muted';
+                sku.textContent = `SKU: ${product.sku}`;
+                option.appendChild(sku);
+            }
 
             option.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -1696,9 +1698,11 @@
     }
 
     #productGrid > .list-group-item {
-        height: 48px;
+        height: auto;
         min-height: 48px;
         overflow: hidden;
+        padding-top: 0.4rem;
+        padding-bottom: 0.4rem;
     }
 
     #productGrid > .list-group-item > .fw-semibold {
@@ -1709,7 +1713,6 @@
     }
 
     #productGrid > .list-group-item > small {
-        flex-shrink: 0;
         white-space: nowrap;
     }
 

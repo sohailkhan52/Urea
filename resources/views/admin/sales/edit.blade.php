@@ -554,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
         products.forEach(product => {
             const option = document.createElement('option');
             option.value = product.id;
-            option.textContent = `${product.name} (${product.sku}) — ${product.available_stock} units`;
+            option.textContent = `${product.name}${product.sku ? ` (SKU: ${product.sku})` : ''}`;
             option.dataset.price = product.sale_price;
             option.dataset.stock = product.available_stock;
             select.appendChild(option);
@@ -749,7 +749,7 @@ document.addEventListener('DOMContentLoaded', function() {
             products.forEach(product => {
                 const option = document.createElement('option');
                 option.value = product.id;
-                option.textContent = `${product.name} (${product.sku}) — ${product.available_stock} units`;
+                option.textContent = `${product.name}${product.sku ? ` (SKU: ${product.sku})` : ''}`;
                 option.dataset.price = product.sale_price;
                 option.dataset.stock = product.available_stock;
                 if (product.id === item.product_id) {

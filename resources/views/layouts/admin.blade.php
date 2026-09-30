@@ -1515,6 +1515,11 @@
 
             const selectElements = document.querySelectorAll('select');
             selectElements.forEach((select, index) => {
+                    // Hidden backing selects already have a custom UI and must not get a second mobile control.
+                    if (select.hidden || select.classList.contains('sale-backing-select')) {
+                        return;
+                    }
+
                     const isThreeOptionSelect = select.classList.contains('three-option-scroll-select');
                     if (!isMobileView && !isThreeOptionSelect) {
                         return;

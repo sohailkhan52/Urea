@@ -4,7 +4,7 @@
 
 <div class="container-fluid">
 
-    <div class="page-header mb-4">
+    <div class="page-header mb-4 sale-page-header">
 
         <div class="row align-items-center">
 
@@ -12,6 +12,12 @@
 
                 <h1 class="page-title">Create Sale</h1>
 
+            </div>
+
+            <div class="col-auto d-none d-sm-block">
+                <a href="{{ route('admin.sales.index') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Sales
+                </a>
             </div>
 
 
@@ -57,13 +63,13 @@
 
             <!-- LEFT SIDE: 75% -->
 
-            <div class="col-lg-9">
+            <div class="col-lg-8 sale-main-column">
 
                 
 
                 <!-- CUSTOMER SECTION -->
 
-                <div class="card mb-4">
+                <div class="card mb-4 sale-autocomplete-card">
 
                     <div class="card-header bg-light">
 
@@ -108,11 +114,9 @@
                             <label class="form-label">Or Select Existing Customer</label>
 
                             <div class="sale-search-wrapper" id="customerSearchWrapper">
-                                <input type="text" id="customerSearch" class="form-control" placeholder="Search customer by name or phone..." autocomplete="off">
+                                <input type="text" id="customerSearch" class="form-control sale-mobile-search" data-mobile-placeholder="Search customer..." placeholder="Search customer by name or phone..." autocomplete="off">
                                 <div id="customerDropdown" class="sale-search-dropdown list-group" style="display: none;"></div>
-                                <select id="existingCustomerSelect" class="form-select d-none" aria-hidden="true" tabindex="-1">
-                                    <option value="">-- Search & Select Customer --</option>
-                                </select>
+                                
                             </div>
 
                         </div>
@@ -147,7 +151,7 @@
 
                 <!-- FAMILY SECTION (OPTIONAL) -->
 
-                <div class="card mb-4">
+                <div class="card mb-4 sale-autocomplete-card sale-family-card">
 
                     <div class="card-header bg-light">
 
@@ -163,29 +167,22 @@
 
                         <div class="row">
 
-                            <div class="col-md-9">
-
+                            <div class="col-12 col-md-9 sale-family-search-column">
                                 <div class="sale-search-wrapper" id="familySearchWrapper">
-                                    <input type="text" id="familySearch" class="form-control" placeholder="Search or select family..." autocomplete="off">
+                                    <input type="text" id="familySearch" class="form-control sale-mobile-search" data-mobile-placeholder="Search family..." placeholder="Search or select family..." autocomplete="off" aria-label="Search family">
                                     <div id="familyDropdown" class="sale-search-dropdown" style="display: none;"></div>
-                                    <select id="family_id" name="family_id" class="form-select d-none" aria-hidden="true" tabindex="-1">
-
-                                    <option value="">-- Select Family --</option>
-
-                                    @foreach($families ?? [] as $family)
-
-                                        <option value="{{ $family->id }}">{{ $family->name }}</option>
-
-                                    @endforeach
-
+                                    <select id="family_id" name="family_id" class="sale-backing-select" aria-hidden="true" tabindex="-1" hidden style="display: none !important;">
+                                        <option value="">-- Select Family --</option>
+                                        @foreach($families ?? [] as $family)
+                                            <option value="{{ $family->id }}">{{ $family->name }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
-
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-12 col-md-3 sale-family-add-column">
 
-                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newFamilyModal">
+                                <button type="button" class="btn btn-primary sale-add-family-button" data-bs-toggle="modal" data-bs-target="#newFamilyModal">
 
                                     <i class="bi bi-plus-lg"></i> Add
 
@@ -207,7 +204,7 @@
 
                 <!-- PRODUCTS SECTION -->
 
-                <div class="card mb-4">
+                <div class="card mb-4 sale-autocomplete-card">
 
                     <div class="card-header bg-light">
 
@@ -227,8 +224,9 @@
 
                                    id="productSearch" 
 
-                                   class="form-control" 
+                                   class="form-control sale-mobile-search" 
 
+                                   data-mobile-placeholder="Search products..."
                                    placeholder="Search Product..."
 
                                    autocomplete="off">
@@ -260,7 +258,7 @@
 
                         <div class="table-responsive">
 
-                            <table class="table table-sm table-hover mb-0">
+                            <table class="table table-sm table-hover mb-0 sale-items-table">
 
                                 <thead class="table-light">
 
@@ -310,7 +308,7 @@
 
             <!-- RIGHT SIDE: 25% SIDEBAR -->
 
-            <div class="col-lg-3">
+            <div class="col-lg-4 sale-summary-column">
 
                 <div class="card sticky-top" style="top: 20px;">
 
@@ -518,8 +516,20 @@
 
 @push('styles')
 <style>
+    .sale-search-wrapper > .sale-backing-select,
+    .sale-search-wrapper > select[hidden] {
+        display: none !important;
+    }
+
+    .sale-autocomplete-card,
+    .sale-autocomplete-card .card-body,
+    .sale-family-search-column {
+        overflow: visible;
+    }
+
     .sale-search-wrapper {
         position: relative;
+        overflow: visible;
     }
 
     .sale-search-dropdown {
@@ -528,8 +538,9 @@
         left: 0;
         right: 0;
         z-index: 1050;
-        max-height: 320px;
+        max-height: min(60vh, 320px);
         overflow-y: auto;
+        overscroll-behavior: contain;
         background: #fff;
         border: 1px solid #dee2e6;
         border-radius: 0.375rem;
@@ -560,6 +571,101 @@
         color: #6c757d;
         background-color: #f8f9fa;
         opacity: 0.75;
+    }
+
+    .sale-items-table {
+        min-width: 700px;
+    }
+
+    @media (max-width: 1024px) {
+        .sale-autocomplete-card,
+        .sale-autocomplete-card .card-body,
+        .sale-autocomplete-card .row,
+        .sale-autocomplete-card .col-md-6,
+        .sale-autocomplete-card .sale-family-search-column,
+        .sale-autocomplete-card .sale-search-wrapper {
+            overflow: visible !important;
+        }
+
+        .sale-autocomplete-card:focus-within {
+            position: relative;
+            z-index: 1060;
+        }
+
+        .sale-search-dropdown {
+            z-index: 1070;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .sale-summary-column .sticky-top {
+            position: static !important;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .sale-family-add-column {
+            margin-top: 0.5rem;
+        }
+
+        .sale-add-family-button {
+            width: 100%;
+        }
+
+        .sale-summary-column .card-body {
+            padding: 1rem;
+        }
+
+        #saleForm .form-control,
+        #saleForm .form-select {
+            min-height: 42px;
+            font-size: 1rem;
+        }
+
+        #saleForm .form-control-sm {
+            min-height: 38px;
+            font-size: 0.95rem;
+        }
+
+        #saleForm .form-label {
+            font-size: 0.9rem;
+        }
+
+        #saleForm .btn {
+            min-height: 40px;
+        }
+
+        .sale-search-dropdown {
+            max-height: min(60vh, 320px);
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .sale-page-header {
+            margin-bottom: 1rem !important;
+        }
+
+        .sale-page-header .page-title {
+            font-size: 1.45rem;
+        }
+
+        .sale-mobile-search::placeholder {
+            font-size: 0.85em;
+        }
+
+        #newFamilyModal .modal-dialog {
+            width: calc(100vw - 1rem);
+            max-width: none;
+            margin: 0.5rem auto;
+        }
+
+        #newFamilyModal .modal-content {
+            max-height: calc(100dvh - 1rem);
+        }
+
+        #newFamilyModal .modal-body {
+            overflow-y: auto;
+        }
     }
 </style>
 @endpush
@@ -828,10 +934,12 @@ function searchSaleProducts(query = '') {
             name.textContent = product.name || '';
             option.appendChild(name);
 
-            const meta = document.createElement('small');
-            meta.className = 'd-block text-muted';
-            meta.textContent = [product.sku, product.unit || 'Piece', `Stock: ${stock}`, `Rs. ${Number(product.sale_price || 0).toLocaleString()}`].filter(Boolean).join(' · ');
-            option.appendChild(meta);
+            if (product.sku) {
+                const sku = document.createElement('small');
+                sku.className = 'd-block text-muted';
+                sku.textContent = `SKU: ${product.sku}`;
+                option.appendChild(sku);
+            }
             option.addEventListener('click', () => addProduct(product.id, product.name, stock, product.sale_price, product.unit || 'Piece'));
             dropdown.appendChild(option);
         });
@@ -1367,6 +1475,23 @@ document.getElementById('saleForm').addEventListener('submit', function(e) {
 
     }
 
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileSearchQuery = window.matchMedia('(max-width: 575.98px)');
+    const searchInputs = document.querySelectorAll('.sale-mobile-search');
+
+    searchInputs.forEach(input => {
+        const desktopPlaceholder = input.placeholder;
+        const syncPlaceholder = () => {
+            input.placeholder = mobileSearchQuery.matches
+                ? input.dataset.mobilePlaceholder
+                : desktopPlaceholder;
+        };
+
+        syncPlaceholder();
+        mobileSearchQuery.addEventListener('change', syncPlaceholder);
+    });
 });
 
 </script>
