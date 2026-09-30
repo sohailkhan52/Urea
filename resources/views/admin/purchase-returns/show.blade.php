@@ -10,6 +10,152 @@
 
     .purchase-return-print-footer { display: none; }
 
+    .purchase-return-page,
+    .purchase-return-page .row > *,
+    .purchase-return-page .card,
+    .purchase-return-page .card-body {
+        min-width: 0;
+    }
+
+    .purchase-return-page .card-header h5,
+    .purchase-return-page .card-body,
+    .purchase-return-page .alert {
+        overflow-wrap: anywhere;
+    }
+
+    .purchase-return-page .badge {
+        white-space: normal;
+        text-align: center;
+    }
+
+    @media (max-width: 767.98px) {
+        .purchase-return-page .page-header {
+            padding: 16px;
+            margin: -25px -25px 16px;
+        }
+
+        .purchase-return-page .page-header .row {
+            row-gap: 14px;
+        }
+
+        .purchase-return-page .page-header .col-md-6 {
+            width: 100%;
+        }
+
+        .purchase-return-page .page-title {
+            font-size: clamp(1.35rem, 5vw, 1.65rem);
+            line-height: 1.25;
+        }
+
+        .purchase-return-page .page-header .text-end {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            max-width: 290px;
+            text-align: left !important;
+        }
+
+        .purchase-return-page .page-header .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 38px;
+            margin: 0 !important;
+            padding: 6px 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .purchase-return-page .page-header .btn i {
+            margin-right: 4px;
+        }
+
+        .purchase-return-page .card {
+            margin-bottom: 16px !important;
+            border-radius: 12px;
+        }
+
+        .purchase-return-page .card-header {
+            gap: 10px;
+            padding: 12px 14px;
+        }
+
+        .purchase-return-page .card-header h5 {
+            flex: 1 1 auto;
+            min-width: 0;
+            font-size: 0.9rem;
+            line-height: 1.35;
+            white-space: nowrap;
+        }
+
+        .purchase-return-page .card-body {
+            padding: 14px;
+        }
+
+        .purchase-return-page .purchase-return-info-grid {
+            row-gap: 12px;
+        }
+
+        .purchase-return-page .purchase-return-info-grid h6 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .purchase-return-page .purchase-return-info-grid p {
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .purchase-return-page .table-responsive {
+            margin: 0 -14px;
+            padding: 0 14px 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .purchase-return-page .table {
+            min-width: 520px;
+            font-size: 0.875rem;
+        }
+
+        .purchase-return-page .table th,
+        .purchase-return-page .table td {
+            padding: 10px 8px;
+            vertical-align: middle;
+        }
+
+        .purchase-return-items-card .card-header h5,
+        .purchase-return-summary-card .card-header h5 {
+            font-size: 0.9rem;
+        }
+
+        .purchase-return-items-card .table {
+            font-size: 0.8rem;
+        }
+
+        .purchase-return-items-card .table th,
+        .purchase-return-items-card .table td {
+            padding: 8px 6px;
+        }
+
+        .purchase-return-summary-card .card-body {
+            font-size: 0.875rem;
+        }
+
+        .purchase-return-page .purchase-return-summary-card .text-primary.fs-5 {
+            font-size: 0.95rem !important;
+        }
+
+        .purchase-return-page .text-primary.fs-5 {
+            font-size: 1.1rem !important;
+        }
+
+        .purchase-return-page .no-print form .btn {
+            min-height: 44px;
+            white-space: normal;
+        }
+    }
+
     @media print {
         .sidebar,
         .topbar,
@@ -141,7 +287,7 @@
             <!-- Return Info -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-receipt"></i> {{ $purchaseReturn->return_number }}</h5>
+                    <h5 class="mb-0">{{ $purchaseReturn->return_number }}</h5>
                     <span class="badge bg-{{ $purchaseReturn->status_badge }}">
                         {{ $purchaseReturn->status_label }}
                     </span>
@@ -206,7 +352,7 @@
             </div>
 
             <!-- Return Items -->
-            <div class="card mb-4">
+            <div class="card mb-4 purchase-return-items-card">
                 <div class="card-header">
                     <h5 class="mb-0"><i class="bi bi-box-seam"></i> Returned Items</h5>
                 </div>
@@ -253,7 +399,7 @@
         <!-- RIGHT COLUMN -->
         <div class="col-lg-4">
             <!-- Financial Summary -->
-            <div class="card mb-4">
+            <div class="card mb-4 purchase-return-summary-card">
                 <div class="card-header bg-light">
                     <h5 class="mb-0"><i class="bi bi-calculator"></i> Return Summary</h5>
                 </div>

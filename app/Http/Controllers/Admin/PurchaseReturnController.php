@@ -35,9 +35,12 @@ class PurchaseReturnController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Filter by refund status
-        if ($request->filled('refund_status')) {
-            $query->where('refund_status', $request->refund_status);
+        // Filter by return date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('return_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('return_date', '<=', $request->date_to);
         }
 
         // Filter by supplier
@@ -60,7 +63,7 @@ class PurchaseReturnController extends Controller
         }
 
         $perPage = (int) $request->input('per_page', 10);
-        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+        if (!in_array($perPage, [10, 20, 25, 50, 100], true)) {
             $perPage = 10;
         }
 
@@ -113,9 +116,14 @@ class PurchaseReturnController extends Controller
             $query->whereIn('warehouse_id', $warehouseIds);
         }
 
-        $purchases = $query->paginate(20);
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 20, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
 
-        return view('admin.purchase-returns.create', compact('purchases'));
+        $purchases = $query->paginate($perPage)->withQueryString();
+
+        return view('admin.purchase-returns.create', compact('purchases', 'perPage'));
     }
 
     /**

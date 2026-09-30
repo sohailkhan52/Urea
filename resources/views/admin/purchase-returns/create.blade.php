@@ -3,28 +3,26 @@
 @section('title', 'Create Purchase Return')
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid purchase-return-selection">
+    <div class="d-flex justify-content-between align-items-center mb-4 return-selection-heading">
         <h1 class="h3 mb-0">
-            <i class="bi bi-arrow-return-left me-2"></i>Select Purchase Order to Return
+            Select Purchase Order to Return
         </h1>
-        <a href="{{ route('admin.purchases.index') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Back to Purchases
+        <a href="{{ route('admin.purchases.index') }}" class="btn btn-outline-secondary" aria-label="Back to Purchases">
+            <i class="bi bi-arrow-left me-1"></i> Back<span class="return-back-destination"> to Purchases</span>
         </a>
     </div>
 
     <div class="card">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Choose a completed purchase order and select items to return. Stock will be deducted from inventory.</h5>
-        </div>
         <div class="card-body">
             {{-- Search Bar --}}
-            <div class="row mb-4">
+            <div class="row mb-4 return-selection-filters">
                 <div class="col-md-4">
                     <input type="text" 
                            id="searchInput" 
                            class="form-control" 
                            placeholder="Search by PO No, Supplier Name, or Date"
+                           data-mobile-placeholder="Search PO No. or Supplier"
                            autocomplete="off">
                 </div>
                 <div class="col-md-2">
@@ -35,6 +33,17 @@
                         <i class="bi bi-arrow-clockwise me-1"></i> Reset
                     </button>
                 </div>
+            </div>
+
+            <div class="d-flex justify-content-end align-items-center mb-2">
+                <form action="{{ route('admin.purchase-returns.create') }}" method="GET" class="d-flex align-items-center gap-2">
+                    <label for="purchase-returns-per-page" class="small text-muted mb-0">Per page</label>
+                    <select id="purchase-returns-per-page" name="per_page" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                        @foreach([10, 25, 50, 100] as $option)
+                            <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
+                        @endforeach
+                    </select>
+                </form>
             </div>
 
             {{-- Purchases Table --}}
@@ -92,8 +101,131 @@
     </div>
 </div>
 
+<style>
+    @media (max-width: 768px) {
+        .purchase-return-selection {
+            width: 100%;
+            max-width: 100%;
+            padding-right: 10px;
+            padding-left: 10px;
+        }
+
+        .return-selection-heading {
+            display: flex !important;
+            flex-direction: row;
+            align-items: center !important;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 16px !important;
+        }
+
+        .return-selection-heading h1 {
+            flex: 1 1 auto;
+            min-width: 0;
+            margin: 0;
+            font-size: clamp(0.72rem, 2.6vw, 0.82rem);
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            overflow-wrap: normal;
+        }
+
+        .return-selection-heading > a {
+            flex: 0 0 auto;
+            width: auto;
+            min-height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 5px;
+            font-size: clamp(0.58rem, 2vw, 0.65rem);
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+
+        .purchase-return-selection .card-body {
+            padding: 14px;
+        }
+
+        .return-selection-filters {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 10px;
+            margin: 0 0 16px !important;
+        }
+
+        .return-selection-filters > [class*="col-"] {
+            width: 100%;
+            max-width: 100%;
+            padding-right: 0;
+            padding-left: 0;
+        }
+
+        .return-selection-filters .form-control {
+            display: block;
+            width: 100%;
+            min-height: 42px;
+            padding: 7px 10px;
+            font-size: 16px;
+        }
+
+        .return-selection-filters .btn {
+            width: auto;
+            min-width: 108px;
+            min-height: 38px;
+            justify-self: start;
+            padding: 6px 12px;
+            font-size: 15px;
+        }
+    }
+
+    @media (min-width: 576px) and (max-width: 1024px) {
+        .return-selection-filters {
+            display: grid !important;
+            grid-template-columns: minmax(0, 2fr) minmax(120px, 1fr) auto;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 16px !important;
+        }
+
+        .return-selection-filters > [class*="col-"] {
+            flex: initial;
+            width: auto;
+            max-width: none;
+            padding-right: 0;
+            padding-left: 0;
+        }
+
+        .return-selection-filters .form-control {
+            width: 100%;
+            min-height: 42px;
+            font-size: 15px;
+        }
+
+        .return-selection-filters .btn {
+            width: auto;
+            min-width: 100px;
+            min-height: 38px;
+            padding: 6px 10px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+    }
+</style>
+
 <script>
 // Client-side search functionality
+const returnSearchInput = document.getElementById('searchInput');
+const returnSearchMedia = window.matchMedia('(max-width: 768px)');
+const updateReturnSearchPlaceholder = () => {
+    returnSearchInput.placeholder = returnSearchMedia.matches
+        ? returnSearchInput.dataset.mobilePlaceholder
+        : 'Search by PO No, Supplier Name, or Date';
+};
+updateReturnSearchPlaceholder();
+returnSearchMedia.addEventListener('change', updateReturnSearchPlaceholder);
+
 document.getElementById('searchInput').addEventListener('input', filterTable);
 document.getElementById('dateFilter').addEventListener('change', filterTable);
 

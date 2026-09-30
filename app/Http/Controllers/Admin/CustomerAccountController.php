@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
 use App\Models\Customer;
 use App\Services\CustomerPaymentService;
 use Illuminate\Http\Request;
@@ -63,7 +64,12 @@ class CustomerAccountController extends Controller
             $openingBalance = $salesBeforeStart - ($initialPaidBeforeStart + $paymentsBeforeStart);
         }
 
-        return view('admin.customers.statement', compact('customer', 'statement', 'openingBalance'));
+        return view('admin.customers.statement', [
+            'customer' => $customer,
+            'statement' => $statement,
+            'openingBalance' => $openingBalance,
+            'company' => Company::first(),
+        ]);
     }
 
     /**

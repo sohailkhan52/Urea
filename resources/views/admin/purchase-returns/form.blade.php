@@ -3,13 +3,13 @@
 @section('title', 'Create Purchase Return')
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid purchase-return-form-page">
+    <div class="d-flex justify-content-between align-items-center mb-4 return-form-heading">
         <h1 class="h3 mb-0">
-            <i class="bi bi-arrow-return-left me-2"></i>Create Purchase Return
+            Create Purchase Return
         </h1>
         <a href="{{ route('admin.purchase-returns.create') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Back to Purchases List
+            <i class="bi bi-arrow-left me-1"></i> Back to Purchases
         </a>
     </div>
 
@@ -199,6 +199,157 @@
         </div>
     </form>
 </div>
+
+<style>
+    @media (max-width: 768px) {
+        .purchase-return-form-page {
+            padding-right: 10px;
+            padding-left: 10px;
+        }
+
+        .return-form-heading {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center !important;
+            gap: 8px;
+            margin-bottom: 14px !important;
+        }
+
+        .return-form-heading h1 {
+            min-width: 0;
+            margin: 0;
+            font-size: clamp(0.88rem, 3.8vw, 1.05rem);
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .return-form-heading > a {
+            max-width: none;
+            min-height: 30px;
+            padding: 4px 5px;
+            font-size: 0.58rem;
+            line-height: 1.1;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .purchase-return-form-page .row.mb-4 {
+            margin-bottom: 14px !important;
+        }
+
+        .purchase-return-form-page .card {
+            margin-bottom: 12px;
+        }
+
+        .purchase-return-form-page .card-header {
+            padding: 9px 12px;
+        }
+
+        .purchase-return-form-page .card-header h5 {
+            font-size: 0.95rem;
+        }
+
+        .purchase-return-form-page .card-body {
+            padding: 12px;
+            font-size: 0.82rem;
+        }
+
+        .purchase-return-form-page .card-body p {
+            margin-bottom: 6px !important;
+            line-height: 1.35;
+        }
+
+        .purchase-return-form-page .card-body h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        .purchase-return-form-page .row > .col-md-6.text-end {
+            display: flex;
+            align-items: baseline;
+            justify-content: flex-start;
+            gap: 6px;
+            text-align: left !important;
+        }
+
+        .purchase-return-form-page .row > .col-md-6.text-end p {
+            margin: 0 !important;
+            font-size: 0.78rem;
+        }
+
+        .purchase-return-form-page .row > .col-md-6.text-end h4 {
+            font-size: 1rem;
+        }
+
+        .purchase-return-form-page .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .purchase-return-form-page .table {
+            min-width: 650px;
+            margin-bottom: 0;
+            font-size: 0.72rem;
+        }
+
+        .purchase-return-form-page .table th,
+        .purchase-return-form-page .table td {
+            padding: 6px 7px;
+            vertical-align: middle;
+        }
+
+        .purchase-return-form-page .return-qty {
+            min-width: 68px;
+            min-height: 34px;
+            padding: 4px 6px;
+            font-size: 14px;
+        }
+
+        .purchase-return-form-page .form-control,
+        .purchase-return-form-page .form-select {
+            min-height: 38px;
+            padding: 6px 9px;
+            font-size: 15px;
+        }
+
+        .purchase-return-form-page textarea.form-control {
+            min-height: auto;
+        }
+
+        .purchase-return-form-page .form-label {
+            margin-bottom: 4px;
+            font-size: 0.78rem;
+        }
+
+        .purchase-return-form-page .badge {
+            font-size: 0.66rem;
+        }
+
+        .purchase-return-form-page .btn {
+            padding: 6px 9px;
+            font-size: 0.78rem;
+        }
+
+        .purchase-return-form-page .btn-lg {
+            padding: 7px 10px;
+            font-size: 0.82rem;
+        }
+
+        .purchase-return-form-page #returnForm > .card:last-child .card-body > .d-flex {
+            gap: 8px;
+        }
+
+        .purchase-return-form-page #returnForm > .card:last-child .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            text-align: center;
+        }
+    }
+</style>
 
 <script>
 // Select all checkbox

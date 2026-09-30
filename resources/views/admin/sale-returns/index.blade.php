@@ -3,12 +3,12 @@
 @section('title', 'Sale Returns')
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">Sale Returns Management</h1>
+<div class="container-fluid sale-returns-index-page">
+    <div class="d-flex justify-content-between align-items-center mb-4 return-index-heading-row">
+        <h1 class="h3 mb-0 return-index-title">Sale Returns</h1>
         @can('sales.create')
-        <a href="{{ route('admin.sale-returns.create') }}" class="btn btn-primary">
-            <i class="bi bi-arrow-return-left me-1"></i> Create Return
+        <a href="{{ route('admin.sale-returns.create') }}" class="btn btn-primary return-index-create-button">
+            <i class="bi bi-plus-lg me-1"></i> Create Return
         </a>
         @endcan
     </div>
@@ -27,6 +27,7 @@
                                name="search" 
                                value="{{ request('search') }}"
                                placeholder="Search by return #, customer, or sale invoice"
+                               data-mobile-placeholder="Search..."
                                autocomplete="off"
                                autocorrect="off"
                                autocapitalize="off"
@@ -36,7 +37,7 @@
                     <div class="col-md-2">
                         <label for="status" class="form-label">Status</label>
                         <select class="form-select" id="status" name="status">
-                            <option value="">All Statuses</option>
+                            <option value="">All Status</option>
                             <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                             <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
                             <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
@@ -58,14 +59,12 @@
                                name="date_to" 
                                value="{{ request('date_to') }}">
                     </div>
-                    <div class="col-md-1 d-flex align-items-end gap-2">
+                    <div class="col-md-3 d-flex align-items-end gap-2 return-filter-submit">
                         <button type="submit" class="btn btn-secondary flex-grow-1">
                             <i class="bi bi-funnel me-1"></i> Filter
                         </button>
-                    </div>
-                    <div class="col-md-12">
-                        <a href="{{ route('admin.sale-returns.index') }}" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-x-circle me-1"></i> Clear All Filters
+                        <a href="{{ route('admin.sale-returns.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i> Clear
                         </a>
                     </div>
                 </div>
@@ -215,6 +214,128 @@
     </div>
 </div>
 
+<style>
+    @media (max-width: 768px) {
+        .sale-returns-index-page {
+            padding-right: 10px;
+            padding-left: 10px;
+        }
+
+        .sale-returns-index-page .return-index-heading-row {
+            display: flex !important;
+            flex-wrap: nowrap;
+            align-items: center !important;
+            gap: 8px;
+            margin-bottom: 14px !important;
+        }
+
+        .sale-returns-index-page .return-index-title {
+            flex: 1 1 auto;
+            min-width: 0;
+            margin: 0;
+            font-size: clamp(1.05rem, 4.5vw, 1.3rem);
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .sale-returns-index-page .return-index-create-button {
+            flex: 0 0 auto;
+            min-height: 36px;
+            padding: 6px 9px;
+            font-size: 0.76rem;
+            white-space: nowrap;
+        }
+
+        .sale-returns-index-page .card {
+            margin-bottom: 12px !important;
+        }
+
+        .sale-returns-index-page .card-body {
+            padding: 12px;
+        }
+
+        .sale-returns-index-page .form-label {
+            margin-bottom: 4px;
+            font-size: 0.76rem;
+        }
+
+        .sale-returns-index-page .form-control,
+        .sale-returns-index-page .form-select {
+            min-height: 38px;
+            padding: 6px 9px;
+            font-size: 14px;
+        }
+
+        .sale-returns-index-page .row.g-3 {
+            --bs-gutter-x: 0.6rem;
+            --bs-gutter-y: 0.65rem;
+        }
+
+        .sale-returns-index-page .return-filter-submit .btn,
+        .sale-returns-index-page .return-filter-submit a {
+            flex: 1 1 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 36px;
+            padding: 5px 8px;
+            font-size: 0.76rem;
+            text-align: center;
+        }
+
+        .sale-returns-index-page .return-filter-submit {
+            width: 100%;
+            display: flex;
+            gap: 8px;
+        }
+
+        .sale-returns-index-page .d-flex.justify-content-end form {
+            font-size: 0.75rem;
+        }
+
+        .sale-returns-index-page .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sale-returns-index-page table {
+            min-width: 720px;
+            margin-bottom: 0;
+            font-size: 0.74rem;
+        }
+
+        .sale-returns-index-page table th,
+        .sale-returns-index-page table td {
+            padding: 7px 8px;
+            vertical-align: middle;
+        }
+
+        .sale-returns-index-page table .badge {
+            font-size: 0.65rem;
+        }
+
+        .sale-returns-index-page .btn-group .btn {
+            padding: 4px 7px;
+            font-size: 0.7rem;
+        }
+
+        .sale-returns-index-page .pagination {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .sale-returns-index-page .modal-dialog {
+            margin: 10px;
+        }
+
+        .sale-returns-index-page .modal-body,
+        .sale-returns-index-page .modal-footer {
+            padding: 12px;
+            font-size: 0.85rem;
+        }
+    }
+</style>
+
 {{-- Confirm Return Modal --}}
 <div class="modal fade" id="confirmReturnModal" tabindex="-1">
     <div class="modal-dialog">
@@ -282,6 +403,16 @@
 
 @push('scripts')
 <script>
+const saleReturnSearchInput = document.getElementById('returns_search');
+const saleReturnSearchMedia = window.matchMedia('(max-width: 768px)');
+const updateSaleReturnSearchPlaceholder = () => {
+    saleReturnSearchInput.placeholder = saleReturnSearchMedia.matches
+        ? saleReturnSearchInput.dataset.mobilePlaceholder
+        : 'Search by return #, customer, or sale invoice';
+};
+updateSaleReturnSearchPlaceholder();
+saleReturnSearchMedia.addEventListener('change', updateSaleReturnSearchPlaceholder);
+
 function confirmReturn(returnId) {
     const form = document.getElementById('confirmReturnForm');
     form.action = `/admin/sale-returns/${returnId}/confirm`;

@@ -16,6 +16,229 @@
         display: none;
     }
 
+    .sale-return-page,
+    .sale-return-page .row > *,
+    .sale-return-page .card,
+    .sale-return-page .card-body {
+        min-width: 0;
+    }
+
+    .sale-return-page .card,
+    .sale-return-page .alert,
+    .sale-return-page .card-body {
+        overflow-wrap: anywhere;
+    }
+
+    .sale-return-page .badge {
+        white-space: normal;
+        text-align: center;
+    }
+
+    .sale-return-info-card .card-header .badge {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 767.98px) {
+        .sale-return-page > .d-flex.no-print {
+            align-items: stretch !important;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px !important;
+        }
+
+        .sale-return-page > .d-flex.no-print h1 {
+            font-size: clamp(1.4rem, 5vw, 1.7rem);
+            line-height: 1.25;
+        }
+
+        .sale-return-page > .d-flex.no-print > div:last-child {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            width: 100%;
+            max-width: 290px;
+        }
+
+        .sale-return-page > .d-flex.no-print .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 38px;
+            margin: 0 !important;
+            padding: 6px 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .sale-return-page > .d-flex.no-print .btn i {
+            margin-right: 4px;
+        }
+
+        .sale-return-page .card {
+            margin-bottom: 16px !important;
+            border-radius: 12px;
+        }
+
+        .sale-return-page .card-header {
+            gap: 10px;
+            padding: 12px 14px;
+        }
+
+        .sale-return-page .card-header h5,
+        .sale-return-page .card-header h6 {
+            font-size: 1rem;
+            line-height: 1.35;
+        }
+
+        .sale-return-info-card .card-header h5 {
+            flex: 1 1 auto;
+            min-width: 0;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .sale-return-page .card-body {
+            padding: 14px;
+        }
+
+        .sale-return-page .sale-return-info-grid {
+            row-gap: 4px !important;
+            margin-top: 0 !important;
+        }
+
+        .sale-return-info-card .card-body {
+            padding: 10px 12px;
+        }
+
+        .sale-return-page .sale-return-info-grid > div {
+            margin-top: 0 !important;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .sale-return-page .sale-return-info-grid > div {
+            width: 100%;
+        }
+
+        .sale-return-page .sale-return-info-grid > div:nth-child(-n+6) {
+            display: grid;
+            grid-template-columns: minmax(92px, 35%) minmax(0, 1fr);
+            align-items: start;
+            column-gap: 8px;
+        }
+
+        .sale-return-page .sale-return-info-grid > div:nth-child(-n+6) > div {
+            min-width: 0;
+            font-size: 0.8rem;
+        }
+
+        .sale-return-page .sale-return-info-grid > div:nth-child(2) > div > a,
+        .sale-return-page .sale-return-info-grid > div:nth-child(3) > div,
+        .sale-return-page .sale-return-info-grid > div:nth-child(5) > div {
+            white-space: nowrap;
+        }
+
+        .sale-return-page .sale-return-info-grid label {
+            display: block;
+            margin: 0;
+            font-size: 0.85rem;
+        }
+
+        .sale-return-page .sale-return-info-grid > div > div {
+            line-height: 1.3;
+        }
+
+        .sale-return-page .sale-return-payment-summary .row.g-3 > [class*="col-md-"] {
+            width: 50%;
+        }
+
+        .sale-return-page .sale-return-payment-summary .row.g-3 > [class*="col-md-"] .border {
+            height: 100%;
+            padding: 12px 8px !important;
+        }
+
+        .sale-return-page .sale-return-payment-summary .row.g-3 > [class*="col-md-"] h5 {
+            font-size: clamp(0.85rem, 3.5vw, 1rem);
+            overflow-wrap: anywhere;
+        }
+
+        .sale-return-page .table-responsive {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sale-return-page .table {
+            min-width: 650px;
+            font-size: 0.875rem;
+        }
+
+        .sale-return-page .table th,
+        .sale-return-page .table td {
+            padding: 10px 8px;
+            vertical-align: middle;
+        }
+
+        .sale-return-items-card .card-header h5,
+        .sale-return-summary-card .card-header h6 {
+            font-size: 0.9rem;
+        }
+
+        .sale-return-items-card .table {
+            font-size: 0.8rem;
+        }
+
+        .sale-return-items-card .table th,
+        .sale-return-items-card .table td {
+            padding: 8px 6px;
+        }
+
+        .sale-return-items-card tfoot .fs-5 {
+            font-size: 0.95rem !important;
+        }
+
+        .sale-return-summary-card .card-body {
+            font-size: 0.875rem;
+        }
+
+        .sale-return-summary-card .text-primary.fs-5 {
+            font-size: 0.95rem !important;
+        }
+
+        .sale-return-page .d-flex.gap-2 {
+            flex-direction: column;
+        }
+
+        .sale-return-page .d-flex.gap-2 form,
+        .sale-return-page .d-flex.gap-2 .btn {
+            width: 100%;
+        }
+
+        .sale-return-page .btn {
+            min-height: 44px;
+            white-space: normal;
+        }
+
+        #cancelModal .modal-dialog {
+            margin: 12px;
+        }
+
+        #cancelModal .modal-footer {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        #cancelModal .modal-footer .btn {
+            flex: 1 1 120px;
+            min-height: 44px;
+        }
+
+        #cancelModal textarea.form-control {
+            min-height: 100px;
+            font-size: 16px;
+        }
+    }
+
     @media print {
         @page {
             size: A4 portrait;
@@ -159,28 +382,28 @@
         }
 
         .sale-return-info-grid > div:nth-child(2) {
-            grid-column: 2;
-            grid-row: 2;
-        }
-
-        .sale-return-info-grid > div:nth-child(3) {
             grid-column: 1;
             grid-row: 1;
         }
 
-        .sale-return-info-grid > div:nth-child(4) {
+        .sale-return-info-grid > div:nth-child(3) {
             grid-column: 1;
             grid-row: 2;
         }
 
-        .sale-return-info-grid > div:nth-child(5) {
+        .sale-return-info-grid > div:nth-child(4) {
             grid-column: 1;
             grid-row: 3;
         }
 
-        .sale-return-info-grid > div:nth-child(6) {
+        .sale-return-info-grid > div:nth-child(5) {
             grid-column: 1;
             grid-row: 4;
+        }
+
+        .sale-return-info-grid > div:nth-child(6) {
+            grid-column: 1;
+            grid-row: 5;
         }
 
         .sale-return-page > .row > .col-lg-8,
@@ -227,8 +450,7 @@
     {{-- Header --}}
     <div class="d-flex justify-content-between align-items-center mb-4 no-print">
         <div>
-            <h1 class="h3 mb-1">Return Details</h1>
-            <p class="text-muted mb-0">{{ $return->return_number }}</p>
+            <h1 class="h3 mb-1">Sale Return Details</h1>
         </div>
         <div>
             <button type="button" class="btn btn-primary me-2" onclick="window.print()">
@@ -250,8 +472,8 @@
                     <span>{{ $return->status_label }}</span>
                 </div>
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Return Information</h5>
-                    <span class="badge bg-{{ $return->status_badge }} fs-6">
+                    <h5 class="mb-0">{{ $return->return_number }}</h5>
+                    <span class="badge bg-{{ $return->status_badge }}">
                         {{ $return->status_label }}
                     </span>
                 </div>
@@ -262,10 +484,6 @@
                     </div>
                     <div class="row g-3 sale-return-info-grid">
                         <div class="col-md-6">
-                            <label class="text-muted small">Return Number</label>
-                            <div class="fw-semibold">{{ $return->return_number }}</div>
-                        </div>
-                        <div class="col-md-6">
                             <label class="text-muted small">Return Date</label>
                             <div class="fw-semibold">{{ $return->return_date->format('d M Y') }}</div>
                         </div>
@@ -273,7 +491,6 @@
                             <label class="text-muted small">Original Sale</label>
                             <div>
                                 <a href="{{ route('admin.sales.show', $return->sale_id) }}" class="text-decoration-none">
-                                    <i class="bi bi-file-earmark-text me-1"></i>
                                     {{ $return->sale->invoice_number }}
                                 </a>
                                 <br>
@@ -283,7 +500,6 @@
                         <div class="col-md-6">
                             <label class="text-muted small">Warehouse</label>
                             <div class="fw-semibold">
-                                <i class="bi bi-building me-1"></i>
                                 {{ $return->warehouse->name }}
                             </div>
                         </div>
@@ -292,14 +508,17 @@
                             <div>
                                 @if($return->customer)
                                     <strong>{{ $return->customer->name }}</strong>
-                                    @if($return->customer->phone)
-                                    <br><small class="text-muted"><i class="bi bi-telephone me-1"></i>{{ $return->customer->phone }}</small>
-                                    @endif
                                 @else
                                     <span class="badge bg-secondary">Walk-in Customer</span>
                                 @endif
                             </div>
                         </div>
+                        @if($return->customer?->phone)
+                        <div class="col-md-6">
+                            <label class="text-muted small">Call</label>
+                            <div>{{ $return->customer->phone }}</div>
+                        </div>
+                        @endif
                         <div class="col-md-6">
                             <label class="text-muted small">Family</label>
                             <div>
@@ -332,7 +551,7 @@
             </div>
 
             {{-- Original Sale Payment Summary --}}
-            <div class="card mb-4 no-print">
+            <div class="card mb-4 no-print sale-return-payment-summary">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Original Sale Payment Summary</h5>
                 </div>
@@ -371,7 +590,7 @@
             </div>
 
             {{-- Return Items --}}
-            <div class="card mb-4">
+            <div class="card mb-4 sale-return-items-card">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Returned Items</h5>
                 </div>
@@ -467,7 +686,7 @@
         {{-- Sidebar --}}
         <div class="col-lg-4">
             {{-- Summary Card --}}
-            <div class="card mb-4">
+            <div class="card mb-4 sale-return-summary-card">
                 <div class="card-header bg-primary text-white">
                     <h6 class="mb-0">Return Summary</h6>
                 </div>

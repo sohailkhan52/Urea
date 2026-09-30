@@ -1,14 +1,14 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid purchase-returns-index-page">
     <div class="page-header">
-        <div class="row align-items-center">
-            <div class="col-md-6">
+        <div class="row align-items-center return-index-heading-row">
+            <div class="col-md-6 return-index-title-col">
                 <h1 class="page-title">Purchase Returns</h1>
             </div>
-            <div class="col-md-6 text-end">
-                <a href="{{ route('admin.purchase-returns.create') }}" class="btn btn-primary">
+            <div class="col-md-6 text-end return-index-action-col">
+                <a href="{{ route('admin.purchase-returns.create') }}" class="btn btn-primary return-index-create-button">
                     <i class="bi bi-plus-lg"></i> Create Return
                 </a>
             </div>
@@ -21,14 +21,17 @@
             <form method="GET" action="{{ route('admin.purchase-returns.index') }}" class="row g-3">
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
                 <div class="col-md-3">
+                      <label for="purchase_returns_search" class="form-label">Search</label>
                     <input type="text" 
+                          id="purchase_returns_search"
                            name="search" 
                            class="form-control" 
                            placeholder="Search..." 
                            value="{{ request('search') }}">
                 </div>
                 <div class="col-md-2">
-                    <select name="status" class="form-select">
+                    <label for="purchase_returns_status" class="form-label">Status</label>
+                    <select id="purchase_returns_status" name="status" class="form-select">
                         <option value="">All Status</option>
                         <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
                         <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
@@ -36,19 +39,19 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <select name="refund_status" class="form-select">
-                        <option value="">All Refund Status</option>
-                        <option value="pending" {{ request('refund_status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="partial" {{ request('refund_status') == 'partial' ? 'selected' : '' }}>Partial</option>
-                        <option value="completed" {{ request('refund_status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                    </select>
+                    <label for="purchase_date_from" class="form-label">Date From</label>
+                    <input type="date" id="purchase_date_from" name="date_from" class="form-control" value="{{ request('date_from') }}" aria-label="Date From">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <label for="purchase_date_to" class="form-label">Date To</label>
+                    <input type="date" id="purchase_date_to" name="date_to" class="form-control" value="{{ request('date_to') }}" aria-label="Date To">
+                </div>
+                <div class="col-md-3 d-flex align-items-end gap-2 return-filter-actions">
                     <button type="submit" class="btn btn-secondary">
-                        <i class="bi bi-search"></i> Filter
+                        <i class="bi bi-funnel me-1"></i> Filter
                     </button>
                     <a href="{{ route('admin.purchase-returns.index') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-lg"></i> Clear
+                        <i class="bi bi-x-circle me-1"></i> Clear
                     </a>
                 </div>
             </form>
@@ -142,4 +145,151 @@
         </div>
     </div>
 </div>
+
+<style>
+    @media (max-width: 768px) {
+        .purchase-returns-index-page {
+            padding-right: 10px;
+            padding-left: 10px;
+        }
+
+        .purchase-returns-index-page .page-header {
+            padding: 10px 12px;
+            margin: -12px -10px 14px;
+        }
+
+        .purchase-returns-index-page .return-index-heading-row {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 8px;
+            margin: 0;
+        }
+
+        .purchase-returns-index-page .return-index-title-col,
+        .purchase-returns-index-page .return-index-action-col {
+            width: auto;
+            max-width: none;
+            padding: 0;
+        }
+
+        .purchase-returns-index-page .return-index-title-col {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .purchase-returns-index-page .page-title {
+            margin: 0;
+            font-size: clamp(1.05rem, 4.5vw, 1.3rem);
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow-y: hidden;
+            scrollbar-width: none;
+        }
+
+        .purchase-returns-index-page .page-title::-webkit-scrollbar {
+            display: none;
+        }
+
+        .purchase-returns-index-page .return-index-action-col {
+            flex: 0 0 auto;
+            text-align: right !important;
+        }
+
+        .purchase-returns-index-page .return-index-create-button {
+            min-height: 36px;
+            padding: 6px 9px;
+            font-size: 0.76rem;
+            white-space: nowrap;
+        }
+
+        .purchase-returns-index-page .card {
+            margin-bottom: 12px !important;
+        }
+
+        .purchase-returns-index-page .card-body {
+            padding: 12px;
+        }
+
+        .purchase-returns-index-page .form-control,
+        .purchase-returns-index-page .form-select {
+            min-height: 38px;
+            padding: 6px 9px;
+            font-size: 14px;
+        }
+
+        .purchase-returns-index-page .form-label {
+            margin-bottom: 3px;
+            font-size: 0.78rem;
+        }
+
+        .purchase-returns-index-page form.row {
+            row-gap: 4px !important;
+        }
+
+        .purchase-returns-index-page form.row > [class*="col-"] {
+            padding-right: 4px;
+            padding-left: 4px;
+        }
+
+        .purchase-returns-index-page form.row .btn {
+            min-height: 36px;
+            padding: 5px 8px;
+            font-size: 0.76rem;
+        }
+
+        .purchase-returns-index-page .return-filter-actions {
+            display: flex;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .purchase-returns-index-page .return-filter-actions .btn {
+            flex: 1 1 0;
+            white-space: nowrap;
+        }
+
+        .purchase-returns-index-page .return-filter-actions a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .purchase-returns-index-page .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .purchase-returns-index-page table {
+            min-width: 720px;
+            margin-bottom: 0;
+            font-size: 0.75rem;
+        }
+
+        .purchase-returns-index-page table th,
+        .purchase-returns-index-page table td {
+            padding: 7px 8px;
+            vertical-align: middle;
+        }
+
+        .purchase-returns-index-page .badge {
+            font-size: 0.65rem;
+        }
+
+        .purchase-returns-index-page .btn-sm {
+            padding: 4px 7px;
+            font-size: 0.7rem;
+        }
+
+        .purchase-returns-index-page .d-flex.justify-content-end form {
+            font-size: 0.75rem;
+        }
+
+        .purchase-returns-index-page .pagination {
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 0;
+        }
+    }
+</style>
 @endsection

@@ -97,9 +97,9 @@ class SaleReturnController extends Controller
             $query->where('return_date', '<=', $request->date_to);
         }
 
-        $perPage = (int) $request->input('per_page', 10);
-        if (!in_array($perPage, [10, 25, 50, 100], true)) {
-            $perPage = 10;
+        $perPage = (int) $request->input('per_page', 20);
+        if (!in_array($perPage, [10, 20, 25, 50, 100], true)) {
+            $perPage = 20;
         }
 
         $returns = $query->orderBy('return_date', 'desc')->latest('created_at')->paginate($perPage)->withQueryString();
@@ -150,9 +150,14 @@ class SaleReturnController extends Controller
             $query->whereIn('warehouse_id', $warehouseIds);
         }
 
-        $sales = $query->paginate(20);
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 20, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
 
-        return view('admin.sale-returns.create', compact('sales'));
+        $sales = $query->paginate($perPage)->withQueryString();
+
+        return view('admin.sale-returns.create', compact('sales', 'perPage'));
     }
 
     /**
