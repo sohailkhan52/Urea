@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid supplier-payables-index-page">
     <div class="page-header mb-4">
         <h1 class="page-title">Supplier Payables</h1>
         <p class="text-muted">Manage outstanding payments to suppliers</p>
@@ -9,12 +9,12 @@
 
     <!-- Summary Cards -->
     <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-3">
+        <div class="col-xl-3 col-md-6 mb-3 supplier-payables-stat">
             <div class="card stat-card warning">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <p class="text-muted mb-1">Suppliers With Payables</p>
+                            <p class="text-muted mb-1">Suppliers with Payables</p>
                             <h3 class="mb-0">{{ $summary['supplier_count'] }}</h3>
                         </div>
                         <div class="text-warning" style="font-size: 2rem;">
@@ -26,7 +26,7 @@
         </div>
 
                 
-        <div class="col-xl-3 col-md-6 mb-3">
+        <div class="col-xl-3 col-md-6 mb-3 supplier-payables-stat">
             <div class="card stat-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -43,7 +43,7 @@
         </div>
         
 
-        <div class="col-xl-3 col-md-6 mb-3">
+        <div class="col-xl-3 col-md-6 mb-3 supplier-payables-stat">
             <div class="card stat-card success">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -59,7 +59,7 @@
             </div>
         </div>
                 
-        <div class="col-xl-3 col-md-6 mb-3">
+        <div class="col-xl-3 col-md-6 mb-3 supplier-payables-stat">
             <div class="card stat-card primary">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -191,9 +191,206 @@
     </div>
 </div>
 
+<style>
+    #paymentModal {
+        z-index: 1080;
+    }
+
+    .modal-backdrop {
+        z-index: 1070;
+    }
+
+    body.modal-open .sidebar-edge-toggle {
+        z-index: 1040 !important;
+    }
+
+    @media (min-width: 576px) and (max-width: 1024px) {
+        #paymentModal .modal-dialog {
+            width: calc(100% - 48px);
+            max-width: 440px;
+            max-height: calc(100dvh - 48px);
+            margin: 24px auto;
+        }
+
+        #paymentModal .modal-content {
+            max-height: calc(100dvh - 48px);
+        }
+
+        #paymentModal #paymentForm {
+            display: flex;
+            min-height: 0;
+            flex-direction: column;
+        }
+
+        #paymentModal .modal-header,
+        #paymentModal .modal-footer {
+            flex: 0 0 auto;
+            padding: 10px 14px;
+        }
+
+        #paymentModal .modal-title {
+            font-size: 1rem;
+        }
+
+        #paymentModal .modal-body {
+            min-height: 0;
+            overflow-y: auto;
+            padding: 12px 14px;
+        }
+
+        #paymentModal .modal-body .mb-3 {
+            margin-bottom: 9px !important;
+        }
+
+        #paymentModal .form-label,
+        #paymentModal .form-control,
+        #paymentModal .modal-footer .btn {
+            font-size: 0.875rem;
+        }
+
+        #paymentModal .form-control {
+            min-height: 36px;
+            padding: 6px 9px;
+        }
+
+        #paymentModal textarea.form-control {
+            min-height: 58px;
+        }
+
+        #paymentModal .modal-footer .btn {
+            min-height: 34px;
+            padding: 6px 9px;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        body.modal-open .sidebar-edge-toggle {
+            z-index: 1040 !important;
+        }
+
+        #paymentModal .modal-dialog {
+            width: calc(100% - 32px);
+            max-width: 380px;
+            max-height: calc(100dvh - 40px);
+            margin: 20px auto;
+        }
+
+        #paymentModal .modal-content {
+            max-height: calc(100dvh - 40px);
+        }
+
+        #paymentModal #paymentForm {
+            display: flex;
+            min-height: 0;
+            flex-direction: column;
+        }
+
+        #paymentModal .modal-header,
+        #paymentModal .modal-footer {
+            flex: 0 0 auto;
+            padding: 8px 10px;
+        }
+
+        #paymentModal .modal-title {
+            font-size: 0.92rem;
+        }
+
+        #paymentModal .modal-body {
+            min-height: 0;
+            overflow-y: auto;
+            padding: 9px 10px;
+        }
+
+        #paymentModal .modal-body .mb-3 {
+            margin-bottom: 7px !important;
+        }
+
+        #paymentModal .form-label,
+        #paymentModal .form-control,
+        #paymentModal .modal-footer .btn {
+            font-size: 0.8rem;
+        }
+
+        #paymentModal .form-control {
+            min-height: 34px;
+            padding: 5px 8px;
+        }
+
+        #paymentModal textarea.form-control {
+            min-height: 52px;
+        }
+
+        #paymentModal .modal-footer .btn {
+            min-height: 32px;
+            padding: 5px 8px;
+        }
+
+        .supplier-payables-index-page .page-header .page-title {
+            font-size: clamp(1.15rem, 5vw, 1.35rem);
+            line-height: 1.2;
+        }
+
+        .supplier-payables-index-page .page-header p {
+            font-size: 0.85rem;
+            line-height: 1.35;
+        }
+
+        .supplier-payables-index-page > .row.mb-4 {
+            margin-bottom: 8px !important;
+        }
+
+        .supplier-payables-index-page .row.mb-4 > .supplier-payables-stat {
+            flex: 0 0 50%;
+            width: 50%;
+            max-width: 50%;
+            margin-bottom: 8px !important;
+        }
+
+        .supplier-payables-index-page .supplier-payables-stat .card-body {
+            padding: 10px;
+        }
+
+        .supplier-payables-index-page .supplier-payables-stat .card {
+            height: 60px;
+            margin-bottom: 0 !important;
+        }
+
+        .supplier-payables-index-page .supplier-payables-stat .card-body > .d-flex {
+            position: relative;
+            align-items: flex-start !important;
+        }
+
+        .supplier-payables-index-page .supplier-payables-stat .card-body > .d-flex > div:first-child {
+            width: 100%;
+            padding-right: 24px;
+        }
+
+        .supplier-payables-index-page .supplier-payables-stat .text-muted {
+            font-size: 0.65rem;
+            line-height: 1.15;
+        }
+
+        .supplier-payables-index-page .supplier-payables-stat h3 {
+            font-size: clamp(0.62rem, 2.7vw, 0.68rem);
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+
+        .supplier-payables-index-page .supplier-payables-stat .text-warning,
+        .supplier-payables-index-page .supplier-payables-stat .text-info,
+        .supplier-payables-index-page .supplier-payables-stat .text-success,
+        .supplier-payables-index-page .supplier-payables-stat .text-primary {
+            position: absolute;
+            top: 0;
+            right: 0;
+            font-size: 1rem !important;
+        }
+    }
+</style>
+
 <!-- Payment Modal -->
 <div class="modal fade" id="paymentModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Add Cash Payment</h5>

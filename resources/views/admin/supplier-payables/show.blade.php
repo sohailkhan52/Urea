@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid supplier-payables-detail-page">
     <div class="page-header mb-4">
         <div class="row align-items-center">
             <div class="col">
@@ -65,8 +65,8 @@
 
     <!-- Make Payment Button -->
     @if($outstanding > 0)
-    <div class="mb-4">
-        <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#paymentModal"
+    <div class="mb-4 supplier-payment-action">
+        <button type="button" class="btn btn-success btn-lg supplier-payment-button" data-bs-toggle="modal" data-bs-target="#paymentModal"
             onclick="setSupplierPayment({{ $supplier->id }}, '{{ $supplier->name }}', {{ $outstanding }})">
             <i class="bi bi-cash-coin me-2"></i> Record Cash Payment
         </button>
@@ -123,9 +123,227 @@
     </div>
 </div>
 
+<style>
+    .supplier-payables-detail-page > .row.mb-4 > .col-md-3 {
+        display: flex;
+    }
+
+    .supplier-payables-detail-page > .row.mb-4 > .col-md-3 .card {
+        width: 100%;
+        height: 80%;
+    }
+
+    #paymentModal {
+        z-index: 1080;
+    }
+
+    .modal-backdrop {
+        z-index: 1070;
+    }
+
+    body.modal-open .sidebar-edge-toggle {
+        z-index: 1040 !important;
+    }
+
+    @media (max-width: 1024px) {
+        #paymentModal .modal-dialog {
+            width: calc(100% - 32px);
+            max-width: 520px;
+            max-height: calc(100dvh - 24px);
+            margin: 12px auto;
+        }
+
+        #paymentModal .modal-content {
+            display: flex;
+            max-height: calc(100dvh - 24px);
+            overflow: hidden;
+        }
+
+        #paymentModal #paymentForm {
+            display: flex;
+            min-height: 0;
+            flex: 1 1 auto;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #paymentModal .modal-header,
+        #paymentModal .modal-footer {
+            flex: 0 0 auto;
+        }
+
+        #paymentModal .modal-body {
+            min-height: 0;
+            flex: 1 1 auto;
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+
+    @media (min-width: 576px) and (max-width: 1024px) {
+        .supplier-payables-detail-page > .row.mb-4 > .col-md-3 h4 {
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+
+        .supplier-payables-detail-page .supplier-payment-action {
+            margin-bottom: 14px !important;
+        }
+
+        .supplier-payables-detail-page .supplier-payment-button {
+            min-height: 38px;
+            padding: 7px 12px;
+            font-size: 0.88rem;
+            line-height: 1.2;
+        }
+
+        .supplier-payables-detail-page .supplier-payment-button .bi {
+            margin-right: 6px !important;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        body.modal-open .sidebar-edge-toggle {
+            z-index: 1040 !important;
+        }
+
+        #paymentModal .modal-dialog {
+            width: calc(100% - 32px);
+            max-width: 380px;
+            max-height: calc(100dvh - 40px);
+            margin: 20px auto;
+        }
+
+        #paymentModal .modal-content {
+            max-height: calc(100dvh - 40px);
+        }
+
+        #paymentModal #paymentForm {
+            display: flex;
+            min-height: 0;
+            flex-direction: column;
+        }
+
+        #paymentModal .modal-header,
+        #paymentModal .modal-footer {
+            flex: 0 0 auto;
+            padding: 8px 10px;
+        }
+
+        #paymentModal .modal-title {
+            font-size: 0.92rem;
+        }
+
+        #paymentModal .modal-body {
+            min-height: 0;
+            overflow-y: auto;
+            padding: 9px 10px;
+        }
+
+        #paymentModal .modal-body .mb-3 {
+            margin-bottom: 7px !important;
+        }
+
+        #paymentModal .form-label,
+        #paymentModal .form-control,
+        #paymentModal .modal-footer .btn {
+            font-size: 0.8rem;
+        }
+
+        #paymentModal .form-control {
+            min-height: 34px;
+            padding: 5px 8px;
+        }
+
+        #paymentModal textarea.form-control {
+            min-height: 52px;
+        }
+
+        #paymentModal .modal-footer .btn {
+            min-height: 32px;
+            padding: 5px 8px;
+        }
+
+        .supplier-payables-detail-page > .row.mb-4 > .col-md-3 {
+            flex: 0 0 50%;
+            width: 50%;
+            max-width: 50%;
+            margin-bottom: 8px;
+        }
+
+        .supplier-payables-detail-page > .row.mb-4 > .col-md-3 .card {
+            height: 70px;
+            margin-bottom: 0;
+        }
+
+        .supplier-payables-detail-page > .row.mb-4 > .col-md-3 .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 9px;
+        }
+
+        .supplier-payables-detail-page > .row.mb-4 > .col-md-3 p {
+            font-size: 0.7rem;
+            line-height: 1.15;
+        }
+
+        .supplier-payables-detail-page > .row.mb-4 > .col-md-3 h4 {
+            font-size: 0.82rem;
+            line-height: 1.15;
+            white-space: nowrap;
+        }
+
+        .supplier-payables-detail-page .supplier-payment-action {
+            margin-bottom: 12px !important;
+        }
+
+        .supplier-payables-detail-page .supplier-payment-button {
+            display: inline-flex;
+            width: auto;
+            max-width: 100%;
+            min-height: 36px;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            font-size: 0.78rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .supplier-payables-detail-page .supplier-payment-button .bi {
+            margin-right: 5px !important;
+        }
+
+        .supplier-payables-detail-page .page-header .page-title {
+            font-size: 1.25rem;
+            line-height: 1.2;
+        }
+
+        .supplier-payables-detail-page .page-header > .row p {
+            margin-bottom: 0;
+            font-size: 0.82rem;
+            line-height: 1.3;
+        }
+
+        .supplier-payables-detail-page > .card:first-of-type .card-body {
+            padding: 12px;
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+
+        .supplier-payables-detail-page > .card:first-of-type .card-body p {
+            margin-bottom: 8px;
+            overflow-wrap: anywhere;
+        }
+    }
+</style>
+
 <!-- Payment Modal -->
 <div class="modal fade" id="paymentModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Add Cash Payment</h5>
