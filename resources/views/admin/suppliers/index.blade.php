@@ -9,6 +9,10 @@
         opacity: 1;
     }
 
+    body.modal-open .sidebar-edge-toggle {
+        display: none !important;
+    }
+
     .supplier-create-modal-dialog {
         max-width: 625px;
     }
@@ -47,15 +51,201 @@
         padding: 1.25rem 1.6rem;
         border-top: 1px solid #dee2e6;
     }
+
+    @media (max-width: 575.98px) {
+        .supplier-page-heading {
+            flex-wrap: wrap;
+            gap: .35rem;
+            margin-bottom: .85rem !important;
+        }
+
+        .supplier-page-heading > div:first-child {
+            flex: 0 0 100%;
+            min-width: 0;
+        }
+
+        .supplier-page-heading h1 {
+            font-size: 1.35rem !important;
+            white-space: nowrap;
+        }
+
+        .supplier-page-heading p {
+            display: none;
+        }
+
+        .supplier-page-actions {
+            flex: 0 0 100%;
+            justify-content: flex-end;
+            gap: 0 !important;
+        }
+
+        .supplier-page-actions .btn {
+            padding: .34rem .42rem !important;
+            font-size: .68rem;
+            line-height: 1.25;
+            white-space: nowrap;
+        }
+
+        .supplier-page-actions .btn i {
+            margin-right: .12rem !important;
+            font-size: .7rem;
+        }
+
+        .supplier-search-card {
+            width: min(100%, 360px) !important;
+            margin-bottom: .75rem !important;
+        }
+
+        .supplier-search-card .card-body {
+            padding: .6rem !important;
+        }
+
+        .supplier-search-card .form-label {
+            margin-bottom: .3rem !important;
+            font-size: .82rem !important;
+        }
+
+        .supplier-search-card .form-control,
+        .supplier-search-card .form-control-lg {
+            min-height: 40px;
+            padding: .38rem .6rem;
+            font-size: .86rem;
+        }
+
+        .supplier-search-card .row {
+            --bs-gutter-x: .55rem;
+            --bs-gutter-y: .55rem;
+        }
+
+        .supplier-search-actions {
+            gap: .4rem !important;
+        }
+
+        .supplier-search-actions .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .25rem;
+            min-height: 38px;
+            padding: .35rem .45rem !important;
+            font-size: .75rem;
+            line-height: 1.2;
+        }
+
+        .supplier-search-actions .btn i {
+            margin: 0 !important;
+            font-size: .78rem;
+        }
+
+        .supplier-create-modal-dialog,
+        .supplier-details-modal,
+        .supplier-edit-modal {
+            width: calc(100% - 2rem);
+            max-width: none;
+            margin: 1rem auto;
+        }
+
+        .supplier-create-modal .modal-content,
+        .supplier-details-modal .modal-content,
+        .supplier-edit-modal .modal-content {
+            max-height: calc(100dvh - 2rem);
+            overflow: hidden;
+        }
+
+        .supplier-create-modal form,
+        .supplier-edit-modal form {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .supplier-create-modal .modal-header,
+        .supplier-edit-modal .modal-header,
+        .supplier-details-modal .modal-header {
+            flex-shrink: 0;
+            padding: .55rem .75rem;
+        }
+
+        .supplier-create-modal .modal-title,
+        .supplier-edit-modal .modal-title,
+        .supplier-details-modal .modal-title {
+            font-size: .95rem;
+        }
+
+        .supplier-create-modal .modal-body,
+        .supplier-edit-modal .modal-body,
+        .supplier-details-modal .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: .6rem .75rem;
+        }
+
+        .supplier-create-modal .modal-body .mb-3,
+        .supplier-edit-modal .modal-body .mb-3 {
+            margin-bottom: .45rem !important;
+        }
+
+        .supplier-edit-modal .modal-body .row {
+            --bs-gutter-y: .45rem;
+        }
+
+        .supplier-create-modal .form-label,
+        .supplier-edit-modal .form-label {
+            margin-bottom: .2rem;
+            font-size: .78rem;
+        }
+
+        .supplier-create-modal .form-control,
+        .supplier-edit-modal .form-control {
+            min-height: 34px;
+            padding: .28rem .5rem;
+            font-size: .8rem;
+        }
+
+        .supplier-create-modal textarea.form-control,
+        .supplier-edit-modal textarea.form-control {
+            min-height: 48px;
+        }
+
+        .supplier-create-modal .modal-footer,
+        .supplier-edit-modal .modal-footer,
+        .supplier-details-modal .modal-footer {
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: .3rem;
+            padding: .5rem .75rem;
+        }
+
+        .supplier-create-modal .modal-footer .btn,
+        .supplier-edit-modal .modal-footer .btn,
+        .supplier-details-modal .modal-footer .btn {
+            padding: .3rem .5rem;
+            font-size: .74rem;
+        }
+
+        .supplier-details-modal .modal-body .row {
+            --bs-gutter-x: .65rem;
+            --bs-gutter-y: .7rem;
+        }
+
+        .supplier-details-modal .modal-body small,
+        .supplier-details-modal .modal-body span,
+        .supplier-details-modal .modal-body strong {
+            font-size: .86rem;
+            overflow-wrap: anywhere;
+        }
+    }
 </style>
 
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 supplier-page-heading">
         <div>
             <h1 class="h3 mb-0 fw-bold" style="font-size: 2.2rem; color: #1f2937;">Suppliers</h1>
             <p class="text-muted mb-0 mt-1">View and manage all suppliers in your inventory</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 supplier-page-actions">
             @can('suppliers.delete')
             <button type="button" class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#createSupplierModal" style="background: #1d74d9; border-color: #1d74d9; border-radius: 8px; font-weight: 600;">
                 <i class="bi bi-plus-lg me-1"></i> Add Supplier
@@ -113,7 +303,7 @@
     </div>
 
     <div class="d-flex justify-content-center">
-        <div class="card mb-4 border-0 shadow-sm" style="border-radius: 12px; background: #f7f8fa; width: min(100%, 900px);">
+        <div class="card mb-4 border-0 shadow-sm supplier-search-card" style="border-radius: 12px; background: #f7f8fa; width: min(100%, 900px);">
             <div class="card-body py-3">
                 <form action="{{ route('admin.suppliers.index') }}" method="GET" autocomplete="off">
                     <div class="row g-3 align-items-end">
@@ -132,7 +322,7 @@
                                    style="border-radius: 10px; border: 1px solid #d5d9df; background: #fff; width: 100%;">
                             <input type="hidden" name="per_page" value="{{ $perPage }}">
                         </div>
-                        <div class="col-md-4 d-flex gap-2">
+                        <div class="col-md-4 d-flex gap-2 supplier-search-actions">
                             <button type="submit" class="btn btn-secondary flex-fill" style="background: #6b7280; border-color: #6b7280; border-radius: 9px; font-weight: 600; padding: 0.65rem 0.8rem;">
                                 <i class="bi bi-funnel me-1"></i> Filter
                             </button>
@@ -210,7 +400,7 @@
 
                 @foreach($suppliers as $supplier)
                     <div class="modal fade" id="supplierDetailsModal{{ $supplier->id }}" tabindex="-1" aria-labelledby="supplierDetailsLabel{{ $supplier->id }}" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-dialog modal-dialog-centered modal-lg supplier-details-modal">
                             <div class="modal-content border-0 shadow" style="border-radius: 12px;">
                                 <div class="modal-header">
                                     <div>
@@ -238,7 +428,7 @@
                     </div>
 
                     <div class="modal fade" id="supplierEditModal{{ $supplier->id }}" tabindex="-1" aria-labelledby="supplierEditLabel{{ $supplier->id }}" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-dialog modal-dialog-centered modal-lg supplier-edit-modal">
                             <div class="modal-content border-0 shadow" style="border-radius: 12px;">
                                 <div class="modal-header">
                                     <h5 class="modal-title fw-bold" id="supplierEditLabel{{ $supplier->id }}">Edit Supplier</h5>

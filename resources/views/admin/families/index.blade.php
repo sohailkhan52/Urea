@@ -3,21 +3,206 @@
 @section('title', 'Families Management')
 
 @section('content')
-<div class="container-fluid">
+<style>
+    body.modal-open .sidebar-edge-toggle {
+        display: none !important;
+    }
+
+    .family-pagination {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: .75rem;
+    }
+
+    .family-pagination nav {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    .family-pagination .pagination {
+        flex-wrap: nowrap;
+        margin-bottom: 0;
+    }
+
+    .family-pagination .page-link {
+        min-width: 38px;
+        text-align: center;
+    }
+
+    @media (max-width: 575.98px) {
+        .family-page {
+            min-width: 0;
+            padding: .75rem !important;
+        }
+
+        .family-page-header {
+            margin-bottom: .85rem;
+            padding: .75rem !important;
+        }
+
+        .family-page-header-inner {
+            flex-wrap: wrap;
+            gap: .4rem;
+        }
+
+        .family-page-header-inner > div:first-child {
+            flex: 0 0 100%;
+            min-width: 0;
+        }
+
+        .family-page-header h1 {
+            font-size: 1.25rem;
+            line-height: 1.2;
+        }
+
+        .family-page-header p {
+            font-size: .78rem;
+        }
+
+        .family-page-header .btn {
+            padding: .35rem .5rem;
+            font-size: .76rem;
+        }
+
+        .family-per-page {
+            margin-bottom: .4rem !important;
+        }
+
+        .family-table-card .card-header {
+            padding: .6rem .75rem;
+        }
+
+        .family-table-card .card-header h5 {
+            font-size: 1rem;
+        }
+
+        .family-table-card .card-body {
+            padding: .65rem !important;
+        }
+
+        .family-table {
+            min-width: 680px;
+            margin-bottom: 0;
+            font-size: .78rem;
+        }
+
+        .family-table th,
+        .family-table td {
+            padding: .55rem .65rem;
+            vertical-align: middle;
+        }
+
+        .family-table td:last-child .btn {
+            padding: .25rem .4rem;
+        }
+
+        .family-pagination {
+            justify-content: center;
+            overflow-x: auto;
+            padding: .65rem .25rem 0;
+        }
+
+        .family-pagination .page-link {
+            min-width: 34px;
+            padding: .35rem .5rem;
+            font-size: .82rem;
+        }
+
+        .family-modal-dialog {
+            width: calc(100% - 2rem);
+            max-width: none;
+            margin: 1rem auto;
+        }
+
+        .family-modal-content {
+            max-height: calc(100dvh - 2rem);
+            overflow: hidden;
+        }
+
+        .family-modal-content .modal-header,
+        .family-modal-content .modal-footer {
+            flex-shrink: 0;
+            padding: .55rem .75rem;
+        }
+
+        .family-modal-content .modal-title {
+            font-size: .98rem;
+        }
+
+        .family-modal-content .modal-body {
+            min-height: 0;
+            overflow-y: auto;
+            padding: .65rem .75rem;
+        }
+
+        .family-modal-content .form-label {
+            margin-bottom: .2rem;
+            font-size: .78rem;
+        }
+
+        .family-modal-content .form-control {
+            min-height: 36px;
+            padding: .3rem .5rem;
+            font-size: .82rem;
+        }
+
+        .family-modal-content textarea.form-control {
+            min-height: 60px;
+        }
+
+        .family-modal-content .modal-footer .btn {
+            padding: .32rem .5rem;
+            font-size: .76rem;
+        }
+    }
+
+    @media (min-width: 576px) and (max-width: 991.98px) {
+        .family-page-header {
+            padding: 1rem !important;
+        }
+
+        .family-page-header-inner {
+            gap: .75rem;
+        }
+
+        .family-page-header h1 {
+            font-size: 1.45rem;
+        }
+
+        .family-page-header p {
+            font-size: .85rem;
+        }
+
+        .family-page-header .btn {
+            padding: .4rem .6rem;
+            font-size: .82rem;
+        }
+
+        .family-table {
+            min-width: 800px;
+        }
+
+        .family-table th,
+        .family-table td {
+            padding: .65rem .75rem;
+        }
+    }
+</style>
+<div class="container-fluid family-page">
     {{-- Page Header --}}
-    <div class="page-header">
-        <div class="d-flex justify-content-between align-items-center">
+    <div class="page-header family-page-header">
+        <div class="d-flex justify-content-between align-items-center family-page-header-inner">
             <div>
                 <h1><i class="bi bi-people me-2"></i>Families Management</h1>
                 <p class="text-muted mb-0">Manage customer families and groups</p>
             </div>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newFamilyModal">
+            <button type="button" class="btn btn-primary family-add-button" data-bs-toggle="modal" data-bs-target="#newFamilyModal">
                 <i class="bi bi-plus-lg me-2"></i> Add New Family
             </button>
         </div>
     </div>
 
-    <div class="d-flex justify-content-end align-items-center mb-2">
+    <div class="d-flex justify-content-end align-items-center mb-2 family-per-page">
         <form action="{{ route('admin.families.index') }}" method="GET" class="d-flex align-items-center gap-2">
             @foreach(request()->except(['page', 'per_page']) as $key => $value)
                 @if(is_scalar($value))
@@ -34,14 +219,14 @@
     </div>
 
     {{-- Families Table --}}
-    <div class="card">
+    <div class="card family-table-card">
         <div class="card-header">
             <h5 class="mb-0">All Families</h5>
         </div>
         <div class="card-body">
             @if($families->count() > 0)
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover family-table">
                         <thead class="table-light">
                             <tr>
                                 <th>Family Name</th>
@@ -101,7 +286,7 @@
                 </div>
 
                 {{-- Pagination --}}
-                <div class="d-flex justify-content-end align-items-center flex-wrap gap-2">
+                <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 family-pagination">
                     {{ $families->links() }}
                 </div>
             @else
@@ -115,9 +300,9 @@
 
 @push('modals')
 <!-- New Family Modal -->
-<div class="modal fade" id="newFamilyModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
+<div class="modal fade family-modal" id="newFamilyModal" tabindex="-1">
+    <div class="modal-dialog family-modal-dialog">
+        <div class="modal-content family-modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Create New Family</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -144,9 +329,9 @@
 </div>
 
 <!-- Edit Family Modal -->
-<div class="modal fade" id="editFamilyModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
+<div class="modal fade family-modal" id="editFamilyModal" tabindex="-1">
+    <div class="modal-dialog family-modal-dialog">
+        <div class="modal-content family-modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Edit Family</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

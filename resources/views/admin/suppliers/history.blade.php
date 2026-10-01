@@ -10,6 +10,197 @@
         display: none;
     }
 
+    @media (max-width: 575.98px) {
+        .supplier-history-tabs {
+            overflow-x: auto;
+            padding: .5rem !important;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .supplier-history-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .supplier-history-tabs .nav-tabs {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: .25rem;
+            width: max-content;
+            min-width: 100%;
+            border-bottom: 0;
+        }
+
+        .supplier-history-tabs .nav-item {
+            flex: 0 0 auto;
+        }
+
+        .supplier-history-tabs .nav-link {
+            padding: .45rem .55rem;
+            border: 0;
+            border-radius: .45rem;
+            color: #526174;
+            font-size: .68rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .supplier-history-tabs .nav-link.active {
+            color: #fff;
+            background: #1769ff;
+            box-shadow: 0 2px 6px rgba(23, 105, 255, .2);
+        }
+
+        .supplier-history-metrics {
+            --bs-gutter-x: .75rem;
+            --bs-gutter-y: .75rem;
+        }
+
+        .supplier-history-metrics > [class*="col-"] {
+            display: flex;
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .supplier-history-metrics .card {
+            width: 100%;
+            min-height: 102px;
+            margin-bottom: 0 !important;
+            transition: none !important;
+            animation: none !important;
+            transform: none !important;
+            will-change: auto !important;
+        }
+
+        .supplier-history-metrics .card,
+        .supplier-history-metrics .card *,
+        .supplier-history-metrics .card::before,
+        .supplier-history-metrics .card::after,
+        .supplier-history-metrics .card *::before,
+        .supplier-history-metrics .card *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+
+        .supplier-history-metrics .card:hover {
+            transform: none !important;
+        }
+
+        .supplier-history-metrics .card-body {
+            padding: .65rem !important;
+        }
+
+        .supplier-history-metrics .card-body small {
+            font-size: .72rem;
+            line-height: 1.25;
+        }
+
+        .supplier-history-metrics .card-body h4 {
+            font-size: .9rem;
+            overflow-wrap: anywhere;
+        }
+
+        .supplier-history-summary .card-body {
+            padding: .65rem .75rem;
+        }
+
+        .supplier-history-summary .row {
+            --bs-gutter-x: .5rem;
+            --bs-gutter-y: .45rem;
+        }
+
+        .supplier-history-summary .row > [class*="col-"] {
+            display: grid;
+            grid-template-columns: 28% minmax(0, 1fr);
+            column-gap: .4rem;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .supplier-history-summary .row > [class*="col-"] > small {
+            grid-column: 1;
+            margin: 0;
+            font-size: .72rem;
+            white-space: nowrap;
+        }
+
+        .supplier-history-summary .row > [class*="col-"] > strong,
+        .supplier-history-summary .row > [class*="col-"] > span {
+            grid-column: 2;
+            min-width: 0;
+            font-size: .82rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .supplier-history-heading {
+            flex-wrap: wrap;
+            gap: .35rem;
+            margin-bottom: .85rem !important;
+        }
+
+        .supplier-history-heading > div:first-child {
+            flex: 0 0 100%;
+            min-width: 0;
+        }
+
+        .supplier-history-heading h1 {
+            font-size: 1rem;
+            white-space: nowrap;
+        }
+
+        .supplier-history-heading p {
+            display: none;
+        }
+
+        .supplier-history-actions {
+            flex: 0 0 100%;
+            justify-content: flex-end;
+            gap: .2rem !important;
+        }
+
+        .supplier-history-actions .btn {
+            padding: .35rem .5rem;
+            font-size: .7rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .supplier-history-actions .btn i {
+            margin-right: .1rem !important;
+            font-size: .65rem;
+        }
+    }
+
+    @media (min-width: 576px) and (max-width: 991.98px) {
+        .supplier-history-heading {
+            gap: .75rem;
+        }
+
+        .supplier-history-heading > div:first-child {
+            min-width: 0;
+        }
+
+        .supplier-history-heading h1 {
+            font-size: 1.25rem;
+        }
+
+        .supplier-history-heading p {
+            font-size: .85rem;
+        }
+
+        .supplier-history-actions {
+            flex: 0 0 auto;
+            gap: .35rem !important;
+        }
+
+        .supplier-history-actions .btn {
+            padding: .38rem .5rem;
+            font-size: .76rem;
+            white-space: nowrap;
+        }
+    }
+
     @media print {
         .sidebar,
         .sidebar-backdrop,
@@ -122,12 +313,12 @@
         <span>Phone</span><strong>{{ $supplier->phone ?: '-' }}</strong>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print supplier-history-heading">
         <div>
-            <h1 class="h3 mb-0 fw-bold" style="color: #1f2937;">Payment History - {{ $supplier->name }}</h1>
+            <h1 class="h3 mb-0 fw-bold" style="color: #1f2937;">Payment History</h1>
             <p class="text-muted mb-0 mt-1">Complete financial transaction history for this supplier</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 supplier-history-actions">
             <button type="button" class="btn btn-primary" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print
             </button>
@@ -137,7 +328,7 @@
         </div>
     </div>
 
-    <div class="card shadow-sm border-0 mb-4 print-summary" style="border-radius: 12px;">
+    <div class="card shadow-sm border-0 mb-4 print-summary supplier-history-summary" style="border-radius: 12px;">
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-4"><small class="text-muted d-block">Supplier</small><strong>{{ $supplier->name }}</strong></div>
@@ -147,7 +338,7 @@
         </div>
     </div>
 
-    <div class="row g-3 mb-4 print-summary">
+    <div class="row g-3 mb-4 print-summary supplier-history-metrics">
         <div class="col-md-6 col-xl-2">
             <div class="card border-start border-4 border-dark shadow-sm h-100"><div class="card-body"><small class="text-muted">Total Purchases</small><h4 class="mb-0 mt-1">Rs. {{ number_format($summary['totalPurchases'], 0) }}</h4></div></div>
         </div>

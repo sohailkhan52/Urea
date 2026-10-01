@@ -9,6 +9,10 @@
         opacity: 1;
     }
 
+    body.modal-open .sidebar-edge-toggle {
+        display: none !important;
+    }
+
     .customer-create-modal-dialog {
         max-width: 625px;
     }
@@ -48,15 +52,315 @@
         padding: 1.25rem 1.6rem;
         border-top: 1px solid #dee2e6;
     }
+
+    @media (max-width: 575.98px) {
+        .customer-page {
+            min-width: 0;
+            padding: .75rem !important;
+        }
+
+        .customer-page-heading {
+            flex-wrap: wrap;
+            gap: .35rem;
+            margin-bottom: .85rem !important;
+        }
+
+        .customer-page-heading > div:first-child {
+            flex: 0 0 100%;
+            min-width: 0;
+        }
+
+        .customer-page-heading h1 {
+            font-size: 1.35rem !important;
+            white-space: nowrap;
+        }
+
+        .customer-page-heading p {
+            display: none;
+        }
+
+        .customer-page-actions {
+            flex: 0 0 100%;
+            justify-content: flex-end;
+            gap: 0 !important;
+        }
+
+        .customer-page-actions .btn {
+            padding: .34rem .42rem !important;
+            font-size: .68rem;
+            line-height: 1.25;
+            white-space: nowrap;
+        }
+
+        .customer-page-actions .btn i {
+            margin-right: .12rem !important;
+            font-size: .7rem;
+        }
+
+        #deleteSelectedCustomersBtn {
+            order: 2;
+        }
+
+        .customer-page-actions [data-bs-target="#createCustomerModal"] {
+            order: 1;
+        }
+
+        .customer-search-card {
+            width: min(100%, 360px) !important;
+            margin-bottom: .75rem !important;
+        }
+
+        .customer-search-card .card-body {
+            padding: .6rem !important;
+        }
+
+        .customer-search-card .form-label {
+            margin-bottom: .3rem !important;
+            font-size: .82rem !important;
+        }
+
+        .customer-search-card .form-control,
+        .customer-search-card .form-control-lg {
+            min-height: 40px;
+            padding: .38rem .6rem;
+            font-size: .86rem;
+        }
+
+        .customer-search-card .row {
+            --bs-gutter-x: .55rem;
+            --bs-gutter-y: .55rem;
+        }
+
+        .customer-search-actions {
+            gap: .4rem !important;
+        }
+
+        .customer-search-actions .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .25rem;
+            min-height: 38px;
+            padding: .35rem .45rem !important;
+            font-size: .75rem;
+            line-height: 1.2;
+        }
+
+        .customer-search-actions .btn i {
+            margin: 0 !important;
+            font-size: .78rem;
+        }
+
+        .customer-per-page {
+            margin-bottom: .4rem !important;
+        }
+
+        .customer-table-card {
+            min-width: 0;
+        }
+
+        .customer-table {
+            min-width: 680px;
+        }
+
+        .customer-table th,
+        .customer-table td {
+            padding: .55rem .65rem !important;
+            font-size: .78rem !important;
+            white-space: nowrap;
+        }
+
+        .customer-table th {
+            font-size: .8rem !important;
+        }
+
+        .customer-table td:last-child {
+            position: static;
+        }
+
+        .customer-table th:last-child {
+            position: static;
+        }
+
+        .customer-table .btn {
+            width: 32px !important;
+            height: 32px !important;
+        }
+
+        .customer-table-pagination {
+            overflow-x: auto;
+            padding: .75rem !important;
+        }
+
+        .customer-table-pagination nav {
+            min-width: max-content;
+        }
+
+        .customer-create-modal-dialog,
+        .customer-details-modal,
+        .customer-edit-modal {
+            width: calc(100% - 2rem);
+            max-width: none;
+            margin: 1rem auto;
+        }
+
+        .customer-modal .modal-content {
+            max-height: calc(100dvh - 2rem);
+            overflow: hidden;
+        }
+
+        .customer-modal form {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .customer-modal .modal-header {
+            flex-shrink: 0;
+            padding: .55rem .75rem;
+        }
+
+        .customer-modal .modal-title {
+            font-size: .95rem;
+        }
+
+        .customer-modal .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: .6rem .75rem;
+        }
+
+        .customer-modal .modal-body .mb-3 {
+            margin-bottom: .45rem !important;
+        }
+
+        .customer-modal .modal-body .row {
+            --bs-gutter-y: .45rem;
+        }
+
+        .customer-modal .form-label {
+            margin-bottom: .2rem;
+            font-size: .78rem;
+        }
+
+        .customer-modal .form-control,
+        .customer-modal .form-select {
+            min-height: 34px;
+            padding: .28rem .5rem;
+            font-size: .8rem;
+        }
+
+        .customer-modal textarea.form-control {
+            min-height: 48px;
+        }
+
+        .customer-modal .modal-footer {
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: .3rem;
+            padding: .5rem .75rem;
+        }
+
+        .customer-modal .modal-footer .btn {
+            padding: .3rem .5rem;
+            font-size: .74rem;
+        }
+
+        .customer-details-modal .modal-body .row {
+            --bs-gutter-x: .65rem;
+            --bs-gutter-y: .7rem;
+        }
+
+        .customer-details-modal .modal-body small,
+        .customer-details-modal .modal-body span,
+        .customer-details-modal .modal-body strong {
+            font-size: .86rem;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    @media (min-width: 576px) and (max-width: 991.98px) {
+        .customer-page-heading {
+            flex-wrap: nowrap;
+            align-items: center !important;
+            gap: .65rem;
+        }
+
+        .customer-page-heading > div:first-child {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .customer-page-heading h1 {
+            font-size: 1.45rem !important;
+        }
+
+        .customer-page-heading p {
+            font-size: .78rem;
+        }
+
+        .customer-page-actions {
+            flex: 0 0 auto;
+            flex-wrap: nowrap;
+            justify-content: flex-end;
+            gap: .3rem !important;
+        }
+
+        .customer-page-actions .btn {
+            flex: 0 0 auto;
+            padding: .34rem .42rem !important;
+            font-size: .68rem;
+            white-space: nowrap;
+        }
+
+        .customer-page-actions .btn i {
+            margin-right: .12rem !important;
+        }
+
+        .customer-search-card {
+            width: min(100%, 760px) !important;
+        }
+
+        .customer-search-card .row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: .75rem;
+            margin: 0;
+            --bs-gutter-x: 0;
+            --bs-gutter-y: 0;
+        }
+
+        .customer-search-card .row > [class*="col-"] {
+            width: auto;
+            max-width: none;
+            padding: 0;
+        }
+
+        .customer-search-actions {
+            align-self: end;
+        }
+
+        .customer-table {
+            min-width: 760px;
+        }
+
+        .customer-table th,
+        .customer-table td {
+            padding: .65rem .75rem !important;
+            font-size: .88rem !important;
+        }
+    }
 </style>
 
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid py-4 customer-page">
+    <div class="d-flex justify-content-between align-items-center mb-4 customer-page-heading">
         <div>
             <h1 class="h3 mb-0 fw-bold" style="font-size: 2.2rem; color: #1f2937;">Customers</h1>
             <p class="text-muted mb-0 mt-1">View and manage all customers in your inventory</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 customer-page-actions">
             @can('customers.delete')
                 <button type="button" class="btn btn-danger btn-sm px-3" id="deleteSelectedCustomersBtn" disabled onclick="deleteSelectedCustomers()" style="border-radius: 8px; font-weight: 600;">
                     <i class="bi bi-trash me-1"></i> Delete Selected
@@ -108,7 +412,7 @@
     </div>
 
     <div class="d-flex justify-content-center">
-        <div class="card mb-4 border-0 shadow-sm" style="border-radius: 12px; background: #f7f8fa; width: min(100%, 900px);">
+        <div class="card mb-4 border-0 shadow-sm customer-search-card" style="border-radius: 12px; background: #f7f8fa; width: min(100%, 900px);">
             <div class="card-body py-3">
                 <form action="{{ route('admin.customers.index') }}" method="GET" autocomplete="off">
                     <div class="row g-3 align-items-end">
@@ -117,7 +421,7 @@
                             <input type="search" class="form-control form-control-lg" id="customer-search" name="search" value="{{ $search ?? '' }}" placeholder="Search by customer name, phone, email, address or city" autocomplete="off" style="border-radius: 10px; border: 1px solid #d5d9df; background: #fff; width: 100%;">
                             <input type="hidden" name="per_page" value="{{ $perPage }}">
                         </div>
-                        <div class="col-md-4 d-flex gap-2">
+                        <div class="col-md-4 d-flex gap-2 customer-search-actions">
                             <button type="submit" class="btn btn-secondary flex-fill" style="background: #6b7280; border-color: #6b7280; border-radius: 9px; font-weight: 600; padding: 0.65rem 0.8rem;"><i class="bi bi-funnel me-1"></i> Filter</button>
                             <a href="{{ route('admin.customers.index') }}" class="btn btn-outline-secondary flex-fill" style="border-radius: 9px; border: 1px solid #c9ced6; color: #374151; background: #fff; font-weight: 600; padding: 0.65rem 0.8rem;"><i class="bi bi-x-circle me-1"></i> Clear</a>
                         </div>
@@ -127,7 +431,7 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-end align-items-center mb-2">
+    <div class="d-flex justify-content-end align-items-center mb-2 customer-per-page">
         <form action="{{ route('admin.customers.index') }}" method="GET" class="d-flex align-items-center gap-2">
             <input type="hidden" name="search" value="{{ $search ?? '' }}">
             <label for="customer-per-page" class="small text-muted mb-0">Per Page</label>
@@ -139,11 +443,11 @@
         </form>
     </div>
 
-    <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
+    <div class="card shadow-sm border-0 customer-table-card" style="border-radius: 12px; overflow: hidden;">
         <div class="card-body p-0">
             @if($customers->count() > 0)
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" style="border-collapse: collapse;">
+                    <table class="table table-hover align-middle mb-0 customer-table" style="border-collapse: collapse;">
                         <thead class="table-light" style="background: #f3f4f6;">
                             <tr>
                                 @can('customers.delete')
@@ -181,7 +485,7 @@
 
                 @foreach($customers as $customer)
                     <div class="modal fade customer-modal" id="customerDetailsModal{{ $customer->id }}" tabindex="-1" aria-labelledby="customerDetailsLabel{{ $customer->id }}" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-dialog modal-dialog-centered modal-lg customer-details-modal">
                             <div class="modal-content border-0 shadow" style="border-radius: 12px;">
                                 <div class="modal-header">
                                     <div><h5 class="modal-title fw-bold" id="customerDetailsLabel{{ $customer->id }}">{{ $customer->name ?: 'Customer Details' }}</h5><small class="text-muted">Complete customer information</small></div>
@@ -201,7 +505,7 @@
                     </div>
 
                     <div class="modal fade customer-modal" id="customerEditModal{{ $customer->id }}" tabindex="-1" aria-labelledby="customerEditLabel{{ $customer->id }}" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-dialog modal-dialog-centered modal-lg customer-edit-modal">
                             <div class="modal-content border-0 shadow" style="border-radius: 12px;">
                                 <div class="modal-header"><h5 class="modal-title fw-bold" id="customerEditLabel{{ $customer->id }}">Edit Customer</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                                 <form action="{{ route('admin.customers.update', $customer) }}" method="POST" autocomplete="new-password">
@@ -223,7 +527,7 @@
                     </div>
                 @endforeach
 
-                <div class="row align-items-center g-2 p-3">
+                <div class="row align-items-center g-2 p-3 customer-table-pagination">
                     <div class="col-12 d-flex justify-content-end">
                         {{ $customers->links() }}
                     </div>
