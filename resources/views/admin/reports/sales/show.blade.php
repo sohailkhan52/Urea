@@ -2,6 +2,220 @@
 
 @section('title', 'Sale Report Detail - ' . $sale->invoice_number)
 
+@push('styles')
+<style>
+    .topbar nav[aria-label="breadcrumb"] {
+        display: none !important;
+    }
+
+    @media (max-width: 575.98px) {
+        .sale-detail-heading {
+            flex-wrap: nowrap;
+            gap: .5rem;
+            margin-bottom: .75rem !important;
+        }
+
+        .sale-detail-heading h1 {
+            min-width: 0;
+            font-size: 1rem;
+            white-space: nowrap;
+        }
+
+        .sale-detail-back {
+            flex: 0 0 auto;
+            padding: .3rem .45rem;
+            font-size: .72rem;
+            white-space: nowrap;
+        }
+
+        .sale-detail-invoice-title {
+            font-size: .72rem;
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+
+        .sale-detail-invoice-row {
+            flex-wrap: nowrap;
+        }
+
+        .sale-detail-invoice-row > .col {
+            min-width: 0;
+        }
+
+        .sale-detail-invoice-row .badge {
+            white-space: nowrap;
+            font-size: .65rem;
+        }
+
+        .sale-detail-info {
+            --bs-gutter-y: .65rem;
+        }
+
+        .sale-detail-info > [class*="col-"] {
+            display: grid;
+            grid-template-columns: 38% minmax(0, 1fr);
+            column-gap: .5rem;
+            align-items: start;
+        }
+
+        .sale-detail-info > [class*="col-"] > :first-child {
+            grid-column: 1;
+            margin-bottom: 0 !important;
+            font-size: .76rem;
+            white-space: nowrap;
+        }
+
+        .sale-detail-info > [class*="col-"] > :first-child i {
+            display: none;
+        }
+
+        .sale-detail-info > [class*="col-"] > :not(:first-child) {
+            grid-column: 2;
+            min-width: 0;
+        }
+
+        .sale-detail-info > [class*="col-"] > p {
+            font-size: .86rem;
+            white-space: nowrap;
+        }
+
+        .sale-detail-info > [class*="col-"] > small {
+            font-size: .72rem;
+            white-space: nowrap;
+        }
+
+        .sale-detail-info > [class*="col-"] > br {
+            display: none;
+        }
+
+        .sale-detail-profit-title {
+            font-size: .95rem;
+        }
+
+        .sale-detail-profit-grid {
+            --bs-gutter-x: .65rem;
+            --bs-gutter-y: .65rem;
+        }
+
+        .sale-detail-profit-grid > [class*="col-"] {
+            display: flex;
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .sale-detail-profit-grid .text-center {
+            width: 100%;
+            height: 100%;
+            padding: .65rem !important;
+        }
+
+        .sale-detail-profit-grid .text-center small {
+            font-size: .72rem;
+        }
+
+        .sale-detail-profit-grid .text-center h5 {
+            font-size: .95rem;
+        }
+
+        .sale-payment-summary .card-header {
+            padding: .55rem .75rem;
+        }
+
+        .sale-payment-summary .card-header h5 {
+            font-size: .95rem;
+        }
+
+        .sale-payment-summary .card-header i {
+            margin-right: .35rem !important;
+        }
+
+        .sale-payment-summary .card-body {
+            padding: .7rem .75rem;
+            font-size: .82rem;
+        }
+
+        .sale-payment-summary .card-body .mb-3 {
+            margin-bottom: .55rem !important;
+        }
+
+        .sale-payment-summary .card-body .mb-2 {
+            margin-bottom: .35rem !important;
+        }
+
+        .sale-payment-summary .card-body hr {
+            margin: .55rem 0;
+        }
+
+        .sale-payment-summary .card-body .fs-5 {
+            font-size: .95rem !important;
+        }
+
+        .sale-payment-summary .card-body .border-top {
+            padding-top: .6rem !important;
+        }
+
+        .sale-payment-summary .card-body .mt-3 {
+            margin-top: .6rem !important;
+        }
+
+        .sale-payment-summary .card-body .fs-6 {
+            font-size: .78rem !important;
+        }
+
+        .sale-payment-summary .card-body > .text-center {
+            display: none;
+        }
+
+        .sale-detail-statistics-title {
+            margin-bottom: .55rem;
+            font-size: .9rem;
+        }
+
+        .sale-detail-statistics-title i {
+            margin-right: .35rem !important;
+        }
+
+        .sale-detail-statistics {
+            font-size: .82rem;
+        }
+
+        .sale-detail-statistics .mb-2 {
+            margin-bottom: .35rem !important;
+        }
+
+        .sale-payment-history .card-header {
+            padding: .55rem .75rem;
+        }
+
+        .sale-payment-history .card-header h5 {
+            font-size: .95rem;
+        }
+
+        .sale-payment-history .card-header i {
+            margin-right: .35rem !important;
+        }
+
+        .sale-payment-history .card-body {
+            padding: .55rem .75rem;
+        }
+
+        .sale-payment-history .list-group-item {
+            padding-top: .45rem;
+            padding-bottom: .45rem;
+        }
+
+        .sale-payment-history .list-group-item small {
+            font-size: .72rem;
+        }
+
+        .sale-payment-history .list-group-item strong {
+            font-size: .85rem;
+            white-space: nowrap;
+        }
+    }
+</style>
+@endpush
+
 @section('breadcrumbs')
     <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
     <li class="breadcrumb-item"><a href="{{ route('admin.reports.sales.index') }}">Sale Report</a></li>
@@ -11,13 +225,13 @@
 @section('content')
 <div class="container-fluid">
     {{-- Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 sale-detail-heading">
         <div>
             <h1 class="h3 mb-0">Sale Report Detail</h1>
         </div>
         <div>
-            <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i> Back to Sale Report
+            <a href="{{ url()->previous() }}" class="btn btn-outline-secondary sale-detail-back">
+                <i class="bi bi-arrow-left me-1"></i><span>Back to Sale Report</span>
             </a>
         </div>
     </div>
@@ -27,10 +241,9 @@
             {{-- Sale Header Information --}}
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <div class="row align-items-center">
+                    <div class="row align-items-center sale-detail-invoice-row">
                         <div class="col">
-                            <h5 class="mb-0">
-                                <i class="bi bi-receipt me-2"></i>
+                            <h5 class="mb-0 sale-detail-invoice-title">
                                 Invoice: {{ $sale->invoice_number }}
                             </h5>
                         </div>
@@ -46,7 +259,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="row g-4">
+                    <div class="row g-4 sale-detail-info">
                         {{-- Customer Information --}}
                         <div class="col-md-6">
                             <small class="text-muted d-block mb-2"><i class="bi bi-person me-1"></i>Customer</small>
@@ -208,12 +421,12 @@
             @if($sale->has_cost_data)
             <div class="card mb-4">
                 <div class="card-header bg-{{ $sale->profit_status === 'profit' ? 'success' : ($sale->profit_status === 'loss' ? 'danger' : 'secondary') }} text-white">
-                    <h5 class="mb-0">
+                    <h5 class="mb-0 sale-detail-profit-title">
                         <i class="bi bi-graph-up-arrow me-2"></i>Profit/Loss Analysis
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row g-3">
+                    <div class="row g-3 sale-detail-profit-grid">
                         <div class="col-md-3">
                             <div class="text-center p-3 bg-light rounded">
                                 <small class="text-muted d-block mb-1">Net Revenue</small>
@@ -309,7 +522,7 @@
         {{-- Right Sidebar - Payment Summary --}}
         <div class="col-lg-4">
             {{-- Payment Summary --}}
-            <div class="card mb-4">
+            <div class="card mb-4 sale-payment-summary">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">
                         <i class="bi bi-wallet2 me-2"></i>Payment Summary
@@ -355,12 +568,36 @@
                             <span class="badge bg-danger fs-6 mt-1">Unpaid</span>
                         @endif
                     </div>
+
+                    <div class="mt-3 pt-3 border-top sale-detail-statistics">
+                        <h6 class="sale-detail-statistics-title">
+                            <i class="bi bi-graph-up me-2"></i>Statistics
+                        </h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Items:</span>
+                            <strong>{{ $sale->items->count() }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Quantity:</span>
+                            <strong>{{ number_format($sale->items->sum('quantity'), 0) }}</strong>
+                        </div>
+                        @if($sale->returns->count() > 0)
+                        <div class="d-flex justify-content-between mb-2 text-warning">
+                            <span>Total Returns:</span>
+                            <strong>{{ $sale->returns->count() }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between text-warning">
+                            <span>Returned Amount:</span>
+                            <strong>Rs. {{ number_format($sale->returns->sum('total_return_amount'), 0) }}</strong>
+                        </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 
             {{-- Payment History --}}
             @if($sale->customerPayments->count() > 0)
-            <div class="card mb-4">
+            <div class="card mb-4 sale-payment-history">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">
                         <i class="bi bi-clock-history me-2"></i>Payment History
@@ -389,34 +626,6 @@
             </div>
             @endif
 
-            {{-- Statistics --}}
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="bi bi-graph-up me-2"></i>Statistics
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Total Items:</span>
-                        <strong>{{ $sale->items->count() }}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Total Quantity:</span>
-                        <strong>{{ number_format($sale->items->sum('quantity'), 0) }}</strong>
-                    </div>
-                    @if($sale->returns->count() > 0)
-                    <div class="d-flex justify-content-between mb-2 text-warning">
-                        <span>Total Returns:</span>
-                        <strong>{{ $sale->returns->count() }}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between text-warning">
-                        <span>Returned Amount:</span>
-                        <strong>Rs. {{ number_format($sale->returns->sum('total_return_amount'), 0) }}</strong>
-                    </div>
-                    @endif
-                </div>
-            </div>
         </div>
     </div>
 </div>

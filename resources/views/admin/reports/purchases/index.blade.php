@@ -8,9 +8,314 @@
 
 @push('styles')
 <style>
+    .topbar nav[aria-label="breadcrumb"] {
+        display: none !important;
+    }
+
     .purchase-report-print-header,
     .purchase-report-print-footer {
         display: none;
+    }
+
+    @media (max-width: 575.98px) {
+        .purchase-report-heading {
+            flex-wrap: nowrap;
+            gap: .4rem;
+            margin-bottom: .75rem !important;
+        }
+
+        .purchase-report-heading h1 {
+            flex: 0 0 auto;
+            font-size: .82rem;
+            white-space: nowrap;
+        }
+
+        .purchase-report-actions {
+            display: flex;
+            flex: 0 0 auto;
+            gap: 0;
+        }
+
+        .purchase-report-actions .btn {
+            margin: 0 !important;
+            padding: .18rem .22rem;
+            font-size: .54rem;
+            line-height: 1.3;
+            white-space: nowrap;
+        }
+
+        .purchase-report-actions .btn i {
+            margin-right: .08rem !important;
+            font-size: .58rem;
+        }
+
+        .purchase-report-summary {
+            row-gap: .45rem;
+        }
+
+        .purchase-report-summary > .col-md-4 {
+            display: flex;
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .purchase-report-summary .card {
+            width: 100%;
+            height: 76px !important;
+            min-height: 76px;
+            margin-bottom: 0 !important;
+            transition: none !important;
+            animation: none !important;
+            transform: none !important;
+            will-change: auto !important;
+        }
+
+        .purchase-report-summary .card,
+        .purchase-report-summary .card *,
+        .purchase-report-summary .card::before,
+        .purchase-report-summary .card::after,
+        .purchase-report-summary .card *::before,
+        .purchase-report-summary .card *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+
+        .purchase-report-summary .card:hover {
+            transform: none !important;
+        }
+
+        .purchase-report-summary .card-body {
+            padding: .5rem .55rem;
+        }
+
+        .purchase-report-summary .card-body p {
+            padding-right: 1rem;
+            font-size: .7rem;
+        }
+
+        .purchase-report-summary .card-body h4 {
+            font-size: .68rem;
+            white-space: nowrap;
+        }
+
+        .purchase-report-summary .card-body .d-flex {
+            position: relative;
+            align-items: flex-start !important;
+        }
+
+        .purchase-report-summary .card-body .d-flex > div:first-child {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .purchase-report-summary .card-body .d-flex > div:last-child {
+            position: absolute;
+            top: 0;
+            right: 0;
+            line-height: 1;
+        }
+
+        .purchase-report-summary .card-body .fs-2 {
+            font-size: .78rem !important;
+        }
+
+        .purchase-report-filters .card-header {
+            padding: .55rem .75rem;
+        }
+
+        .purchase-report-filters .card-header .card-title {
+            font-size: 1rem;
+        }
+
+        .purchase-report-filters .card-header .card-title i {
+            margin-right: .35rem !important;
+        }
+
+        .purchase-report-filters .card-body {
+            padding: .75rem;
+        }
+
+        .purchase-report-filters .row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: .55rem;
+            margin: 0;
+            --bs-gutter-x: 0;
+            --bs-gutter-y: 0;
+        }
+
+        .purchase-report-filters .row > [class*="col-"] {
+            width: 100%;
+            max-width: 100%;
+            padding: 0;
+        }
+
+        .purchase-report-filters .form-label {
+            margin-bottom: .25rem;
+            font-size: .78rem;
+        }
+
+        .purchase-report-filters .form-control,
+        .purchase-report-filters .form-select {
+            width: 100%;
+            min-width: 0;
+            min-height: 36px;
+            padding: .35rem .55rem;
+            font-size: .82rem;
+        }
+
+        .purchase-report-filters .btn {
+            padding: .32rem .55rem;
+            font-size: .78rem;
+        }
+
+        .purchase-report-filters .row > .col-md-12 {
+            display: flex;
+            gap: .35rem;
+        }
+
+        .purchase-report-filters .row > .col-md-12 .btn {
+            margin: 0 !important;
+        }
+
+        .purchase-report-table {
+            min-width: 800px;
+            font-size: .72rem;
+        }
+
+        .purchase-report-table .btn {
+            padding: .2rem .35rem;
+            font-size: .7rem;
+        }
+    }
+
+    @media (min-width: 576px) and (max-width: 991.98px) {
+        .purchase-report-summary {
+            --bs-gutter-x: 1rem;
+            --bs-gutter-y: 1rem;
+        }
+
+        .purchase-report-summary > .col-md-4 {
+            display: flex;
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .purchase-report-summary .card {
+            width: 100%;
+            height: auto;
+            min-height: 112px;
+            margin-bottom: 0 !important;
+            transition: none !important;
+            animation: none !important;
+            transform: none !important;
+            will-change: auto !important;
+        }
+
+        .purchase-report-summary .card,
+        .purchase-report-summary .card *,
+        .purchase-report-summary .card::before,
+        .purchase-report-summary .card::after,
+        .purchase-report-summary .card *::before,
+        .purchase-report-summary .card *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+
+        .purchase-report-summary .card:hover {
+            transform: none !important;
+        }
+
+        .purchase-report-summary .card-body {
+            padding: .85rem;
+        }
+
+        .purchase-report-summary .card-body p {
+            font-size: .85rem;
+        }
+
+        .purchase-report-summary .card-body h4 {
+            font-size: 1.1rem;
+        }
+
+        .purchase-report-summary .card-body .fs-2 {
+            font-size: 1.45rem !important;
+        }
+
+        .purchase-report-filters .row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem .85rem;
+            margin: 0;
+            --bs-gutter-x: 0;
+            --bs-gutter-y: 0;
+        }
+
+        .purchase-report-filters .row > [class*="col-"] {
+            width: 100%;
+            max-width: 100%;
+            padding: 0;
+        }
+
+        .purchase-report-filters .row > .col-md-12 {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+        .purchase-report-filters .form-control,
+        .purchase-report-filters .form-select {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .purchase-report-table {
+            min-width: 900px;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .purchase-report-heading h1 {
+            white-space: nowrap;
+        }
+
+        .purchase-report-filters .row {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 1rem .85rem;
+            margin: 0;
+            --bs-gutter-x: 0;
+            --bs-gutter-y: 0;
+        }
+
+        .purchase-report-filters .row > [class*="col-"] {
+            width: auto;
+            max-width: none;
+            padding: 0;
+        }
+
+        .purchase-report-filters .row > .col-md-3 {
+            grid-column: span 3;
+        }
+
+        .purchase-report-filters .row > .col-md-2 {
+            grid-column: span 2;
+        }
+
+        .purchase-report-filters .row > .col-md-12 {
+            grid-column: span 4;
+            align-self: end;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+        .purchase-report-filters .form-control,
+        .purchase-report-filters .form-select {
+            width: 100%;
+            min-width: 0;
+        }
     }
 
     @media print {
@@ -96,7 +401,8 @@
         }
 
         .pagination,
-        .d-flex.justify-content-between.align-items-center.mt-3 {
+        .d-flex.justify-content-between.align-items-center.mt-3,
+        .d-flex.justify-content-end.align-items-center.mb-2 {
             display: none !important;
         }
     }
@@ -121,9 +427,9 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print purchase-report-heading">
         <h1 class="h3 mb-0">Purchase Report</h1>
-        <div>
+        <div class="purchase-report-actions">
             <button type="button" class="btn btn-info me-2" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print Report
             </button>
@@ -135,7 +441,7 @@
 
     {{-- Summary Cards --}}
     @if($totals && $totals->total_purchases > 0)
-    <div class="row mb-4 no-print">
+    <div class="row mb-4 no-print purchase-report-summary">
         <div class="col-md-4">
             <div class="card border-primary">
                 <div class="card-body">
@@ -185,7 +491,7 @@
     @endif
 
     {{-- Filters --}}
-    <div class="card mb-4 no-print">
+    <div class="card mb-4 no-print purchase-report-filters">
         <div class="card-header bg-light">
             <h5 class="card-title mb-0">
                 <i class="bi bi-funnel me-2"></i>Filters
@@ -279,7 +585,7 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-end align-items-center mb-2">
+    <div class="d-flex justify-content-end align-items-center mb-2 no-print">
         <form action="{{ route('admin.reports.purchases.index') }}" method="GET" class="d-flex align-items-center gap-2">
             @foreach(request()->except(['page', 'per_page']) as $key => $value)
                 @if(is_scalar($value))
@@ -300,7 +606,7 @@
         <div class="card-body">
             @if($purchases->count() > 0)
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle purchase-report-table">
                     <thead class="table-light">
                         <tr>
                             <th style="width: 40px;">
@@ -391,7 +697,7 @@
     </div>
 
     <div class="purchase-report-print-footer">
-        Printed on {{ now()->format('d M Y H:i A') }}
+        Address: {{ $company?->address ?: 'Naivela Dera Ismail Khan' }}
     </div>
 </div>
 

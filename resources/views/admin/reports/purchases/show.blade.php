@@ -2,6 +2,203 @@
 
 @section('title', 'Purchase Report Detail - ' . $purchase->purchase_number)
 
+@push('styles')
+<style>
+    .topbar nav[aria-label="breadcrumb"] {
+        display: none !important;
+    }
+
+    @media (max-width: 575.98px) {
+        .purchase-detail-heading {
+            flex-wrap: nowrap;
+            gap: .3rem;
+            margin-bottom: .75rem !important;
+        }
+
+        .purchase-detail-heading h1 {
+            min-width: 0;
+            font-size: .76rem;
+            white-space: nowrap;
+        }
+
+        .purchase-detail-heading > div:first-child {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .purchase-detail-heading > div:last-child {
+            flex: 0 0 auto;
+        }
+
+        .purchase-detail-back {
+            flex: 0 0 auto;
+            padding: .25rem .3rem;
+            font-size: .56rem;
+            white-space: nowrap;
+        }
+
+        .purchase-detail-back i {
+            margin-right: .15rem !important;
+            font-size: .6rem;
+        }
+
+        .purchase-detail-invoice-title {
+            font-size: .56rem;
+            line-height: 1.1;
+            white-space: nowrap;
+            letter-spacing: -.02em;
+        }
+
+        .purchase-detail-invoice-row {
+            flex-wrap: nowrap;
+            column-gap: .2rem;
+        }
+
+        .purchase-detail-invoice-row > .col {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .purchase-detail-invoice-row .badge {
+            padding: .25em .4em;
+            font-size: .52rem;
+            white-space: nowrap;
+        }
+
+        .purchase-detail-info {
+            --bs-gutter-y: .65rem;
+        }
+
+        .purchase-detail-info > [class*="col-"] {
+            display: grid;
+            grid-template-columns: 38% minmax(0, 1fr);
+            column-gap: .5rem;
+            align-items: start;
+        }
+
+        .purchase-detail-info > [class*="col-"] > :first-child {
+            grid-column: 1;
+            margin-bottom: 0 !important;
+            font-size: .76rem;
+            white-space: nowrap;
+        }
+
+        .purchase-detail-info > [class*="col-"] > :first-child i {
+            display: none;
+        }
+
+        .purchase-detail-info > [class*="col-"] > :not(:first-child) {
+            grid-column: 2;
+            min-width: 0;
+        }
+
+        .purchase-detail-info > [class*="col-"] > p {
+            font-size: .86rem;
+            white-space: nowrap;
+        }
+
+        .purchase-detail-info > [class*="col-"] > small {
+            font-size: .72rem;
+            white-space: nowrap;
+        }
+
+        .purchase-detail-info > [class*="col-"] > br {
+            display: none;
+        }
+
+        .purchase-detail-items-table,
+        .purchase-detail-returns-table {
+            min-width: 560px;
+            font-size: .78rem;
+        }
+
+        .purchase-payment-summary .card-header,
+        .purchase-payment-history .card-header {
+            padding: .55rem .75rem;
+        }
+
+        .purchase-payment-summary .card-header h5,
+        .purchase-payment-history .card-header h5 {
+            font-size: .95rem;
+        }
+
+        .purchase-payment-summary .card-header i,
+        .purchase-payment-history .card-header i {
+            margin-right: .35rem !important;
+        }
+
+        .purchase-payment-summary .card-body {
+            padding: .7rem .75rem;
+            font-size: .82rem;
+        }
+
+        .purchase-payment-summary .card-body .mb-3 {
+            margin-bottom: .55rem !important;
+        }
+
+        .purchase-payment-summary .card-body .mb-2 {
+            margin-bottom: .35rem !important;
+        }
+
+        .purchase-payment-summary .card-body hr {
+            margin: .55rem 0;
+        }
+
+        .purchase-payment-summary .card-body .fs-5 {
+            font-size: .95rem !important;
+        }
+
+        .purchase-payment-summary .card-body .border-top {
+            padding-top: .6rem !important;
+        }
+
+        .purchase-payment-summary .card-body .mt-3 {
+            margin-top: .6rem !important;
+        }
+
+        .purchase-payment-summary .card-body .fs-6,
+        .purchase-payment-summary .card-body > .text-center {
+            display: none;
+        }
+
+        .purchase-detail-statistics-title {
+            margin-bottom: .55rem;
+            font-size: .9rem;
+        }
+
+        .purchase-detail-statistics-title i {
+            margin-right: .35rem !important;
+        }
+
+        .purchase-detail-statistics {
+            font-size: .82rem;
+        }
+
+        .purchase-detail-statistics .mb-2 {
+            margin-bottom: .35rem !important;
+        }
+
+        .purchase-payment-history .card-body {
+            padding: .55rem .75rem;
+        }
+
+        .purchase-payment-history .list-group-item {
+            padding-top: .45rem;
+            padding-bottom: .45rem;
+        }
+
+        .purchase-payment-history .list-group-item small {
+            font-size: .72rem;
+        }
+
+        .purchase-payment-history .list-group-item strong {
+            font-size: .85rem;
+            white-space: nowrap;
+        }
+    }
+</style>
+@endpush
+
 @section('breadcrumbs')
     <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
     <li class="breadcrumb-item"><a href="{{ route('admin.reports.purchases.index') }}">Purchase Report</a></li>
@@ -11,13 +208,13 @@
 @section('content')
 <div class="container-fluid">
     {{-- Header --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 purchase-detail-heading">
         <div>
             <h1 class="h3 mb-0">Purchase Report Detail</h1>
         </div>
         <div>
-            <a href="{{ url()->previous() }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i> Back to Purchase Report
+            <a href="{{ url()->previous() }}" class="btn btn-outline-secondary purchase-detail-back">
+                <i class="bi bi-arrow-left me-1"></i><span>Back to Purchase Report</span>
             </a>
         </div>
     </div>
@@ -27,10 +224,9 @@
             {{-- Purchase Header Information --}}
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <div class="row align-items-center">
+                    <div class="row align-items-center purchase-detail-invoice-row">
                         <div class="col">
-                            <h5 class="mb-0">
-                                <i class="bi bi-cart me-2"></i>
+                            <h5 class="mb-0 purchase-detail-invoice-title">
                                 Purchase Order: {{ $purchase->purchase_number }}
                             </h5>
                         </div>
@@ -46,7 +242,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="row g-4">
+                    <div class="row g-4 purchase-detail-info">
                         {{-- Supplier Information --}}
                         <div class="col-md-6">
                             <small class="text-muted d-block mb-2"><i class="bi bi-shop me-1"></i>Supplier</small>
@@ -112,7 +308,7 @@
                 <div class="card-body">
                     @if($purchase->items->count() > 0)
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table table-hover align-middle purchase-detail-items-table">
                             <thead class="table-light">
                                 <tr>
                                     <th>#</th>
@@ -159,7 +355,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-sm">
+                        <table class="table table-sm purchase-detail-returns-table">
                             <thead>
                                 <tr>
                                     <th>Return No.</th>
@@ -192,7 +388,7 @@
         {{-- Right Sidebar - Payment Summary --}}
         <div class="col-lg-4">
             {{-- Payment Summary --}}
-            <div class="card mb-4">
+            <div class="card mb-4 purchase-payment-summary">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">
                         <i class="bi bi-wallet2 me-2"></i>Payment Summary
@@ -256,12 +452,26 @@
                             <span class="badge bg-danger fs-6 mt-1">Unpaid</span>
                         @endif
                     </div>
+
+                    <div class="mt-3 pt-3 border-top purchase-detail-statistics">
+                        <h6 class="purchase-detail-statistics-title">
+                            <i class="bi bi-graph-up me-2"></i>Statistics
+                        </h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Items:</span>
+                            <strong>{{ $purchase->items->count() }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Quantity:</span>
+                            <strong>{{ number_format($purchase->items->sum('quantity'), 0) }}</strong>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {{-- Payment History --}}
             @if($purchase->payments->count() > 0)
-            <div class="card mb-4">
+            <div class="card mb-4 purchase-payment-history">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">
                         <i class="bi bi-clock-history me-2"></i>Payment History
@@ -292,24 +502,6 @@
             </div>
             @endif
 
-            {{-- Statistics --}}
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="bi bi-graph-up me-2"></i>Statistics
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Total Items:</span>
-                        <strong>{{ $purchase->items->count() }}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Total Quantity:</span>
-                        <strong>{{ number_format($purchase->items->sum('quantity'), 0) }}</strong>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>

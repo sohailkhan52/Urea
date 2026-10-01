@@ -18,6 +18,59 @@
     }
 
     @media (max-width: 767.98px) {
+        body.modal-open .sidebar-edge-toggle {
+            display: none !important;
+        }
+
+        #individualPaymentModal .customer-payment-dialog {
+            width: calc(100vw - 2rem);
+            max-width: 300px;
+            margin: .5rem auto;
+        }
+
+        #individualPaymentModal .customer-payment-dialog .modal-content {
+            max-height: 78dvh;
+        }
+
+        #individualPaymentModal .customer-payment-dialog form {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        #individualPaymentModal .customer-payment-dialog .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding: .55rem .75rem;
+        }
+
+        #individualPaymentModal .customer-payment-dialog .modal-header,
+        #individualPaymentModal .customer-payment-dialog .modal-footer {
+            flex-shrink: 0;
+            padding: .5rem .75rem;
+        }
+
+        #individualPaymentModal .customer-payment-dialog .modal-title {
+            font-size: 1rem;
+        }
+
+        #individualPaymentModal .customer-payment-dialog .form-label {
+            margin-bottom: .2rem;
+            font-size: .85rem;
+        }
+
+        #individualPaymentModal .customer-payment-dialog .mb-3 {
+            margin-bottom: .45rem !important;
+        }
+
+        #individualPaymentModal .customer-payment-dialog .form-control {
+            min-height: 34px;
+            padding: .3rem .55rem;
+            font-size: .85rem;
+        }
+
         .individual-account-card,
         .individual-account-card *,
         .individual-account-card::before,

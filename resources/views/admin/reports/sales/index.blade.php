@@ -8,9 +8,214 @@
 
 @push('styles')
 <style>
+    .topbar nav[aria-label="breadcrumb"] {
+        display: none !important;
+    }
+
     .sales-report-print-header,
     .sales-report-print-footer {
         display: none;
+    }
+
+    @media (max-width: 575.98px) {
+        .sales-report-filters .card-header {
+            padding: .55rem .75rem;
+        }
+
+        .sales-report-filters .card-header .card-title {
+            font-size: 1rem;
+        }
+
+        .sales-report-filters .card-header .card-title i {
+            margin-right: .35rem !important;
+        }
+
+        .sales-report-filters .card-body {
+            padding: .75rem;
+        }
+
+        .sales-report-filters .row {
+            --bs-gutter-x: .65rem;
+            --bs-gutter-y: .55rem;
+        }
+
+        .sales-report-filters .form-label {
+            margin-bottom: .25rem;
+            font-size: .78rem;
+        }
+
+        .sales-report-filters .form-control,
+        .sales-report-filters .form-select {
+            min-height: 36px;
+            padding: .35rem .55rem;
+            font-size: .82rem;
+        }
+
+        .sales-report-filters .btn {
+            padding: .32rem .55rem;
+            font-size: .78rem;
+        }
+
+        .sales-report-summary > .col-md-3 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .sales-report-summary .card-body {
+            padding: .65rem;
+        }
+
+        .sales-report-summary .card-body p {
+            font-size: .7rem;
+        }
+
+        .sales-report-summary .card-body h4,
+        .sales-report-summary .card-body h5 {
+            font-size: .72rem;
+            white-space: nowrap;
+        }
+
+        .sales-report-summary .currency-prefix {
+            font-size: .65em;
+        }
+
+        .sales-report-summary .card-body small {
+            display: none;
+        }
+
+        .sales-report-summary .card-body .fs-2,
+        .sales-report-summary .card-body .fs-3 {
+            font-size: .9rem !important;
+        }
+
+        .sales-report-summary .card-body .d-flex {
+            position: relative;
+            align-items: flex-start !important;
+        }
+
+        .sales-report-summary .card-body .d-flex > div:first-child {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .sales-report-summary .card-body .d-flex > div:first-child > p {
+            padding-right: 1rem;
+        }
+
+        .sales-report-summary .card-body .d-flex > div:last-child {
+            position: absolute;
+            top: 0;
+            right: 0;
+            line-height: 1;
+        }
+
+        .sales-report-heading {
+            flex-wrap: nowrap;
+            gap: .4rem;
+            margin-bottom: .75rem !important;
+        }
+
+        .sales-report-heading h1 {
+            flex: 0 0 auto;
+            font-size: 1rem;
+            white-space: nowrap;
+        }
+
+        .sales-report-actions {
+            display: flex;
+            flex: 0 0 auto;
+            gap: 0;
+        }
+
+        .sales-report-actions .btn {
+            padding: .22rem .28rem;
+            font-size: .62rem;
+            line-height: 1.3;
+            white-space: nowrap;
+        }
+
+        .sales-report-actions .btn i {
+            margin-right: .1rem !important;
+            font-size: .65rem;
+        }
+    }
+
+    @media (min-width: 576px) and (max-width: 991.98px) {
+        .sales-report-summary > .col-md-3 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+        .sales-report-filters .row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem .85rem;
+            margin: 0;
+            --bs-gutter-x: 0;
+            --bs-gutter-y: 0;
+        }
+
+        .sales-report-filters .row > [class*="col-"] {
+            width: 100%;
+            max-width: 100%;
+            padding-right: 0;
+            padding-left: 0;
+        }
+
+        .sales-report-filters .row > .col-md-12 {
+            grid-column: 2;
+            align-self: end;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+        .sales-report-filters .form-control,
+        .sales-report-filters .form-select {
+            width: 100%;
+            min-width: 0;
+        }
+
+    }
+
+    @media (min-width: 992px) {
+        .sales-report-filters .row {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 1rem .85rem;
+            margin: 0;
+            --bs-gutter-x: 0;
+            --bs-gutter-y: 0;
+        }
+
+        .sales-report-filters .row > [class*="col-"] {
+            width: auto;
+            max-width: none;
+            padding-right: 0;
+            padding-left: 0;
+        }
+
+        .sales-report-filters .row > .col-md-3 {
+            grid-column: span 3;
+        }
+
+        .sales-report-filters .row > .col-md-2 {
+            grid-column: span 2;
+        }
+
+        .sales-report-filters .row > .col-md-12 {
+            grid-column: span 4;
+            align-self: end;
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+        .sales-report-filters .form-control,
+        .sales-report-filters .form-select {
+            width: 100%;
+            min-width: 0;
+        }
     }
 
     @media print {
@@ -117,9 +322,9 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print sales-report-heading">
         <h1 class="h3 mb-0">Sale Report</h1>
-        <div>
+        <div class="sales-report-actions">
             <button type="button" class="btn btn-info me-2" onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> Print Report
             </button>
@@ -131,7 +336,7 @@
 
     {{-- Summary Cards --}}
     @if($totals && $totals->total_sales > 0)
-    <div class="row mb-4 no-print">
+    <div class="row mb-4 no-print sales-report-summary">
         <div class="col-md-3">
             <div class="card border-primary">
                 <div class="card-body">
@@ -153,7 +358,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Total Amount</p>
-                            <h4 class="mb-0">Rs. {{ number_format($totals->total_amount_sum, 0) }}</h4>
+                            <h4 class="mb-0"><span class="currency-prefix">Rs.</span> {{ number_format($totals->total_amount_sum, 0) }}</h4>
                         </div>
                         <div class="text-success">
                             <i class="bi bi-currency-dollar fs-2"></i>
@@ -168,7 +373,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Total Paid</p>
-                            <h4 class="mb-0">Rs. {{ number_format($totals->total_paid_sum, 0) }}</h4>
+                            <h4 class="mb-0"><span class="currency-prefix">Rs.</span> {{ number_format($totals->total_paid_sum, 0) }}</h4>
                         </div>
                         <div class="text-info">
                             <i class="bi bi-check-circle fs-2"></i>
@@ -183,7 +388,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Total Outstanding</p>
-                            <h4 class="mb-0">Rs. {{ number_format($totals->total_udhar_sum, 0) }}</h4>
+                            <h4 class="mb-0"><span class="currency-prefix">Rs.</span> {{ number_format($totals->total_udhar_sum, 0) }}</h4>
                         </div>
                         <div class="text-warning">
                             <i class="bi bi-exclamation-triangle fs-2"></i>
@@ -196,14 +401,14 @@
 
     {{-- Profit/Loss Summary Cards --}}
     @if($totals->sales_with_cost_data > 0)
-    <div class="row mb-4 no-print">
+    <div class="row mb-4 no-print sales-report-summary">
         <div class="col-md-3">
             <div class="card border-success bg-light">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Net Revenue</p>
-                            <h5 class="mb-0 text-success">Rs. {{ number_format($totals->total_revenue, 0) }}</h5>
+                            <h5 class="mb-0 text-success"><span class="currency-prefix">Rs.</span> {{ number_format($totals->total_revenue, 0) }}</h5>
                         </div>
                         <div class="text-success">
                             <i class="bi bi-graph-up fs-3"></i>
@@ -218,7 +423,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <p class="text-muted mb-1 small">Total COGS</p>
-                            <h5 class="mb-0 text-danger">Rs. {{ number_format($totals->total_cogs, 0) }}</h5>
+                            <h5 class="mb-0 text-danger"><span class="currency-prefix">Rs.</span> {{ number_format($totals->total_cogs, 0) }}</h5>
                         </div>
                         <div class="text-danger">
                             <i class="bi bi-cart-dash fs-3"></i>
@@ -234,11 +439,11 @@
                         <div>
                             <p class="text-muted mb-1 small">Net Profit</p>
                             <h5 class="mb-0 text-{{ $totals->net_profit >= 0 ? 'success' : 'danger' }}">
-                                Rs. {{ number_format($totals->net_profit, 0) }}
+                                <span class="currency-prefix">Rs.</span> {{ number_format($totals->net_profit, 0) }}
                             </h5>
                             <small class="text-muted">
-                                Profit: Rs. {{ number_format($totals->total_profit, 0) }} | 
-                                Loss: Rs. {{ number_format($totals->total_loss, 0) }}
+                                Profit: <span class="currency-prefix">Rs.</span> {{ number_format($totals->total_profit, 0) }} | 
+                                Loss: <span class="currency-prefix">Rs.</span> {{ number_format($totals->total_loss, 0) }}
                             </small>
                         </div>
                         <div class="text-{{ $totals->net_profit >= 0 ? 'success' : 'danger' }}">
@@ -269,7 +474,7 @@
     @endif
 
     {{-- Filters --}}
-    <div class="card mb-4 no-print">
+    <div class="card mb-4 no-print sales-report-filters">
         <div class="card-header bg-light">
             <h5 class="card-title mb-0">
                 <i class="bi bi-funnel me-2"></i>Filters
@@ -379,22 +584,6 @@
                 </div>
             </form>
         </div>
-    </div>
-
-    <div class="d-flex justify-content-end align-items-center mb-2">
-        <form action="{{ route('admin.reports.sales.index') }}" method="GET" class="d-flex align-items-center gap-2">
-            @foreach(request()->except(['page', 'per_page']) as $key => $value)
-                @if(is_scalar($value))
-                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                @endif
-            @endforeach
-            <label for="sales-report-per-page" class="small text-muted mb-0">Per Page</label>
-            <select id="sales-report-per-page" name="per_page" class="form-select form-select-sm" style="width: 82px;" onchange="this.form.submit()">
-                @foreach([10, 25, 50, 100] as $option)
-                    <option value="{{ $option }}" @selected($perPage == $option)>{{ $option }}</option>
-                @endforeach
-            </select>
-        </form>
     </div>
 
     {{-- Sales Report Table --}}
