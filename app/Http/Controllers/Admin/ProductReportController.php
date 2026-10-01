@@ -43,8 +43,8 @@ class ProductReportController extends Controller
         }
 
         // Sort
-        $sortBy = $request->input('sort_by', 'name');
-        $sortOrder = $request->input('sort_order', 'asc');
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortOrder = $request->input('sort_order', 'desc');
         
         if (in_array($sortBy, ['name', 'purchase_price', 'sale_price', 'created_at'])) {
             $query->orderBy($sortBy, $sortOrder);
@@ -88,7 +88,8 @@ class ProductReportController extends Controller
             }))
             ->when($filters['product_id'], fn ($query, $productId) => $query->whereKey($productId))
             ->when($filters['unit'], fn ($query, $unit) => $query->where('unit', $unit))
-            ->orderBy('name')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->get();
 
         $rows = $products->map(fn ($product) => $this->productHistorySummary($product, $filters));
@@ -153,7 +154,7 @@ class ProductReportController extends Controller
             $balance += $transaction['in'] - $transaction['out'] - $transaction['return'];
             $transaction['balance'] = $balance;
             return $transaction;
-        });
+        })->reverse()->values();
 
         return view('admin.reports.products.history-show', compact('product', 'summary', 'transactions', 'filters'));
     }

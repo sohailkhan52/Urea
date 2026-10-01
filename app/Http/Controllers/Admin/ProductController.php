@@ -24,7 +24,8 @@ class ProductController extends Controller
      */
     public function create()
     {
-        return view('admin.products.create');
+        return redirect()->route('admin.reports.products.index')
+            ->with('open_create_product_modal', true);
     }
 
     /**

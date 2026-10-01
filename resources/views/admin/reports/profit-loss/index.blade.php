@@ -2,13 +2,28 @@
 
 @section('title', 'Profit & Loss Report')
 
-@section('breadcrumbs')
-    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-    <li class="breadcrumb-item active">Profit & Loss Report</li>
-@endsection
-
 @section('content')
-<div class="container-fluid">
+<style>
+    @media (max-width: 575.98px) {
+        .profit-loss-report-page .card,
+        .profit-loss-report-page .card *,
+        .profit-loss-report-page .card::before,
+        .profit-loss-report-page .card::after,
+        .profit-loss-report-page .card *::before,
+        .profit-loss-report-page .card *::after {
+            transition: none !important;
+            animation: none !important;
+            transform: none !important;
+            will-change: auto !important;
+        }
+
+        .profit-loss-report-page .card:hover {
+            transform: none !important;
+        }
+    }
+</style>
+
+<div class="container-fluid profit-loss-report-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">
             <i class="bi bi-graph-up-arrow me-2"></i>Profit & Loss Report
