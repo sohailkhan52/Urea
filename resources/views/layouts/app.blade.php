@@ -189,8 +189,8 @@
             position: absolute;
             top: 80px;
             right: 12px;
-            width: min(280px, calc(100vw - 24px));
-            max-width: 280px;
+            width: min(250px, calc(100vw - 24px));
+            max-width: 250px;
             min-height: 0;
             margin: 0;
             align-items: flex-start;
@@ -263,7 +263,7 @@
             </a>
             <button class="navbar-toggler" type="button"
                     @auth data-bs-toggle="modal" data-bs-target="#mobileUserMenuModal" aria-label="Open menu"
-                    @else data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation" @endauth>
+                    @else data-bs-toggle="modal" data-bs-target="#mobileGuestMenuModal" aria-label="Open menu" @endauth>
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
@@ -305,6 +305,26 @@
             </div>
         </div>
     </nav>
+
+    @guest
+        <div class="modal fade mobile-user-menu-modal" id="mobileGuestMenuModal" tabindex="-1" aria-labelledby="mobileGuestMenuTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold" id="mobileGuestMenuTitle">Menu</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body pt-3">
+                        <div class="d-grid gap-2">
+                            <a class="btn btn-light text-start modal-action" href="{{ route('login') }}">
+                                <i class="bi bi-box-arrow-in-right text-primary"></i> Sign In
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endguest
 
     @auth
         <div class="modal fade mobile-user-menu-modal" id="mobileUserMenuModal" tabindex="-1" aria-labelledby="mobileUserMenuTitle" aria-hidden="true">

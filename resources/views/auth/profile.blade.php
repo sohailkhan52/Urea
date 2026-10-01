@@ -24,18 +24,6 @@
     </div>
 </div>
 
-@if($errors->any())
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="bi bi-exclamation-triangle me-2"></i><strong>Error!</strong>
-        <ul class="mb-0 mt-2">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-
 <div class="row">
     <!-- Profile Information -->
     <div class="col-lg-8 mb-4">
@@ -144,7 +132,7 @@
     </div>
 
     <!-- Account Status & Info -->
-    <div class="col-lg-4 mb-4">
+    <div class="col-lg-4 mb-4 d-none d-lg-block">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-light border-bottom">
                 <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Account Information</h5>
@@ -235,7 +223,7 @@
             </div>
             <div class="card-body">
                 <p class="text-muted small mb-4">
-                    <i class="bi bi-info-circle me-2"></i>Keep your account secure by using a strong password with letters, numbers, and symbols.
+                    <i class="bi bi-info-circle me-2"></i>Choose a password between 5 and 20 characters.
                 </p>
 
                 <form action="{{ route('profile.password.update') }}" method="POST" id="password-form">
@@ -244,50 +232,59 @@
 
                     <div class="mb-3">
                         <label for="current_password" class="form-label fw-bold">Current Password <span class="text-danger">*</span></label>
-                        <input type="password" 
-                               class="form-control @error('current_password') is-invalid @enderror" 
-                               id="current_password" 
-                               name="current_password" 
-                               placeholder="Enter your current password"
-                               required>
+                        <div class="position-relative">
+                            <input type="password" 
+                                   class="form-control pe-5 @error('current_password') is-invalid @enderror" 
+                                   id="current_password" 
+                                   name="current_password" 
+                                   placeholder="Enter your current password"
+                                   required>
+                            <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y text-secondary p-2" data-password-toggle="current_password" aria-label="Show current password" aria-pressed="false" title="Show password">
+                                <i class="bi bi-eye" aria-hidden="true"></i>
+                            </button>
+                        </div>
                         @error('current_password')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="password" class="form-label fw-bold">New Password <span class="text-danger">*</span></label>
-                            <input type="password" 
-                                   class="form-control @error('password') is-invalid @enderror" 
-                                   id="password" 
-                                   name="password" 
-                                   placeholder="Enter new password"
-                                   required>
+                            <div class="position-relative">
+                                <input type="password" 
+                                       class="form-control pe-5 @error('password') is-invalid @enderror" 
+                                       id="password" 
+                                       name="password" 
+                                       placeholder="Enter new password"
+                                       minlength="5"
+                                       maxlength="20"
+                                       required>
+                                <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y text-secondary p-2" data-password-toggle="password" aria-label="Show new password" aria-pressed="false" title="Show password">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
                             @error('password')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @else
-                                <small class="text-muted d-block mt-1">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    Minimum 8 characters, mix of letters, numbers, and symbols recommended
-                                </small>
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
 
                         <div class="col-md-6 mb-3">
                             <label for="password_confirmation" class="form-label fw-bold">Confirm Password <span class="text-danger">*</span></label>
-                            <input type="password" 
-                                   class="form-control" 
-                                   id="password_confirmation" 
-                                   name="password_confirmation" 
-                                   placeholder="Re-enter new password"
-                                   required>
+                            <div class="position-relative">
+                                <input type="password" 
+                                       class="form-control pe-5" 
+                                       id="password_confirmation" 
+                                       name="password_confirmation" 
+                                       placeholder="Re-enter new password"
+                                       minlength="5"
+                                       maxlength="20"
+                                       required>
+                                <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y text-secondary p-2" data-password-toggle="password_confirmation" aria-label="Show confirmation password" aria-pressed="false" title="Show password">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="alert alert-info" role="alert">
-                        <i class="bi bi-lightbulb me-2"></i>
-                        <strong>Password Strength:</strong> Your new password must be different from your current password.
                     </div>
 
                     <div class="d-flex gap-2 pt-3 border-top">
@@ -303,6 +300,87 @@
         </div>
     </div>
 </div>
+
+<div class="row mt-4 d-lg-none">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-light border-bottom">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Account Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <label class="text-muted small fw-bold">Account Status</label>
+                    <div class="mt-2">
+                        @if($user->status === 'active')
+                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Active</span>
+                        @elseif($user->status === 'inactive')
+                            <span class="badge bg-secondary"><i class="bi bi-pause-circle me-1"></i>Inactive</span>
+                        @else
+                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Suspended</span>
+                        @endif
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="mb-4">
+                    <label class="text-muted small fw-bold">Member Since</label>
+                    <div class="mt-2">
+                        <i class="bi bi-calendar-event me-2 text-primary"></i>
+                        @if($user->created_at)
+                            {{ $user->created_at->format('M d, Y') }}
+                        @else
+                            <span class="text-muted">-</span>
+                        @endif
+                    </div>
+                </div>
+
+                @if($user->last_login_at)
+                    <div class="mb-4">
+                        <label class="text-muted small fw-bold">Last Login</label>
+                        <div class="mt-2">
+                            <i class="bi bi-clock-history me-2 text-info"></i>
+                            {{ $user->last_login_at->format('M d, Y h:i A') }}
+                        </div>
+                    </div>
+                @endif
+
+                @if($user->email_verified_at)
+                    <div>
+                        <label class="text-muted small fw-bold">Email Verification</label>
+                        <div class="mt-2">
+                            <i class="bi bi-check-circle text-success me-1"></i>
+                            <span class="text-success">Verified</span>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+@if(auth()->user()->isSuperAdmin())
+<div class="row mt-4 mb-4 d-lg-none">
+    <div class="col-12">
+        <div class="card shadow-sm border-0 border-danger">
+            <div class="card-header bg-danger bg-opacity-10 border-danger">
+                <h5 class="mb-0 text-danger">
+                    <i class="bi bi-shield-fill me-2"></i>Super Admin Privileges
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-3">As a Super Admin, you have full access to:</p>
+                <ul class="small mb-0 list-unstyled">
+                    <li><i class="bi bi-check-circle text-success me-2"></i>System management</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>User management</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>All features</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>System configuration</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 @endsection
 
 @push('scripts')
@@ -338,6 +416,25 @@ function deleteProfileImage() {
     document.body.appendChild(form);
     form.submit();
 }
+
+document.querySelectorAll('[data-password-toggle]').forEach(function(toggle) {
+    toggle.addEventListener('click', function() {
+        const input = document.getElementById(this.dataset.passwordToggle);
+        const icon = this.querySelector('i');
+
+        if (!input || !icon) {
+            return;
+        }
+
+        const isVisible = input.type === 'password';
+        input.type = isVisible ? 'text' : 'password';
+        icon.classList.toggle('bi-eye', !isVisible);
+        icon.classList.toggle('bi-eye-slash', isVisible);
+        this.setAttribute('aria-pressed', String(isVisible));
+        this.setAttribute('aria-label', `${isVisible ? 'Hide' : 'Show'} ${input.id === 'current_password' ? 'current password' : input.id === 'password_confirmation' ? 'confirmation password' : 'new password'}`);
+        this.title = `${isVisible ? 'Hide' : 'Show'} password`;
+    });
+});
 
 // Form submission feedback
 document.getElementById('profile-form')?.addEventListener('submit', function() {
