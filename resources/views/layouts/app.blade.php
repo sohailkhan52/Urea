@@ -164,6 +164,82 @@
                 padding: 2rem 0;
             }
         }
+
+        @media (min-width: 992px) and (max-width: 1024px) {
+            .navbar-expand-lg .navbar-toggler {
+                display: block;
+            }
+
+            .navbar-expand-lg .navbar-collapse:not(.show) {
+                display: none !important;
+            }
+
+            .navbar-expand-lg .navbar-collapse.show {
+                display: block !important;
+            }
+        }
+
+        .mobile-user-menu-modal .modal-content {
+            border: 0;
+            border-radius: 16px;
+            box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.2);
+        }
+
+        .mobile-user-menu-modal .modal-dialog-centered {
+            position: absolute;
+            top: 80px;
+            right: 12px;
+            width: min(280px, calc(100vw - 24px));
+            max-width: 280px;
+            min-height: 0;
+            margin: 0;
+            align-items: flex-start;
+        }
+
+        @media (min-width: 576px) and (max-width: 767.98px) {
+            .mobile-user-menu-modal .modal-dialog-centered {
+                right: calc((100vw - 540px) / 2 + 12px);
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 991.98px) {
+            .mobile-user-menu-modal .modal-dialog-centered {
+                right: calc((100vw - 720px) / 2 + 12px);
+            }
+        }
+
+        @media (min-width: 992px) and (max-width: 1024px) {
+            .mobile-user-menu-modal .modal-dialog-centered {
+                right: calc((100vw - 960px) / 2 + 12px);
+            }
+        }
+
+        .mobile-user-menu-modal .modal-action {
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .mobile-user-menu-modal .modal-header {
+            padding: 0.75rem 0.75rem 0;
+        }
+
+        .mobile-user-menu-modal .modal-body {
+            padding: 0.75rem;
+        }
+
+        .mobile-user-menu-modal .modal-body > .d-flex {
+            padding: 0.625rem !important;
+            margin-bottom: 0.75rem !important;
+        }
+
+        .mobile-user-menu-modal .modal-body > .d-flex img {
+            width: 40px !important;
+            height: 40px !important;
+        }
     </style>
 
     @yield('styles')
@@ -185,7 +261,9 @@
                 @endif
                 {{ $companyName }}
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button"
+                    @auth data-bs-toggle="modal" data-bs-target="#mobileUserMenuModal" aria-label="Open menu"
+                    @else data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation" @endauth>
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
@@ -227,6 +305,43 @@
             </div>
         </div>
     </nav>
+
+    @auth
+        <div class="modal fade mobile-user-menu-modal" id="mobileUserMenuModal" tabindex="-1" aria-labelledby="mobileUserMenuTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold" id="mobileUserMenuTitle">Menu</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body pt-3">
+                        <div class="d-flex align-items-center gap-3 p-3 mb-3 bg-light rounded-3">
+                            <img src="{{ auth()->user()->profile_image_url }}" alt="{{ auth()->user()->name }}"
+                                 class="rounded-circle" style="width: 48px; height: 48px; object-fit: cover;">
+                            <div class="min-w-0">
+                                <div class="fw-semibold text-truncate">{{ auth()->user()->name }}</div>
+                                <small class="text-muted text-truncate d-block">{{ auth()->user()->email }}</small>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a class="btn btn-light text-start modal-action" href="{{ route('profile.edit') }}">
+                                <i class="bi bi-person text-primary"></i> Profile
+                            </a>
+                            <a class="btn btn-light text-start modal-action" href="{{ route('admin.dashboard') }}">
+                                <i class="bi bi-speedometer2 text-primary"></i> Dashboard
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="btn btn-light text-start text-danger modal-action w-100">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endauth
 
     <!-- Main Content -->
     <main class="flex-grow-1">

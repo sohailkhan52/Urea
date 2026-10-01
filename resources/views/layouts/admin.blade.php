@@ -910,6 +910,86 @@
             }
         }
 
+        /* Give Profile Settings the full viewport on phones and tablets. */
+        @media (max-width: 1024px) {
+            body.profile-settings-page .main-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+
+            body.profile-settings-page.sidebar-collapsed .sidebar {
+                width: var(--sidebar-width);
+                transform: translateX(-100%);
+            }
+
+            body.profile-settings-page .sidebar-edge-toggle {
+                left: calc(var(--sidebar-width) - 18px);
+            }
+
+            body.profile-settings-page.sidebar-collapsed .sidebar-edge-toggle {
+                left: 12px;
+            }
+
+            body.profile-settings-page .topbar {
+                height: auto;
+                min-height: var(--topbar-height);
+                padding: 8px 12px 8px 58px;
+                gap: 8px;
+                flex-wrap: nowrap;
+            }
+
+            body.profile-settings-page .topbar > .btn-outline-secondary,
+            body.profile-settings-page .topbar > nav[aria-label="breadcrumb"] {
+                display: none !important;
+            }
+
+            body.profile-settings-page .topbar-right {
+                margin-left: auto;
+                flex-shrink: 0;
+            }
+
+            body.profile-settings-page .page-header > .d-flex {
+                align-items: flex-start !important;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            body.profile-settings-page .page-header > .d-flex > div:first-child {
+                flex: 1 1 220px;
+                min-width: 0;
+            }
+
+            body.profile-settings-page .page-header h1 {
+                font-size: clamp(1.2rem, 4.5vw, 1.5rem);
+                line-height: 1.25;
+                overflow-wrap: anywhere;
+            }
+
+            body.profile-settings-page #profile-preview {
+                width: min(140px, 38vw) !important;
+                height: min(140px, 38vw) !important;
+            }
+
+            body.profile-settings-page #profile-form .d-flex.gap-2,
+            body.profile-settings-page #password-form .d-flex.gap-2 {
+                flex-wrap: wrap;
+            }
+
+            body.profile-settings-page #profile-form .d-flex.gap-2 > .btn,
+            body.profile-settings-page #password-form .d-flex.gap-2 > .btn {
+                flex: 1 1 110px;
+                min-width: 0;
+                white-space: normal;
+                padding: 0.45rem 0.6rem;
+                font-size: 0.9rem;
+                line-height: 1.25;
+            }
+
+            body.profile-settings-page #password-form .d-flex.gap-2 > .btn {
+                min-height: 42px;
+            }
+        }
+
         @media print {
             html,
             body,
@@ -949,7 +1029,7 @@
         }
     </style>
 </head>
-<body>
+<body class="{{ request()->routeIs('profile.*') ? 'profile-settings-page' : '' }}">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
