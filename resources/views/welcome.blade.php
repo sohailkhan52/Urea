@@ -18,12 +18,24 @@
                     </p>
                     
                     <div class="d-flex gap-3 mb-5 hero-actions">
-                        <a href="{{ route('login') }}" class="btn btn-primary btn-lg px-5">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-                        </a>
-                        <a href="#features" class="btn btn-outline-primary btn-lg px-5">
-                            <i class="bi bi-star me-2"></i>Learn More
-                        </a>
+                        @guest
+                            <a href="{{ route('login') }}" class="btn btn-primary btn-lg px-5">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                            </a>
+                            <a href="#features" class="btn btn-outline-primary btn-lg px-5">
+                                <i class="bi bi-star me-2"></i>Learn More
+                            </a>
+                        @else
+                            <a href="{{ route('admin.dashboard') }}" class="btn btn-primary btn-lg px-5">
+                                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-primary btn-lg px-5">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                </button>
+                            </form>
+                        @endguest
                     </div>
 
                     <div class="row g-3 hero-highlights">
