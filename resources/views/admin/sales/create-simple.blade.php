@@ -869,6 +869,33 @@ function addProduct(productId, productName, stock = 0, salePrice = 0, unit = 'Pi
     }
 
     if (!saleItems[productId]) {
+        // Find full product data from allSaleProducts to get multi-unit information
+        const product = allSaleProducts.find(p => p.id === productId);
+        const productUnits = product?.product_units || [];
+        
+        // Determine default unit:
+        // 1. If only one unit exists, use it
+        // 2. Otherwise, use base unit
+        // 3. Fallback: create legacy unit from product data
+        let defaultUnit = null;
+        
+        if (productUnits.length === 1) {
+            defaultUnit = productUnits[0];
+        } else if (productUnits.length > 1) {
+            // Try to find base unit
+            defaultUnit = productUnits.find(u => u.is_base_unit) || productUnits[0];
+        } else {
+            // Legacy product without product_units - create a virtual unit
+            defaultUnit = {
+                unit_id: product?.base_unit_id || null,
+                unit_name: unit || 'Unit',
+                unit_abbreviation: unit || 'Unit',
+                conversion_to_base: 1,
+                purchase_price: null,
+                sale_price: salePrice,
+                is_base_unit: true
+            };
+        }
 
         saleItems[productId] = {
 
@@ -878,11 +905,27 @@ function addProduct(productId, productName, stock = 0, salePrice = 0, unit = 'Pi
 
             quantity: 1,
 
-            unit: unit,
+            product_unit_id: defaultUnit.id,  // Add ProductUnit ID
 
-            price: salePrice || 0,
+            unit_id: defaultUnit.unit_id,
+            
+            unit_name: defaultUnit.unit_name,
+            
+            unit_abbreviation: defaultUnit.unit_abbreviation,
+            
+            package_name: defaultUnit.package_name || null,  // Add package name
+            
+            conversion_to_base: defaultUnit.conversion_to_base,
 
-            stock: stock
+            unit: defaultUnit.unit_abbreviation, // Legacy field
+
+            price: parseFloat(defaultUnit.sale_price ?? salePrice) || 0,
+
+            stock: stock,
+            
+            // Store full product data including available units
+            product_units: productUnits,
+            base_unit_abbreviation: product?.base_unit?.abbreviation || unit || 'Unit'
 
         };
 
@@ -928,25 +971,77 @@ function renderSaleItems() {
 
     
 
-    tbody.innerHTML = items.map(item => `
+    tbody.innerHTML = items.map(item => {
+        // Build unit selector dropdown
+        let unitOptions = '';
+        
+        if (item.product_units && item.product_units.length > 0) {
+            // Multi-unit product - show all active units
+            unitOptions = item.product_units.map(pu => {
+                const selected = pu.id === item.product_unit_id ? 'selected' : '';
+
+                // A ProductUnit is the base when it has no package_name AND conversion = 1.
+                // Do NOT rely on pu.is_base_unit — that field can be stale when
+                // multiple packages share the same unit_id.
+                const isBase = (!pu.package_name || pu.package_name === '')
+                    && Math.abs(parseFloat(pu.conversion_to_base) - 1.0) < 0.0001;
+
+                // Display name: package_name when set, otherwise unit_name
+                const displayName   = pu.package_name || pu.unit_name;
+                const conversionText = isBase
+                    ? 'Base'
+                    : `${pu.conversion_to_base} ${item.base_unit_abbreviation}`;
+
+                return `<option value="${pu.id}" data-unit-id="${pu.unit_id}" data-package="${pu.package_name || ''}" ${selected}>${displayName} (${conversionText})</option>`;
+            }).join('');
+        } else {
+            // Legacy product - show single option
+            const displayName = item.display_name || item.unit_abbreviation || item.unit || 'Unit';
+            unitOptions = `<option value="${item.unit_id || ''}" selected>${displayName}</option>`;
+        }
+        
+        // Generate conversion preview text
+        let conversionPreview = '';
+        if (item.conversion_to_base && item.conversion_to_base !== 1) {
+            const baseQty = (item.quantity * item.conversion_to_base).toFixed(2);
+            conversionPreview = `<div class="text-muted" style="font-size: 0.7rem; margin-top: 2px;">
+                ${item.quantity} × ${item.conversion_to_base} = ${baseQty} ${item.base_unit_abbreviation}
+            </div>`;
+        }
+        
+        // Calculate stock in the selected unit
+        let displayStock = item.stock;  // Default to base unit stock
+        if (item.conversion_to_base && item.conversion_to_base > 0) {
+            displayStock = Math.floor(item.stock / item.conversion_to_base);
+        }
+        
+        return `
 
         <tr>
 
             <td><strong>${item.name}</strong></td>
 
-            <td class="text-center">${item.stock}</td>
+            <td class="text-center">
+                <strong>${displayStock}</strong>
+                ${item.conversion_to_base !== 1 ? `<br><small class="text-muted">(${item.stock} ${item.base_unit_abbreviation})</small>` : ''}
+            </td>
 
             <td class="text-center">
 
                 <input type="number" class="form-control form-control-sm text-center" style="width: 60px;" 
 
                        value="${item.quantity}" min="1" onchange="updateQty(${item.id}, this.value)">
+                ${conversionPreview}
 
             </td>
 
             <td>
 
-                <span class="badge bg-secondary">${item.unit}</span>
+                <select class="form-select form-select-sm" 
+                        onchange="updateSaleItemUnit(${item.id}, this.value)"
+                        ${item.product_units && item.product_units.length > 1 ? '' : 'disabled'}>
+                    ${unitOptions}
+                </select>
 
             </td>
 
@@ -972,7 +1067,8 @@ function renderSaleItems() {
 
         </tr>
 
-    `).join('');
+    `;
+    }).join('');
 
     
 
@@ -1006,6 +1102,42 @@ function updatePrice(productId, price) {
 
     }
 
+}
+
+/**
+ * Handle unit change for a sale item
+ * Updates conversion factor, prices, and re-renders to show new conversion preview
+ */
+function updateSaleItemUnit(productId, productUnitId) {
+    const item = saleItems[productId];
+    if (!item) return;
+    
+    const productUnitIdNum = parseInt(productUnitId);
+    
+    // Find the selected ProductUnit by its unique ID (not unit_id!)
+    const selectedUnit = item.product_units?.find(pu => pu.id === productUnitIdNum);
+    
+    if (!selectedUnit) {
+        console.error('Selected product unit not found:', productUnitId);
+        return;
+    }
+    
+    // Update item with new unit data
+    item.product_unit_id = selectedUnit.id;  // Store the ProductUnit ID
+    item.unit_id = selectedUnit.unit_id;
+    item.unit_name = selectedUnit.unit_name;
+    item.unit_abbreviation = selectedUnit.unit_abbreviation;
+    item.package_name = selectedUnit.package_name;
+    item.conversion_to_base = selectedUnit.conversion_to_base;
+    item.unit = selectedUnit.unit_abbreviation; // Legacy compatibility
+    
+    // Update price with unit-specific sale price if available
+    if (selectedUnit.sale_price !== null && selectedUnit.sale_price !== undefined) {
+        item.price = parseFloat(selectedUnit.sale_price);
+    }
+    
+    // Re-render the table to update conversion preview and prices
+    renderSaleItems();
 }
 
 // Calculate total
@@ -1270,7 +1402,12 @@ document.getElementById('saleForm').addEventListener('submit', function(e) {
     }
 
     const outOfStockItem = Object.values(saleItems).find(item => {
-        return Number(item.quantity) > Number(item.stock);
+        // Calculate available stock in the selected unit
+        let availableStock = item.stock;
+        if (item.conversion_to_base && item.conversion_to_base > 0) {
+            availableStock = Math.floor(item.stock / item.conversion_to_base);
+        }
+        return Number(item.quantity) > Number(availableStock);
     });
 
     if (outOfStockItem) {
@@ -1285,11 +1422,15 @@ document.getElementById('saleForm').addEventListener('submit', function(e) {
 
     const items = Object.values(saleItems).map(item => ({
 
-        product_id: item.id,
+        product_id:      item.id,
 
-        quantity: item.quantity,
+        quantity:        item.quantity,
 
-        unit_price: item.price
+        unit_price:      item.price,
+
+        unit_id:         item.unit_id        || null,
+
+        product_unit_id: item.product_unit_id || null
 
     }));
 

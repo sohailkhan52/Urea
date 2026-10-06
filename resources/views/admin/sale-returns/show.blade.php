@@ -392,15 +392,42 @@
                                 <tr>
                                     <td>
                                         <div class="fw-semibold">{{ $item->product->name }}</div>
-                                        @if($item->product->sku)
-                                        <small class="text-muted">SKU: {{ $item->product->sku }}</small>
+                                        <small class="text-muted">
+                                            @if($item->unit_id && $item->unit)
+                                                Transaction Unit: {{ $item->unit->name }}
+                                                @if($item->conversion_factor != 1)
+                                                    ({{ $item->conversion_factor }}× base)
+                                                @endif
+                                                @if($item->product->baseUnit)
+                                                    | Base: {{ $item->product->baseUnit->name }}
+                                                @endif
+                                            @else
+                                                Unit: {{ $item->product->unit ?? 'N/A' }}
+                                            @endif
+                                            @if($item->product->sku)
+                                                | SKU: {{ $item->product->sku }}
+                                            @endif
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        {{ number_format($item->saleItem->quantity, 2) }}
+                                        @if($item->unit)
+                                            {{ $item->unit->abbreviation }}
                                         @endif
                                     </td>
                                     <td class="text-center">
-                                        {{ number_format($item->saleItem->quantity, 0) }}
-                                    </td>
-                                    <td class="text-center">
-                                        <strong class="text-primary">{{ number_format($item->quantity, 0) }}</strong>
+                                        <strong class="text-primary">
+                                            {{ number_format($item->quantity, 2) }}
+                                            @if($item->unit)
+                                                {{ $item->unit->abbreviation }}
+                                            @endif
+                                        </strong>
+                                        @if($item->base_quantity && $item->conversion_factor != 1 && $item->product && $item->product->baseUnit)
+                                            <br>
+                                            <small class="text-muted">
+                                                = {{ number_format($item->base_quantity, 2) }} {{ $item->product->baseUnit->abbreviation }}
+                                            </small>
+                                        @endif
                                     </td>
                                     <td class="text-end">
                                         Rs. {{ number_format($item->unit_price, 0) }}

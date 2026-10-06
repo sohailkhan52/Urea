@@ -33,6 +33,11 @@ class SaleItem extends Model
         'cost_price',
         'discount',
         'total',
+        'unit_id',
+        'product_unit_id',
+        'conversion_factor',
+        'base_quantity',
+        'base_cost_price',
     ];
 
     /**
@@ -48,6 +53,9 @@ class SaleItem extends Model
             'cost_price' => 'decimal:2',
             'discount' => 'decimal:2',
             'total' => 'decimal:2',
+            'conversion_factor' => 'decimal:4',
+            'base_quantity' => 'decimal:4',
+            'base_cost_price' => 'decimal:4',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
@@ -67,6 +75,14 @@ class SaleItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the unit used for this sale item (multi-unit system)
+     */
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
     }
 
     /**

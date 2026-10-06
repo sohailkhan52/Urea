@@ -198,19 +198,11 @@
                             </td>
                             <td class="text-center">
                                 <div class="btn-group" role="group">
-                                                <button type="button"
+                                                <a href="{{ route('admin.products.edit', $product) }}"
                                                     class="btn btn-sm btn-outline-primary"
-                                                    title="Edit"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#editProductModal"
-                                                    data-update-url="{{ route('admin.products.update', $product) }}"
-                                                    data-name="{{ $product->name }}"
-                                                    data-unit="{{ $product->unit }}"
-                                                    data-purchase-price="{{ $product->purchase_price }}"
-                                                    data-sale-price="{{ $product->sale_price }}"
-                                                    data-minimum-stock-level="{{ $product->minimum_stock_level ?? 10 }}">
+                                                    title="Edit">
                                         <i class="bi bi-pencil"></i>
-                                                </button>
+                                                </a>
                                     <form action="{{ route('admin.reports.products.destroy', $product) }}" 
                                           method="POST" 
                                           style="display: inline;"

@@ -370,8 +370,9 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <small class="text-muted d-block">Items Sold</small>
+                            <small class="text-muted d-block">Items Sold (Base Units)</small>
                             <h5 class="mb-0">{{ number_format($todayStats['items_sold'], 0) }}</h5>
+                            <small class="text-muted" style="font-size: 0.7rem;">Total in base units</small>
                         </div>
                         <i class="bi bi-box" style="font-size: 2rem; color: #ffc107;"></i>
                     </div>
@@ -401,6 +402,7 @@
                                 <tr>
                                     <th>Product</th>
                                     <th>Current Stock</th>
+                                    <th>Unit</th>
                                     <th>Minimum Level</th>
                                 </tr>
                             </thead>
@@ -411,8 +413,17 @@
                                         <strong>{{ $item->product->name }}</strong><br>
                                         <small class="text-muted">{{ $item->product->sku }}</small>
                                     </td>
-                                    <td><span class="badge bg-danger">{{ $item->quantity }}</span></td>
-                                    <td>{{ $item->product->minimum_stock_level }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">
+                                            {{ number_format($item->quantity, 2) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ $item->product->baseUnit ? $item->product->baseUnit->abbreviation : $item->product->unit }}
+                                        </small>
+                                    </td>
+                                    <td>{{ number_format($item->product->minimum_stock_level, 2) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>

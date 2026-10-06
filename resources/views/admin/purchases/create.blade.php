@@ -492,16 +492,17 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="product_unit" class="form-label">Unit <span class="text-danger">*</span></label>
+                                <label for="product_base_unit" class="form-label">Base Unit <span class="text-danger">*</span></label>
                                 <select class="form-select three-option-scroll-select" 
-                                        id="product_unit" 
-                                        name="unit"
+                                        id="product_base_unit" 
+                                        name="base_unit_id"
                                         required>
-                                    <option value="">-- Select Unit --</option>
-                                    @foreach(\App\Models\Product::getUnits() as $value => $label)
-                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    <option value="">-- Select Base Unit --</option>
+                                    @foreach(\App\Models\Unit::active()->orderBy('name')->get() as $unit)
+                                        <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->abbreviation }})</option>
                                     @endforeach
                                 </select>
+                                <small class="text-muted d-block mt-1">Primary unit for inventory tracking</small>
                             </div>
                         </div>
                     </div>
@@ -558,6 +559,22 @@
                             </div>
                         </div>
                     </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3">Product Units / Packaging</h6>
+                    <p class="text-muted small mb-3">
+                        Add packaging variants for this product. Each variant will use the base unit you selected above.
+                        <span class="badge bg-info">Base unit is auto-selected - just enter Package Name and Conversion</span>
+                    </p>
+
+                    <div id="modalProductUnitsContainer">
+                        <!-- Product units will be added here dynamically -->
+                    </div>
+
+                    <button type="button" class="btn btn-sm btn-outline-primary mb-3" id="modalAddUnitBtn">
+                        <i class="bi bi-plus-lg"></i> Add Unit
+                    </button>
                 </form>
             </div>
             <div class="modal-footer">
@@ -908,6 +925,135 @@
         } else {
             console.error('Save Product button NOT FOUND!');
         }
+
+        // Product Units Management in Modal
+        let modalUnitIndex = 0;
+        const modalUnitsContainer = document.getElementById('modalProductUnitsContainer');
+        const modalAddUnitBtn = document.getElementById('modalAddUnitBtn');
+        const baseUnitSelect = document.getElementById('product_base_unit');
+
+        if (modalAddUnitBtn && baseUnitSelect) {
+            modalAddUnitBtn.addEventListener('click', function() {
+                if (!baseUnitSelect.value) {
+                    baseUnitSelect.focus();
+                    baseUnitSelect.classList.add('is-invalid');
+                    return;
+                }
+                baseUnitSelect.classList.remove('is-invalid');
+
+                const unitRow = document.createElement('div');
+                unitRow.className = 'card mb-2 modal-unit-item';
+                unitRow.innerHTML = `
+                    <div class="card-body py-2">
+                        <div class="row align-items-center">
+                            <input type="hidden" name="product_units[${modalUnitIndex}][unit_id]" value="${baseUnitSelect.value}">
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Unit</label>
+                                <input type="text" class="form-control form-control-sm" 
+                                       value="${baseUnitSelect.options[baseUnitSelect.selectedIndex].text}" 
+                                       disabled style="background:#e9ecef">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Package Name</label>
+                                <input type="text" class="form-control form-control-sm" 
+                                       name="product_units[${modalUnitIndex}][package_name]" 
+                                       placeholder="e.g., bag, box">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Conversion <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control form-control-sm modal-conversion-input" 
+                                       name="product_units[${modalUnitIndex}][conversion_to_base]" 
+                                       min="0.0001" step="0.01" placeholder="1.0" required
+                                       data-index="${modalUnitIndex}">
+                                <small class="text-muted modal-conversion-display"></small>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Purchase Price</label>
+                                <input type="number" class="form-control form-control-sm modal-purchase-price" 
+                                       name="product_units[${modalUnitIndex}][purchase_price]" 
+                                       min="0" step="0.01" placeholder="Auto"
+                                       data-index="${modalUnitIndex}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Sale Price</label>
+                                <input type="number" class="form-control form-control-sm modal-sale-price" 
+                                       name="product_units[${modalUnitIndex}][sale_price]" 
+                                       min="0" step="0.01" placeholder="Auto"
+                                       data-index="${modalUnitIndex}">
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <label class="form-label small d-block mb-1">&nbsp;</label>
+                                <button type="button" class="btn btn-sm btn-danger modal-remove-unit-btn">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                modalUnitsContainer.appendChild(unitRow);
+
+                // Attach event listeners
+                const conversionInput = unitRow.querySelector('.modal-conversion-input');
+                const purchasePriceInput = unitRow.querySelector('.modal-purchase-price');
+                const salePriceInput = unitRow.querySelector('.modal-sale-price');
+                const conversionDisplay = unitRow.querySelector('.modal-conversion-display');
+                const removeBtn = unitRow.querySelector('.modal-remove-unit-btn');
+
+                let purchasePriceManuallyEdited = false;
+                let salePriceManuallyEdited = false;
+
+                purchasePriceInput.addEventListener('input', () => { purchasePriceManuallyEdited = true; });
+                salePriceInput.addEventListener('input', () => { salePriceManuallyEdited = true; });
+
+                function updateConversionDisplay() {
+                    const conversion = parseFloat(conversionInput.value) || 1;
+                    const baseAbbr = baseUnitSelect.options[baseUnitSelect.selectedIndex]?.text.match(/\(([^)]+)\)/)?.[1] || '';
+                    const selectedAbbr = baseUnitSelect.options[baseUnitSelect.selectedIndex]?.text.match(/\(([^)]+)\)/)?.[1] || '';
+                    if (baseAbbr) {
+                        conversionDisplay.textContent = `1 unit = ${conversion} ${baseAbbr}`;
+                    }
+                }
+
+                function autoCalculatePrices() {
+                    const conversion = parseFloat(conversionInput.value);
+                    if (!conversion || conversion <= 0) return;
+
+                    const basePurchasePrice = parseFloat(document.getElementById('product_purchase_price').value) || 0;
+                    const baseSalePrice = parseFloat(document.getElementById('product_sale_price').value) || 0;
+
+                    if (!purchasePriceManuallyEdited && basePurchasePrice > 0) {
+                        purchasePriceInput.value = (basePurchasePrice * conversion).toFixed(2);
+                    }
+
+                    if (!salePriceManuallyEdited && baseSalePrice > 0) {
+                        salePriceInput.value = (baseSalePrice * conversion).toFixed(2);
+                    }
+                }
+
+                conversionInput.addEventListener('input', function() {
+                    updateConversionDisplay();
+                    autoCalculatePrices();
+                });
+
+                document.getElementById('product_purchase_price')?.addEventListener('input', function() {
+                    if (!purchasePriceManuallyEdited) autoCalculatePrices();
+                });
+
+                document.getElementById('product_sale_price')?.addEventListener('input', function() {
+                    if (!salePriceManuallyEdited) autoCalculatePrices();
+                });
+
+                removeBtn.addEventListener('click', function() {
+                    unitRow.remove();
+                });
+
+                // Focus on package name
+                unitRow.querySelector('input[name*="[package_name]"]').focus();
+
+                modalUnitIndex++;
+            });
+        }
     }
 
     // ========== SUPPLIER FUNCTIONS ==========
@@ -1172,13 +1318,50 @@
         if (existingItem) {
             existingItem.quantity += 1;
         } else {
+            // Multi-unit support: Get available units for this product
+            const productUnits = product.product_units || [];
+            
+            // Determine default unit:
+            // 1. If only one unit exists, use it
+            // 2. Otherwise, use base unit
+            // 3. Fallback: use first active unit or create legacy unit
+            let defaultUnit = null;
+            
+            if (productUnits.length === 1) {
+                defaultUnit = productUnits[0];
+            } else if (productUnits.length > 1) {
+                // Try to find base unit
+                defaultUnit = productUnits.find(u => u.is_base_unit) || productUnits[0];
+            } else {
+                // Legacy product without product_units - create a virtual unit from product data
+                defaultUnit = {
+                    unit_id: product.base_unit_id || null,
+                    unit_name: product.unit || 'Unit',
+                    unit_abbreviation: product.unit || 'Unit',
+                    conversion_to_base: 1,
+                    purchase_price: product.purchase_price,
+                    sale_price: product.sale_price,
+                    is_base_unit: true
+                };
+            }
+            
             purchaseItems.push({
                 product_id: product.id,
                 product_name: product.name,
                 quantity: 1,
-                unit_price: parseFloat(product.purchase_price),
-                sale_price: parseFloat(product.sale_price),
-                unit: product.unit
+                product_unit_id: defaultUnit.id,  // Add ProductUnit ID
+                unit_id: defaultUnit.unit_id,
+                unit_name: defaultUnit.unit_name,
+                unit_abbreviation: defaultUnit.unit_abbreviation,
+                package_name: defaultUnit.package_name || null,  // Add package name
+                conversion_to_base: defaultUnit.conversion_to_base,
+                unit_price: parseFloat(defaultUnit.purchase_price ?? product.purchase_price),
+                sale_price: parseFloat(defaultUnit.sale_price ?? product.sale_price),
+                // Store full product data including available units
+                product_units: productUnits,
+                base_unit_abbreviation: product.base_unit?.abbreviation || product.unit || 'Unit',
+                // Legacy field for backward compatibility
+                unit: defaultUnit.unit_abbreviation
             });
         }
 
@@ -1194,7 +1377,7 @@
     function saveNewProduct() {
         const form = document.getElementById('newProductForm');
         const nameInput = document.getElementById('product_name');
-        const unitInput = document.getElementById('product_unit');
+        const baseUnitInput = document.getElementById('product_base_unit');
         const purchasePriceInput = document.getElementById('product_purchase_price');
         const salePriceInput = document.getElementById('product_sale_price');
         
@@ -1203,7 +1386,7 @@
         console.log('Name input:', nameInput); // Debug
         
         // Clear previous visual error states without rendering messages.
-        const fields = [nameInput, unitInput, purchasePriceInput, salePriceInput];
+        const fields = [nameInput, baseUnitInput, purchasePriceInput, salePriceInput];
         fields.forEach(field => {
             field.classList.remove('is-invalid');
         });
@@ -1219,8 +1402,8 @@
             return;
         }
 
-        if (!unitInput.value.trim()) {
-            focusInvalidProductField(unitInput);
+        if (!baseUnitInput.value.trim()) {
+            focusInvalidProductField(baseUnitInput);
             return;
         }
 
@@ -1254,7 +1437,7 @@
                     const firstField = Object.keys(errors.errors || {})[0];
                     const fieldMap = {
                         name: nameInput,
-                        unit: unitInput,
+                        base_unit_id: baseUnitInput,
                         purchase_price: purchasePriceInput,
                         sale_price: salePriceInput,
                     };
@@ -1313,16 +1496,18 @@
         let cursorPosition = 0;
 
         // Check if the active element is one of our input fields
-        if (activeElement && activeElement.tagName === 'INPUT' && activeElement.type === 'number') {
+        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'SELECT')) {
             // Find which row and field is active
             const row = activeElement.closest('tr');
             if (row) {
                 activeIndex = Array.from(tbody.children).indexOf(row);
-                // Determine which field (quantity, unit_price, or sale_price)
+                // Determine which field (quantity, unit_id, unit_price, or sale_price)
                 if (activeElement.getAttribute('data-field')) {
                     activeField = activeElement.getAttribute('data-field');
                 }
-                cursorPosition = activeElement.selectionStart;
+                if (activeElement.tagName === 'INPUT') {
+                    cursorPosition = activeElement.selectionStart;
+                }
             }
         }
 
@@ -1331,7 +1516,45 @@
             return;
         }
 
-        tbody.innerHTML = purchaseItems.map((item, index) => `
+        tbody.innerHTML = purchaseItems.map((item, index) => {
+            // Build unit selector dropdown
+            let unitOptions = '';
+            
+            if (item.product_units && item.product_units.length > 0) {
+                // Multi-unit product - show all active units
+                unitOptions = item.product_units.map(pu => {
+                    const selected = pu.id === item.product_unit_id ? 'selected' : '';
+
+                    // A ProductUnit is the base when it has no package_name AND conversion = 1.
+                    // Do NOT rely on pu.is_base_unit from the API — that field was computed
+                    // server-side and may be stale when the same unit_id is shared by multiple packages.
+                    const isBase = (!pu.package_name || pu.package_name === '')
+                        && Math.abs(parseFloat(pu.conversion_to_base) - 1.0) < 0.0001;
+
+                    // Display name: use package_name when set, otherwise unit_name
+                    const displayName = pu.package_name || pu.unit_name;
+                    const conversionText = isBase
+                        ? 'Base'
+                        : `${pu.conversion_to_base} ${item.base_unit_abbreviation}`;
+
+                    return `<option value="${pu.id}" data-unit-id="${pu.unit_id}" data-package="${pu.package_name || ''}" ${selected}>${displayName} (${conversionText})</option>`;
+                }).join('');
+            } else {
+                // Legacy product - show single option
+                const displayName = item.display_name || item.unit_abbreviation || item.unit || 'Unit';
+                unitOptions = `<option value="${item.unit_id || ''}" selected>${displayName}</option>`;
+            }
+            
+            // Generate conversion preview text
+            let conversionPreview = '';
+            if (item.conversion_to_base && item.conversion_to_base !== 1) {
+                const baseQty = (item.quantity * item.conversion_to_base).toFixed(2);
+                conversionPreview = `<div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+                    ${item.quantity} × ${item.conversion_to_base} = ${baseQty} ${item.base_unit_abbreviation}
+                </div>`;
+            }
+            
+            return `
             <tr>
                 <td>
                     <strong>${item.product_name}</strong>
@@ -1346,9 +1569,20 @@
                            data-index="${index}"
                            oninput="updateItemQuantity(${index}, this.value)"
                            onblur="updateItemQuantity(${index}, this.value)">
+                    ${conversionPreview}
                 </td>
                 <td>
-                    <small class="text-muted">${item.unit || 'KG'}</small>
+                    <select class="form-select form-select-sm" 
+                            data-field="unit_id"
+                            data-index="${index}"
+                            onchange="updateItemUnit(${index}, this.value)"
+                            ${item.product_units && item.product_units.length > 1 ? '' : 'disabled'}>
+                        ${unitOptions}
+                    </select>
+                    <!-- Display current selection for closed dropdown -->
+                    <small class="text-muted d-block" style="font-size: 0.7rem; margin-top: 2px;">
+                        ${item.package_name ? item.package_name : item.unit_abbreviation}
+                    </small>
                 </td>
                 <td>
                     <input type="number" 
@@ -1385,16 +1619,19 @@
                     </button>
                 </td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
 
         // Restore focus and cursor position if there was an active element
         if (activeIndex >= 0 && activeField) {
             const newRow = tbody.children[activeIndex];
             if (newRow) {
-                const input = newRow.querySelector(`input[data-field="${activeField}"]`);
+                const input = newRow.querySelector(`[data-field="${activeField}"]`);
                 if (input) {
                     input.focus();
-                    input.setSelectionRange(cursorPosition, cursorPosition);
+                    if (input.tagName === 'INPUT') {
+                        input.setSelectionRange(cursorPosition, cursorPosition);
+                    }
                 }
             }
         }
@@ -1402,8 +1639,8 @@
 
     function updateItemQuantity(index, value) {
         purchaseItems[index].quantity = parseFloat(value) || 0;
-        // Update the row total display
-        updateRowTotal(index);
+        // Update the row with new quantity and conversion preview
+        updateRowWithConversion(index);
         // Only update calculations, don't re-render the table to preserve cursor
         updateCalculationsOnly();
     }
@@ -1421,6 +1658,50 @@
         // No need to update row total as sale price doesn't affect purchase total
     }
 
+    /**
+     * Handle unit change for a purchase item
+     * Updates conversion factor, prices, and re-renders to show new conversion preview
+     */
+    function updateItemUnit(index, productUnitId) {
+        const item = purchaseItems[index];
+        const productUnitIdNum = parseInt(productUnitId);
+        
+        // Find the selected ProductUnit by its unique ID (not unit_id!)
+        const selectedUnit = item.product_units?.find(pu => pu.id === productUnitIdNum);
+        
+        if (!selectedUnit) {
+            console.error('Selected product unit not found:', productUnitId);
+            return;
+        }
+        
+        // Update item with new unit data
+        item.product_unit_id = selectedUnit.id;  // Store the ProductUnit ID
+        item.unit_id = selectedUnit.unit_id;
+        item.unit_name = selectedUnit.unit_name;
+        item.unit_abbreviation = selectedUnit.unit_abbreviation;
+        item.package_name = selectedUnit.package_name;
+        item.conversion_to_base = selectedUnit.conversion_to_base;
+        item.unit = selectedUnit.unit_abbreviation; // Legacy compatibility
+        
+        // Update prices with unit-specific prices if available
+        // Use fallback to product base prices if unit-specific price is null
+        const productBasePrice = item.unit_price; // Keep current if not specified
+        const productBaseSalePrice = item.sale_price;
+        
+        // Only update price if the unit has a specific price configured
+        if (selectedUnit.purchase_price !== null && selectedUnit.purchase_price !== undefined) {
+            item.unit_price = parseFloat(selectedUnit.purchase_price);
+        }
+        
+        if (selectedUnit.sale_price !== null && selectedUnit.sale_price !== undefined) {
+            item.sale_price = parseFloat(selectedUnit.sale_price);
+        }
+        
+        // Re-render the table to update conversion preview and prices
+        renderItemsTable();
+        updateCalculations();
+    }
+
     // Update the total display for a specific row without re-rendering
     function updateRowTotal(index) {
         const tbody = document.getElementById('itemsBody');
@@ -1430,6 +1711,42 @@
             const totalCell = row.cells[5]; // 6th column (0-indexed) is the Total column
             if (totalCell) {
                 totalCell.innerHTML = `<strong>Rs. ${Math.round(item.quantity * item.unit_price)}</strong>`;
+            }
+        }
+    }
+
+    /**
+     * Update row total AND conversion preview when quantity changes
+     */
+    function updateRowWithConversion(index) {
+        const tbody = document.getElementById('itemsBody');
+        const row = tbody.children[index];
+        if (row) {
+            const item = purchaseItems[index];
+            
+            // Update total cell (6th column, 0-indexed = 5)
+            const totalCell = row.cells[5];
+            if (totalCell) {
+                totalCell.innerHTML = `<strong>Rs. ${Math.round(item.quantity * item.unit_price)}</strong>`;
+            }
+            
+            // Update conversion preview (inside quantity cell, 2nd column, 0-indexed = 1)
+            const quantityCell = row.cells[1];
+            if (quantityCell && item.conversion_to_base && item.conversion_to_base !== 1) {
+                const baseQty = (item.quantity * item.conversion_to_base).toFixed(2);
+                const conversionPreview = `<div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+                    ${item.quantity} × ${item.conversion_to_base} = ${baseQty} ${item.base_unit_abbreviation}
+                </div>`;
+                
+                // Find the input element and add preview after it
+                const input = quantityCell.querySelector('input');
+                const existingPreview = quantityCell.querySelector('.text-muted');
+                
+                if (existingPreview) {
+                    existingPreview.outerHTML = conversionPreview;
+                } else if (input) {
+                    input.insertAdjacentHTML('afterend', conversionPreview);
+                }
             }
         }
     }

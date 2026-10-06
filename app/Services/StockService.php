@@ -15,19 +15,36 @@ use Illuminate\Support\Facades\Log;
  * 
  * All stock movements MUST go through this service.
  * Direct manipulation of warehouse_inventory is prohibited.
+ * 
+ * IMPORTANT: Multi-Unit System
+ * ---------------------------
+ * This service operates on BASE UNIT QUANTITIES ONLY.
+ * 
+ * When a product is sold/purchased in packages (e.g., Bags, Boxes):
+ * - The calling service MUST convert to base units first
+ * - Example: 10 Bags × 50 KG/Bag = 500 KG base quantity
+ * - StockService receives 500, not 10
+ * 
+ * warehouse_inventory.quantity is always in base units.
+ * stock_movements.quantity_in and quantity_out are always in base units.
+ * 
+ * The conversion is handled by services (Purchase, Sale, etc.) before calling this service.
  */
 class StockService
 {
     /**
      * Add stock to warehouse (Stock In)
      * 
+     * IMPORTANT: quantity parameter must be in BASE UNITS.
+     * Multi-unit conversion must be done by the caller.
+     * 
      * @param int $warehouseId
      * @param int $productId
-     * @param float $quantity
+     * @param float $quantity Quantity in BASE UNITS (already converted from transaction unit)
      * @param string $type Movement type (opening_stock, purchase, customer_return, etc.)
      * @param string|null $referenceType Reference model class (e.g., Purchase::class)
      * @param int|null $referenceId Reference model ID
-     * @param float|null $unitCost Cost per unit
+     * @param float|null $unitCost Cost per BASE UNIT
      * @param string|null $remarks Additional notes
      * @param int|null $userId User performing the action (defaults to authenticated user)
      * @return StockMovement
@@ -99,13 +116,16 @@ class StockService
     /**
      * Remove stock from warehouse (Stock Out)
      * 
+     * IMPORTANT: quantity parameter must be in BASE UNITS.
+     * Multi-unit conversion must be done by the caller.
+     * 
      * @param int $warehouseId
      * @param int $productId
-     * @param float $quantity
+     * @param float $quantity Quantity in BASE UNITS (already converted from transaction unit)
      * @param string $type Movement type (sale, transfer_out, adjustment_out, etc.)
      * @param string|null $referenceType
      * @param int|null $referenceId
-     * @param float|null $unitCost
+     * @param float|null $unitCost Cost per BASE UNIT
      * @param string|null $remarks
      * @param int|null $userId
      * @return StockMovement
@@ -320,9 +340,11 @@ class StockService
     /**
      * Get current stock for a product in a warehouse
      * 
+     * Returns quantity in BASE UNITS.
+     * 
      * @param int $warehouseId
      * @param int $productId
-     * @return float
+     * @return float Quantity in base units
      */
     public function getCurrentStock(int $warehouseId, int $productId): float
     {

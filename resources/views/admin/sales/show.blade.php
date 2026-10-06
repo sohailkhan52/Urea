@@ -206,7 +206,34 @@
                                         @if($item->product)
                                             <div class="fw-semibold">{{ $item->product->name }}</div>
                                             <small class="text-muted">
-                                                Unit: {{ $item->product->unit }}
+                                                @if($item->unit_id && $item->unit)
+                                                    @php
+                                                        // Resolve the display label from the stored product_unit_id.
+                                                        // Falls back to unit_id + conversion_factor matching for
+                                                        // legacy sale items that predate the product_unit_id column.
+                                                        $transactionUnitLabel = null;
+                                                        if ($item->product_unit_id) {
+                                                            $pu = $item->product->productUnits->find($item->product_unit_id);
+                                                            $transactionUnitLabel = $pu?->package_name ?: $pu?->unit?->name;
+                                                        }
+                                                        if (!$transactionUnitLabel) {
+                                                            $pu = $item->product->productUnits
+                                                                ->where('unit_id', $item->unit_id)
+                                                                ->where('conversion_to_base', $item->conversion_factor)
+                                                                ->first();
+                                                            $transactionUnitLabel = $pu?->package_name ?: $item->unit->name;
+                                                        }
+                                                    @endphp
+                                                    Transaction Unit: {{ $transactionUnitLabel }}
+                                                    @if($item->conversion_factor != 1)
+                                                        ({{ rtrim(rtrim(number_format($item->conversion_factor, 4), '0'), '.') }}× base)
+                                                    @endif
+                                                    @if($item->product->baseUnit)
+                                                        | Base: {{ $item->product->baseUnit->name }}
+                                                    @endif
+                                                @else
+                                                    Unit: {{ $item->product->unit ?? 'N/A' }}
+                                                @endif
                                                 @if($item->product->sku)
                                                     | SKU: {{ $item->product->sku }}
                                                 @endif
@@ -217,7 +244,18 @@
                                         @endif
                                     </td>
                                     <td class="text-end">
-                                        <span class="badge bg-light text-dark">{{ $item->quantity }}</span>
+                                        <span class="badge bg-light text-dark">
+                                            {{ number_format($item->quantity, 2) }}
+                                            @if($item->unit)
+                                                {{ $item->unit->abbreviation }}
+                                            @endif
+                                        </span>
+                                        @if($item->base_quantity && $item->conversion_factor != 1 && $item->product && $item->product->baseUnit)
+                                            <br>
+                                            <small class="text-muted">
+                                                = {{ number_format($item->base_quantity, 2) }} {{ $item->product->baseUnit->abbreviation }}
+                                            </small>
+                                        @endif
                                     </td>
                                     <td class="text-end">
                                         {{ number_format($item->unit_price, 0) }}

@@ -44,7 +44,7 @@ class WarehouseInventory extends Model
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
+            'quantity' => 'decimal:4',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

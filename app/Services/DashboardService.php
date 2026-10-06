@@ -30,6 +30,14 @@ class DashboardService
      * 
      * @return array
      */
+    /**
+     * Get today's statistics for dashboard
+     * 
+     * MULTI-UNIT NOTE: items_sold uses base_quantity for accurate counting
+     * across different units. For display, this represents base unit quantities.
+     * 
+     * @return array
+     */
     public function getTodayStats(): array
     {
         $today = Carbon::today();
@@ -47,12 +55,15 @@ class DashboardService
                 ->whereDate('confirmed_at', $today)
                 ->sum('paid_amount'),
             
+            // MULTI-UNIT FIX: Sum base_quantity with fallback to quantity for legacy records
             'items_sold' => Sale::where('status', Sale::STATUS_CONFIRMED)
                 ->whereDate('confirmed_at', $today)
                 ->with('items')
                 ->get()
                 ->sum(function ($sale) {
-                    return $sale->items->sum('quantity');
+                    return $sale->items->sum(function ($item) {
+                        return $item->base_quantity ?? $item->quantity;
+                    });
                 }),
         ];
     }
@@ -240,7 +251,7 @@ class DashboardService
     public function getLowStockItems(int $limit = 20)
     {
         if (Schema::hasColumn('products', 'minimum_stock_level')) {
-            return WarehouseInventory::with(['product', 'warehouse'])
+            return WarehouseInventory::with(['product.baseUnit', 'warehouse'])
                 ->withoutGlobalScopes()
                 ->join('products', 'warehouse_inventory.product_id', '=', 'products.id')
                 ->whereRaw('warehouse_inventory.quantity < products.minimum_stock_level')
@@ -252,7 +263,7 @@ class DashboardService
         }
 
         // Fallback when the column is not present
-        return WarehouseInventory::with(['product', 'warehouse'])
+        return WarehouseInventory::with(['product.baseUnit', 'warehouse'])
             ->withoutGlobalScopes()
             ->where('quantity', '>', 0)
             ->where('quantity', '<', 10)
@@ -270,7 +281,7 @@ class DashboardService
      */
     public function getOutOfStockItems(int $limit = 20)
     {
-        return WarehouseInventory::with(['product', 'warehouse'])
+        return WarehouseInventory::with(['product.baseUnit', 'warehouse'])
             ->withoutGlobalScopes()
             ->where('quantity', 0)
             ->orderBy('product_id')
@@ -492,38 +503,74 @@ class DashboardService
      */
     public function getTotalUdharAmount(): float
     {
-        // Get individual customer udhar
-        $udharService = app(UdharService::class);
-        
-        $individualSummary = collect();
-        $customers = Customer::whereHas('sales', function ($q) {
-            $q->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
-              ->where('status', Sale::STATUS_CONFIRMED);
-        })->get();
-        
-        foreach ($customers as $customer) {
-            $balance = $udharService->getCustomerIndividualBalance($customer->id);
-            $individualSummary->push($balance);
+        try {
+            // Check if the udhar_account_type column exists
+            if (!Schema::hasColumn('sales', 'udhar_account_type')) {
+                \Log::warning('udhar_account_type column does not exist, using simple calculation');
+                return $this->getTotalUdharAmountFallback();
+            }
+            
+            // Get individual customer udhar
+            $udharService = app(UdharService::class);
+            
+            $individualSummary = collect();
+            $customers = Customer::whereHas('sales', function ($q) {
+                $q->where('sales.udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_INDIVIDUAL)
+                  ->where('sales.status', Sale::STATUS_CONFIRMED);
+            })->get();
+            
+            foreach ($customers as $customer) {
+                $balance = $udharService->getCustomerIndividualBalance($customer->id);
+                $individualSummary->push($balance);
+            }
+            
+            $individualUdhar = $individualSummary->sum('outstanding');
+            
+            // Get family udhar
+            $familySummary = collect();
+            $families = Family::whereHas('sales', function ($q) {
+                $q->where('sales.udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
+                  ->where('sales.status', Sale::STATUS_CONFIRMED);
+            })->get();
+            
+            foreach ($families as $family) {
+                $balance = $udharService->getFamilyBalance($family->id);
+                $familySummary->push($balance);
+            }
+            
+            $familyUdhar = $familySummary->sum('outstanding');
+            
+            // Total udhar = individual + family
+            return (float) ($individualUdhar + $familyUdhar);
+        } catch (\Exception $e) {
+            \Log::warning('Udhar calculation failed, using fallback: ' . $e->getMessage());
+            return $this->getTotalUdharAmountFallback();
         }
-        
-        $individualUdhar = $individualSummary->sum('outstanding');
-        
-        // Get family udhar
-        $familySummary = collect();
-        $families = Family::whereHas('sales', function ($q) {
-            $q->where('udhar_account_type', Sale::UDHAR_ACCOUNT_TYPE_FAMILY)
-              ->where('status', Sale::STATUS_CONFIRMED);
-        })->get();
-        
-        foreach ($families as $family) {
-            $balance = $udharService->getFamilyBalance($family->id);
-            $familySummary->push($balance);
+    }
+
+    /**
+     * Fallback method for calculating total udhar when column doesn't exist
+     */
+    private function getTotalUdharAmountFallback(): float
+    {
+        try {
+            // Get all confirmed sales
+            $sales = Sale::where('status', Sale::STATUS_CONFIRMED)->get();
+            
+            $totalUdhar = 0;
+            foreach ($sales as $sale) {
+                // Calculate udhar for this sale: total - paid - returns
+                $udhar = $sale->total_amount - $sale->paid_amount - ($sale->total_returned_amount ?? 0);
+                if ($udhar > 0) {
+                    $totalUdhar += $udhar;
+                }
+            }
+            
+            return (float) $totalUdhar;
+        } catch (\Exception $e) {
+            \Log::error('Fallback udhar calculation also failed: ' . $e->getMessage());
+            return 0.0;
         }
-        
-        $familyUdhar = $familySummary->sum('outstanding');
-        
-        // Total udhar = individual + family
-        return (float) ($individualUdhar + $familyUdhar);
     }
 
     /**

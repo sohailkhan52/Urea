@@ -10,14 +10,25 @@ use App\Models\StockMovement;
 use App\Models\Warehouse;
 use App\Models\WarehouseInventory;
 use Illuminate\Support\Facades\DB;
+use App\Services\UnitConversionService;
 
+/**
+ * Sales Service - Handles sale operations and inventory integration
+ * 
+ * Multi-unit support:
+ * - Products can be sold in different units (KG, Bags, etc.)
+ * - Stock availability checked using base quantities
+ * - Cost price and profit calculations use base units
+ */
 class SalesService
 {
     protected StockService $stockService;
+    protected UnitConversionService $conversionService;
 
-    public function __construct(StockService $stockService)
+    public function __construct(StockService $stockService, UnitConversionService $conversionService)
     {
         $this->stockService = $stockService;
+        $this->conversionService = $conversionService;
     }
 
     /**
@@ -103,24 +114,64 @@ class SalesService
                         continue; // Skip invalid items
                     }
 
-                    // Check stock availability
+                    // Multi-unit support: get conversion data
+                    // Pass product_unit_id (PK) for unambiguous lookup when multiple
+                    // packages share the same unit_id (e.g. Carton, Box, Bag all backed by Piece).
+                    $unitId        = $itemData['unit_id'] ?? null;
+                    $productUnitId = $itemData['product_unit_id'] ?? null;
+
+                    $conversionData = $this->conversionService->calculateTransactionData(
+                        $itemData['product_id'],
+                        $itemData['quantity'],
+                        $unitId,
+                        $productUnitId  // exact ProductUnit PK — eliminates ambiguity
+                    );
+
+                    // Check stock availability using base quantity
                     $availableStock = $this->stockService->getCurrentStock($sale->warehouse_id, $itemData['product_id']);
-                    if ($availableStock < $itemData['quantity']) {
-                        $product = Product::find($itemData['product_id']);
-                        throw new \Exception("Insufficient stock for {$product->name}. Available: {$availableStock}, Requested: {$itemData['quantity']}");
+                    if ($availableStock < $conversionData['base_quantity']) {
+                        $product     = Product::find($itemData['product_id']);
+                        $unitName    = 'units';
+                        if ($productUnitId) {
+                            $pu = \App\Models\ProductUnit::with('unit')->find($productUnitId);
+                            $unitName = $pu ? ($pu->package_name ?: $pu->unit->name) : 'units';
+                        } elseif ($unitId) {
+                            $pu = \App\Models\ProductUnit::with('unit')->find($unitId);
+                            $unitName = $pu ? $pu->unit->name : 'units';
+                        }
+                        throw new \Exception("Insufficient stock for {$product->name}. Available: {$availableStock} (base units), Requested: {$itemData['quantity']} {$unitName} = {$conversionData['base_quantity']} (base units)");
                     }
 
                     // Get product's current purchase price as cost
-                    $product = Product::find($itemData['product_id']);
+                    $product   = Product::find($itemData['product_id']);
                     $costPrice = $product ? $product->purchase_price : 0;
 
                     $sale->items()->create([
-                        'product_id' => $itemData['product_id'],
-                        'quantity' => $itemData['quantity'],
-                        'unit_price' => $itemData['unit_price'],
-                        'cost_price' => $costPrice,
-                        'discount' => $itemData['discount'] ?? 0,
+                        'product_id'       => $itemData['product_id'],
+                        'quantity'         => $itemData['quantity'],
+                        'unit_id'          => $conversionData['unit_id'],
+                        'product_unit_id'  => $productUnitId,  // store exact ProductUnit ID
+                        'conversion_factor'=> $conversionData['conversion_factor'],
+                        'base_quantity'    => $conversionData['base_quantity'],
+                        'unit_price'       => $itemData['unit_price'],
+                        'cost_price'       => $costPrice,
+                        'discount'         => $itemData['discount'] ?? 0,
                     ]);
+
+                    // ── SALE PRICE SYNCHRONIZATION ──────────────────────────────────────
+                    // Normalize the entered package sale price to base, then recalculate
+                    // all active ProductUnit sale prices from that base.
+                    // Purchase / cost prices are NEVER touched here.
+                    $conversionFactor = $conversionData['conversion_factor'] > 0
+                        ? $conversionData['conversion_factor']
+                        : 1.0;
+                    $baseSalePrice = floatval($itemData['unit_price']) / $conversionFactor;
+
+                    $this->conversionService->synchronizeProductUnitSalePrices(
+                        $product,
+                        $baseSalePrice
+                    );
+                    // ─────────────────────────────────────────────────────────────────────
                 }
             }
 
@@ -140,17 +191,30 @@ class SalesService
 
     /**
      * Add item to sale (draft only)
+     * 
+     * Multi-unit support:
+     * - Accepts optional unitId parameter
+     * - Checks stock availability using base quantities
+     * - Stores unit conversion snapshot on the item
+     * - Calculates cost_price and base_cost_price for profit tracking
      *
      * @param Sale $sale
      * @param int $productId
-     * @param float $quantity
-     * @param float $unitPrice
-     * @param float $discount
+     * @param float $quantity Quantity in selected unit
+     * @param float $unitPrice Price per selected unit
+     * @param float $discount Discount amount
+     * @param int|null $unitId Selected unit (null = use base unit)
      * @return SaleItem
      * @throws \Exception
      */
-    public function addItem(Sale $sale, int $productId, float $quantity, float $unitPrice, float $discount = 0): SaleItem
-    {
+    public function addItem(
+        Sale $sale, 
+        int $productId, 
+        float $quantity, 
+        float $unitPrice, 
+        float $discount = 0,
+        ?int $unitId = null
+    ): SaleItem {
         if (!$sale->isDraft()) {
             throw new \Exception('Can only add items to draft sales.');
         }
@@ -163,39 +227,52 @@ class SalesService
             throw new \Exception('Unit price cannot be negative.');
         }
 
-        // Check stock availability
+        // Calculate unit conversion data
+        $conversionData = $this->conversionService->calculateTransactionData($productId, $quantity, $unitId);
+        $baseQuantity = $conversionData['base_quantity'];
+
+        // Check stock availability using BASE QUANTITIES
         $availableStock = $this->stockService->getCurrentStock($sale->warehouse_id, $productId);
-        if ($availableStock < $quantity) {
-            throw new \Exception("Only {$availableStock} units available in warehouse. Cannot sell {$quantity} units.");
+        if ($availableStock < $baseQuantity) {
+            throw new \Exception("Insufficient stock. Available: {$availableStock} base units, Required: {$baseQuantity} base units.");
         }
 
-        return DB::transaction(function () use ($sale, $productId, $quantity, $unitPrice, $discount) {
+        return DB::transaction(function () use ($sale, $productId, $quantity, $unitPrice, $discount, $conversionData, $baseQuantity) {
             // Check if product is already in this sale
             $existingItem = $sale->items()->where('product_id', $productId)->first();
             
             if ($existingItem) {
                 // Update existing item instead of creating duplicate
                 $newQuantity = $existingItem->quantity + $quantity;
+                $newBaseQuantity = $existingItem->base_quantity + $baseQuantity;
                 
                 // Verify increased quantity is still available
                 $availableStock = $this->stockService->getCurrentStock($sale->warehouse_id, $productId);
-                if ($availableStock < $newQuantity) {
-                    throw new \Exception("Cannot increase quantity. Only {$availableStock} units available, but {$newQuantity} requested.");
+                if ($availableStock < $newBaseQuantity) {
+                    throw new \Exception("Cannot increase quantity. Available: {$availableStock} base units, Required: {$newBaseQuantity} base units.");
                 }
                 
                 $existingItem->update([
                     'quantity' => $newQuantity,
                     'unit_price' => $unitPrice,
                     'discount' => ($existingItem->discount + $discount),
+                    'base_quantity' => $newBaseQuantity,
                 ]);
                 
                 $this->recalculateSaleTotals($sale);
                 return $existingItem;
             }
 
-            // Get product's current purchase price as cost
+            // Get product's current purchase price as cost basis
             $product = Product::find($productId);
-            $costPrice = $product ? $product->purchase_price : 0;
+            $baseCostPrice = $product ? $product->purchase_price : 0;
+            
+            // Calculate cost_price for this transaction unit
+            // If selling in packages, cost_price = base cost × conversion factor
+            $costPrice = $baseCostPrice;
+            if ($conversionData['conversion_factor'] > 1) {
+                $costPrice = $baseCostPrice * $conversionData['conversion_factor'];
+            }
 
             $item = $sale->items()->create([
                 'product_id' => $productId,
@@ -203,6 +280,10 @@ class SalesService
                 'unit_price' => $unitPrice,
                 'cost_price' => $costPrice,
                 'discount' => $discount,
+                'unit_id' => $conversionData['unit_id'],
+                'conversion_factor' => $conversionData['conversion_factor'],
+                'base_quantity' => $baseQuantity,
+                'base_cost_price' => $baseCostPrice,
             ]);
 
             // Recalculate sale totals
@@ -215,37 +296,74 @@ class SalesService
     /**
      * Update sale item (draft only)
      *
+     * Multi-unit support:
+     * - Can change unit along with quantity
+     * - Recalculates conversion and validates stock using base quantities
+     *
      * @param SaleItem $item
-     * @param float $quantity
-     * @param float $unitPrice
-     * @param float $discount
+     * @param float $quantity Quantity in selected unit
+     * @param float $unitPrice Price per selected unit
+     * @param float $discount Discount amount
+     * @param int|null $unitId Selected unit (null = keep existing)
      * @return SaleItem
      * @throws \Exception
      */
-    public function updateItem(SaleItem $item, float $quantity, float $unitPrice, float $discount = 0): SaleItem
-    {
+    public function updateItem(
+        SaleItem $item, 
+        float $quantity, 
+        float $unitPrice, 
+        float $discount = 0,
+        ?int $unitId = null
+    ): SaleItem {
         $sale = $item->sale;
 
         if (!$sale->isDraft()) {
             throw new \Exception('Can only modify items in draft sales.');
         }
 
-        // Check stock availability (account for current quantity)
-        $currentQuantity = $item->quantity;
-        $quantityDifference = $quantity - $currentQuantity;
+        // If unitId not provided, keep the existing unit
+        if ($unitId === null) {
+            $unitId = $item->unit_id;
+        }
 
-        if ($quantityDifference > 0) {
+        // Calculate new conversion data
+        $conversionData = $this->conversionService->calculateTransactionData(
+            $item->product_id, 
+            $quantity, 
+            $unitId
+        );
+        $newBaseQuantity = $conversionData['base_quantity'];
+
+        // Check stock availability (account for current quantity being freed up)
+        $currentBaseQuantity = $item->base_quantity ?? $item->quantity;
+        $stockDifference = $newBaseQuantity - $currentBaseQuantity;
+
+        if ($stockDifference > 0) {
             $availableStock = $this->stockService->getCurrentStock($sale->warehouse_id, $item->product_id);
-            if ($availableStock < $quantityDifference) {
-                throw new \Exception("Only {$availableStock} additional units available. Cannot increase by {$quantityDifference} units.");
+            if ($availableStock < $stockDifference) {
+                throw new \Exception("Only {$availableStock} additional base units available. Cannot increase by {$stockDifference} base units.");
             }
         }
 
-        return DB::transaction(function () use ($item, $quantity, $unitPrice, $discount) {
+        return DB::transaction(function () use ($item, $quantity, $unitPrice, $discount, $conversionData, $newBaseQuantity) {
+            // Recalculate cost prices
+            $product = Product::find($item->product_id);
+            $baseCostPrice = $product ? $product->purchase_price : 0;
+            
+            $costPrice = $baseCostPrice;
+            if ($conversionData['conversion_factor'] > 1) {
+                $costPrice = $baseCostPrice * $conversionData['conversion_factor'];
+            }
+
             $item->update([
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
                 'discount' => $discount,
+                'cost_price' => $costPrice,
+                'unit_id' => $conversionData['unit_id'],
+                'conversion_factor' => $conversionData['conversion_factor'],
+                'base_quantity' => $newBaseQuantity,
+                'base_cost_price' => $baseCostPrice,
             ]);
 
             // Recalculate sale totals
@@ -309,28 +427,32 @@ class SalesService
                 ->lockForUpdate()
                 ->get();
 
-            // Verify stock availability for all items
+            // Verify stock availability for all items using BASE QUANTITIES
             foreach ($sale->items as $item) {
+                $baseQuantity = $item->base_quantity ?? $item->quantity;
                 $currentStock = $this->stockService->getCurrentStock($sale->warehouse_id, $item->product_id);
 
-                if ($currentStock < $item->quantity) {
+                if ($currentStock < $baseQuantity) {
                     throw new \Exception(
                         "Insufficient stock for {$item->product->name}. " .
-                        "Required: {$item->quantity}, Available: {$currentStock}"
+                        "Required: {$baseQuantity} base units, Available: {$currentStock} base units"
                     );
                 }
             }
 
-            // Create stock movements for each item
+            // Create stock movements for each item using BASE QUANTITIES
             foreach ($sale->items as $item) {
+                $baseQuantity = $item->base_quantity ?? $item->quantity;
+                $baseCostPrice = $item->base_cost_price ?? $item->cost_price ?? $item->unit_price;
+                
                 $this->stockService->removeStock(
                     warehouseId: $sale->warehouse_id,
                     productId: $item->product_id,
-                    quantity: $item->quantity,
+                    quantity: $baseQuantity,
                     type: \App\Models\StockMovement::TYPE_SALE,
                     referenceType: Sale::class,
                     referenceId: $sale->id,
-                    unitCost: $item->cost_price ?? $item->unit_price, // Use cost_price, fallback to unit_price if null
+                    unitCost: $baseCostPrice,
                     remarks: "Sale #{$sale->invoice_number}",
                     userId: auth()->id()
                 );
@@ -395,16 +517,19 @@ class SalesService
         }
 
         return DB::transaction(function () use ($sale, $reason) {
-            // If confirmed, create reverse stock movements
+            // If confirmed, create reverse stock movements using BASE QUANTITIES
             if ($sale->isConfirmed()) {
                 foreach ($sale->items as $item) {
+                    $baseQuantity = $item->base_quantity ?? $item->quantity;
+                    $baseCostPrice = $item->base_cost_price ?? $item->cost_price ?? $item->unit_price;
+                    
                     // Create reverse movement
                     $this->stockService->addStock(
                         warehouseId: $sale->warehouse_id,
                         productId: $item->product_id,
-                        quantity: $item->quantity,
+                        quantity: $baseQuantity,
                         type: StockMovement::TYPE_CUSTOMER_RETURN, // Customer return (reverse of sale)
-                        unitCost: $item->unit_price,
+                        unitCost: $baseCostPrice,
                         remarks: "Sale #{$sale->invoice_number} cancelled. {$reason}",
                         referenceType: 'sale_reversal',
                         referenceId: $sale->id,

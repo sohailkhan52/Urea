@@ -82,6 +82,7 @@ class ProductReportController extends Controller
 
         $filters = $this->historyFilters($request);
         $products = Product::query()
+            ->with('baseUnit') // Load base unit relationship
             ->when($filters['search'], fn ($query, $search) => $query->where(function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%");
@@ -110,44 +111,95 @@ class ProductReportController extends Controller
     {
         $this->authorize('products.view');
 
+        // Load baseUnit relationship for display
+        $product->load('baseUnit');
+
         $filters = $this->historyFilters($request);
         $summary = $this->productHistorySummary($product, $filters);
         $transactions = collect();
 
-        $purchaseItems = $product->purchaseItems()->with('purchase')->whereHas('purchase', function ($query) use ($filters) {
+        // MULTI-UNIT FIX: Use base_quantity for normalized tracking, but also show transaction details
+        $purchaseItems = $product->purchaseItems()->with(['purchase', 'unit'])->whereHas('purchase', function ($query) use ($filters) {
             $query->where('status', Purchase::STATUS_CONFIRMED);
             $this->applyDateFilter($query, 'purchase_date', $filters);
         })->get();
         foreach ($purchaseItems as $item) {
-            $transactions->push(['date' => $item->purchase->purchase_date, 'type' => 'Purchase', 'reference' => $item->purchase->purchase_number, 'in' => (float) $item->quantity, 'out' => 0, 'return' => 0]);
+            // Use base_quantity for balance calculation, fall back to quantity for legacy records
+            $baseQty = $item->base_quantity ?? $item->quantity;
+            $transactions->push([
+                'date' => $item->purchase->purchase_date,
+                'type' => 'Purchase',
+                'reference' => $item->purchase->purchase_number,
+                'in' => (float) $baseQty,
+                'out' => 0,
+                'return' => 0,
+                // Store transaction details for display
+                'transaction_quantity' => $item->quantity,
+                'unit_name' => $item->unit->abbreviation ?? $product->unit,
+                'conversion_factor' => $item->conversion_factor,
+            ]);
         }
 
-        $purchaseReturns = PurchaseReturnItem::where('product_id', $product->id)->with('purchaseReturn')
+        $purchaseReturns = PurchaseReturnItem::where('product_id', $product->id)->with(['purchaseReturn', 'unit'])
             ->whereHas('purchaseReturn', function ($query) use ($filters) {
                 $query->where('status', 'confirmed');
                 $this->applyDateFilter($query, 'return_date', $filters);
             })->get();
         foreach ($purchaseReturns as $item) {
-            $transactions->push(['date' => $item->purchaseReturn->return_date, 'type' => 'Purchase Return', 'reference' => $item->purchaseReturn->return_number, 'in' => 0, 'out' => 0, 'return' => (float) $item->quantity]);
+            $baseQty = $item->base_quantity ?? $item->quantity;
+            $transactions->push([
+                'date' => $item->purchaseReturn->return_date,
+                'type' => 'Purchase Return',
+                'reference' => $item->purchaseReturn->return_number,
+                'in' => 0,
+                'out' => 0,
+                'return' => (float) $baseQty,
+                'transaction_quantity' => $item->quantity,
+                'unit_name' => $item->unit->abbreviation ?? $product->unit,
+                'conversion_factor' => $item->conversion_factor,
+            ]);
         }
 
-        $saleItems = $product->saleItems()->with('sale')->whereHas('sale', function ($query) use ($filters) {
+        $saleItems = $product->saleItems()->with(['sale', 'unit'])->whereHas('sale', function ($query) use ($filters) {
             $query->where('status', Sale::STATUS_CONFIRMED);
             $this->applyDateFilter($query, 'sale_date', $filters);
         })->get();
         foreach ($saleItems as $item) {
-            $transactions->push(['date' => $item->sale->sale_date, 'type' => 'Sale', 'reference' => $item->sale->invoice_number, 'in' => 0, 'out' => (float) $item->quantity, 'return' => 0]);
+            $baseQty = $item->base_quantity ?? $item->quantity;
+            $transactions->push([
+                'date' => $item->sale->sale_date,
+                'type' => 'Sale',
+                'reference' => $item->sale->invoice_number,
+                'in' => 0,
+                'out' => (float) $baseQty,
+                'return' => 0,
+                'transaction_quantity' => $item->quantity,
+                'unit_name' => $item->unit->abbreviation ?? $product->unit,
+                'conversion_factor' => $item->conversion_factor,
+            ]);
         }
 
-        $saleReturns = SaleReturnItem::where('product_id', $product->id)->with('saleReturn')
+        $saleReturns = SaleReturnItem::where('product_id', $product->id)->with(['saleReturn', 'unit'])
             ->whereHas('saleReturn', function ($query) use ($filters) {
                 $query->where('status', 'confirmed');
                 $this->applyDateFilter($query, 'return_date', $filters);
             })->get();
         foreach ($saleReturns as $item) {
-            $transactions->push(['date' => $item->saleReturn->return_date, 'type' => 'Sale Return', 'reference' => $item->saleReturn->return_number, 'in' => (float) $item->quantity, 'out' => 0, 'return' => 0]);
+            $baseQty = $item->base_quantity ?? $item->quantity;
+            $transactions->push([
+                'date' => $item->saleReturn->return_date,
+                'type' => 'Sale Return',
+                'reference' => $item->saleReturn->return_number,
+                'in' => (float) $baseQty,
+                'out' => 0,
+                'return' => 0,
+                'transaction_quantity' => $item->quantity,
+                'unit_name' => $item->unit->abbreviation ?? $product->unit,
+                'conversion_factor' => $item->conversion_factor,
+            ]);
         }
 
+        // Calculate running balance using BASE QUANTITIES
         $balance = 0;
         $transactions = $transactions->sortBy('date')->values()->map(function ($transaction) use (&$balance) {
             $balance += $transaction['in'] - $transaction['out'] - $transaction['return'];
@@ -179,24 +231,39 @@ class ProductReportController extends Controller
         }
     }
 
+    /**
+     * Get product history summary with multi-unit support
+     * 
+     * Uses base_quantity for accurate aggregation across different units.
+     * Falls back to quantity for legacy records without base_quantity.
+     * 
+     * @param Product $product
+     * @param array $filters
+     * @return object
+     */
     private function productHistorySummary(Product $product, array $filters): object
     {
+        // MULTI-UNIT FIX: Use base_quantity with fallback to quantity for legacy records
+        // We need to use raw SQL to handle the COALESCE for legacy compatibility
         $purchased = (float) $product->purchaseItems()->whereHas('purchase', function ($query) use ($filters) {
             $query->where('status', Purchase::STATUS_CONFIRMED);
             $this->applyDateFilter($query, 'purchase_date', $filters);
-        })->sum('quantity');
+        })->sum(\DB::raw('COALESCE(base_quantity, quantity)'));
+        
         $purchasedReturns = (float) PurchaseReturnItem::where('product_id', $product->id)->whereHas('purchaseReturn', function ($query) use ($filters) {
             $query->where('status', 'confirmed');
             $this->applyDateFilter($query, 'return_date', $filters);
-        })->sum('quantity');
+        })->sum(\DB::raw('COALESCE(base_quantity, quantity)'));
+        
         $sold = (float) $product->saleItems()->whereHas('sale', function ($query) use ($filters) {
             $query->where('status', Sale::STATUS_CONFIRMED);
             $this->applyDateFilter($query, 'sale_date', $filters);
-        })->sum('quantity');
+        })->sum(\DB::raw('COALESCE(base_quantity, quantity)'));
+        
         $soldReturns = (float) SaleReturnItem::where('product_id', $product->id)->whereHas('saleReturn', function ($query) use ($filters) {
             $query->where('status', 'confirmed');
             $this->applyDateFilter($query, 'return_date', $filters);
-        })->sum('quantity');
+        })->sum(\DB::raw('COALESCE(base_quantity, quantity)'));
 
         return (object) [
             'product' => $product,

@@ -11,11 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Drop if exists first to handle idempotency
-        Schema::table('customer_ledgers', function (Blueprint $table) {
-            $table->dropForeign(['sales_return_id']);
-        });
-        Schema::dropIfExists('sales_return_items');
+        $hasSalesReturnForeignKey = collect(Schema::getForeignKeys('customer_ledgers'))
+            ->contains(fn (array $foreignKey) => in_array('sales_return_id', $foreignKey['columns'], true));
+        $hasSaleReturnItemForeignKey = Schema::hasTable('sale_return_items')
+            && collect(Schema::getForeignKeys('sale_return_items'))
+                ->contains(fn (array $foreignKey) => in_array('sale_return_id', $foreignKey['columns'], true));
+
+        if ($hasSalesReturnForeignKey) {
+            Schema::table('customer_ledgers', function (Blueprint $table) {
+                $table->dropForeign(['sales_return_id']);
+            });
+        }
+
+        if ($hasSaleReturnItemForeignKey) {
+            Schema::table('sale_return_items', function (Blueprint $table) {
+                $table->dropForeign(['sale_return_id']);
+            });
+        }
+
         Schema::dropIfExists('sales_returns');
         
         Schema::create('sales_returns', function (Blueprint $table) {
@@ -76,6 +89,15 @@ return new class extends Migration
                 ->on('sales_returns')
                 ->onDelete('restrict');
         });
+
+        if (Schema::hasTable('sale_return_items')) {
+            Schema::table('sale_return_items', function (Blueprint $table) {
+                $table->foreign('sale_return_id')
+                    ->references('id')
+                    ->on('sales_returns')
+                    ->onDelete('cascade');
+            });
+        }
     }
 
     /**
@@ -83,6 +105,28 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (Schema::hasTable('customer_ledgers')) {
+            $hasSalesReturnForeignKey = collect(Schema::getForeignKeys('customer_ledgers'))
+                ->contains(fn (array $foreignKey) => in_array('sales_return_id', $foreignKey['columns'], true));
+
+            if ($hasSalesReturnForeignKey) {
+                Schema::table('customer_ledgers', function (Blueprint $table) {
+                    $table->dropForeign(['sales_return_id']);
+                });
+            }
+        }
+
+        if (Schema::hasTable('sale_return_items')) {
+            $hasSaleReturnItemForeignKey = collect(Schema::getForeignKeys('sale_return_items'))
+                ->contains(fn (array $foreignKey) => in_array('sale_return_id', $foreignKey['columns'], true));
+
+            if ($hasSaleReturnItemForeignKey) {
+                Schema::table('sale_return_items', function (Blueprint $table) {
+                    $table->dropForeign(['sale_return_id']);
+                });
+            }
+        }
+
         Schema::dropIfExists('sales_returns');
     }
 };

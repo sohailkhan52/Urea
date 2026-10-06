@@ -43,6 +43,9 @@ class SaleReturnItem extends Model
         'quantity',
         'unit_price',
         'total',
+        'unit_id',
+        'conversion_factor',
+        'base_quantity',
     ];
 
     /**
@@ -56,6 +59,8 @@ class SaleReturnItem extends Model
             'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',
             'total' => 'decimal:2',
+            'conversion_factor' => 'decimal:4',
+            'base_quantity' => 'decimal:4',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
@@ -85,6 +90,14 @@ class SaleReturnItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the unit used for this return item (multi-unit system)
+     */
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class);
     }
 
     // ========== COMPUTED ATTRIBUTES ==========

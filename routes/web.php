@@ -177,7 +177,6 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
 
     // Product Management
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)
-        ->except(['edit'])
         ->middleware('permission:products.view');
 
     // AJAX: Get all products (for single-page create form) - MUST come BEFORE resource routes
@@ -550,3 +549,86 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
 
 // Setup routes - NO AUTHENTICATION REQUIRED for table creation
 Route::get('/setup/create-tables', [\App\Http\Controllers\Admin\SetupController::class, 'createMissingTables'])->name('setup.create.tables');
+
+
+// TEMPORARY: Package Name Migration Route
+Route::get('/run-package-migration', function () {
+    if (!auth()->check() || !auth()->user()->isSuperAdmin()) {
+        abort(403, 'Unauthorized');
+    }
+    
+    try {
+        DB::beginTransaction();
+        
+        $results = [];
+        
+        // Check if column already exists
+        $columns = DB::select("SHOW COLUMNS FROM product_units WHERE Field = 'package_name'");
+        if (empty($columns)) {
+            DB::statement("ALTER TABLE `product_units` ADD COLUMN `package_name` VARCHAR(100) NULL COMMENT 'Optional display name for package variant' AFTER `unit_id`");
+            $results[] = '✓ Added package_name column';
+        } else {
+            $results[] = '⚠ package_name column already exists';
+        }
+        
+        // Check and drop old constraint
+        $oldIndex = DB::select("SHOW INDEXES FROM product_units WHERE Key_name = 'product_unit_unique'");
+        if (!empty($oldIndex)) {
+            DB::statement("ALTER TABLE `product_units` DROP INDEX `product_unit_unique`");
+            $results[] = '✓ Dropped old unique constraint';
+        } else {
+            $results[] = '⚠ Old constraint already removed';
+        }
+        
+        // Check and add new constraint
+        $newIndex = DB::select("SHOW INDEXES FROM product_units WHERE Key_name = 'product_unit_package_unique'");
+        if (empty($newIndex)) {
+            DB::statement("ALTER TABLE `product_units` ADD UNIQUE KEY `product_unit_package_unique` (`product_id`, `unit_id`, `package_name`)");
+            $results[] = '✓ Added new unique constraint';
+        } else {
+            $results[] = '⚠ New constraint already exists';
+        }
+        
+        // Record migrations
+        $existing = DB::table('migrations')
+            ->where('migration', '2026_10_06_000001_add_package_name_to_product_units_table')
+            ->exists();
+            
+        if (!$existing) {
+            $maxBatch = DB::table('migrations')->max('batch') ?? 0;
+            DB::table('migrations')->insert([
+                ['migration' => '2026_10_06_000001_add_package_name_to_product_units_table', 'batch' => $maxBatch + 1],
+                ['migration' => '2026_10_06_000002_update_product_units_unique_constraint', 'batch' => $maxBatch + 1],
+            ]);
+            $results[] = '✓ Recorded migrations';
+        } else {
+            $results[] = '⚠ Migrations already recorded';
+        }
+        
+        DB::commit();
+        
+        // Show current state
+        $results[] = '<br><br><strong>Current ProductUnits for Drake Chan:</strong>';
+        $units = DB::select("
+            SELECT pu.id, pu.unit_id, pu.package_name, u.name as unit_name 
+            FROM product_units pu 
+            JOIN units u ON u.id = pu.unit_id 
+            WHERE pu.product_id = 5
+        ");
+        
+        foreach ($units as $unit) {
+            $pkg = $unit->package_name ?? 'NULL';
+            $results[] = "ID {$unit->id}: unit={$unit->unit_name}, package_name={$pkg}";
+        }
+        
+        $results[] = '<br><strong>✅ Migration completed!</strong>';
+        $results[] = '<br>Now go to Edit Product and add package names like: piece, ration, box';
+        $results[] = '<br>Then refresh the Purchase/Sale pages.';
+        
+        return '<pre>' . implode("\n", $results) . '</pre>';
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return '<pre>❌ Error: ' . $e->getMessage() . '</pre>';
+    }
+})->name('run.package.migration');

@@ -81,6 +81,16 @@ class StoreSaleWithItemsRequest extends FormRequest
                 'numeric',
                 'min:0.01',
             ],
+            'items.*.unit_id' => [
+                'nullable',
+                'integer',
+                'exists:units,id',
+            ],
+            'items.*.product_unit_id' => [
+                'nullable',
+                'integer',
+                'exists:product_units,id',
+            ],
             'items.*.unit_price' => [
                 'required',
                 'numeric',

@@ -11,23 +11,30 @@ use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Services\UnitConversionService;
 
 /**
  * Sale Return Service
  * 
- * Handles all business logic for creating and managing sale returns.
- * Integrates with StockService for inventory updates and follows
- * existing payment/udhar patterns for financial adjustments.
+ * Multi-unit support:
+ * - Validates returnable quantities using base units
+ * - Stores unit conversion snapshots on return items
+ * - Uses base quantities for stock movements
  */
 class SaleReturnService
 {
     protected StockService $stockService;
     protected UdharHistoryService $udharHistoryService;
+    protected UnitConversionService $conversionService;
 
-    public function __construct(StockService $stockService, UdharHistoryService $udharHistoryService)
-    {
+    public function __construct(
+        StockService $stockService, 
+        UdharHistoryService $udharHistoryService,
+        UnitConversionService $conversionService
+    ) {
         $this->stockService = $stockService;
         $this->udharHistoryService = $udharHistoryService;
+        $this->conversionService = $conversionService;
     }
 
     /**
@@ -83,6 +90,14 @@ class SaleReturnService
                 $returnQty = (float) $itemData['quantity'];
                 $returnTotal = $returnQty * $saleItem->unit_price;
                 
+                // Calculate unit conversion data
+                $unitId = $itemData['unit_id'] ?? $saleItem->unit_id;
+                $conversionData = $this->conversionService->calculateTransactionData(
+                    $saleItem->product_id,
+                    $returnQty,
+                    $unitId
+                );
+                
                 SaleReturnItem::create([
                     'sale_return_id' => $return->id,
                     'sale_item_id' => $saleItem->id,
@@ -90,6 +105,9 @@ class SaleReturnService
                     'quantity' => $returnQty,
                     'unit_price' => $saleItem->unit_price, // Use original sale price
                     'total' => $returnTotal,
+                    'unit_id' => $conversionData['unit_id'],
+                    'conversion_factor' => $conversionData['conversion_factor'],
+                    'base_quantity' => $conversionData['base_quantity'],
                 ]);
 
                 $totalReturnAmount += $returnTotal;
@@ -133,12 +151,14 @@ class SaleReturnService
         return DB::transaction(function () use ($return) {
             $sale = $return->sale;
 
-            // 1. Add stock back to warehouse for each returned item
+            // 1. Add stock back to warehouse for each returned item using BASE QUANTITIES
             foreach ($return->items as $returnItem) {
+                $baseQuantity = $returnItem->base_quantity ?? $returnItem->quantity;
+                
                 $this->stockService->addStock(
                     $return->warehouse_id,
                     $returnItem->product_id,
-                    $returnItem->quantity,
+                    $baseQuantity,
                     StockMovement::TYPE_CUSTOMER_RETURN,
                     SaleReturn::class,
                     $return->id,
@@ -276,7 +296,10 @@ class SaleReturnService
     }
 
     /**
-     * Validate return items before creating return
+     * Validate return items before creating return using BASE UNITS
+     * 
+     * CRITICAL: Must compare base quantities to prevent returning more than sold.
+     * Example: Sold 10 Bags (500 KG), can't return 11 Bags (550 KG).
      * 
      * @param Sale $sale
      * @param array $items
@@ -302,14 +325,26 @@ class SaleReturnService
                 throw new \Exception('Return quantity must be greater than 0.');
             }
 
-            // Check returnable quantity
-            $returnableQty = $saleItem->returnable_quantity;
-            if ($returnQty > $returnableQty) {
+            // Calculate return quantity in base units
+            $unitId = $itemData['unit_id'] ?? $saleItem->unit_id;
+            $conversionData = $this->conversionService->calculateTransactionData(
+                $saleItem->product_id,
+                $returnQty,
+                $unitId
+            );
+            $returnBaseQuantity = $conversionData['base_quantity'];
+
+            // Get original base quantity and already returned base quantity
+            $originalBaseQty = $saleItem->base_quantity ?? $saleItem->quantity;
+            $returnedBaseQty = $this->getRemainingReturnableQuantity($saleItem->id);
+            $alreadyReturned = $originalBaseQty - $returnedBaseQty;
+
+            if ($returnBaseQuantity > $returnedBaseQty) {
                 $productName = $saleItem->product->name;
                 throw new \Exception(
-                    "Cannot return {$returnQty} of {$productName}. " .
-                    "Maximum returnable quantity is {$returnableQty} " .
-                    "(Original: {$saleItem->quantity}, Already returned: {$saleItem->total_returned_quantity})."
+                    "Cannot return {$returnQty} units of {$productName}. " .
+                    "Remaining returnable: {$returnedBaseQty} base units " .
+                    "(Original: {$originalBaseQty}, Already returned: {$alreadyReturned})"
                 );
             }
         }
@@ -357,14 +392,27 @@ class SaleReturnService
     }
 
     /**
-     * Calculate how much quantity can still be returned for a sale item
+     * Calculate how much quantity can still be returned for a sale item (in BASE UNITS)
      * 
      * @param int $saleItemId
-     * @return float
+     * @return float Remaining returnable quantity in base units
      */
     public function getRemainingReturnableQuantity(int $saleItemId): float
     {
-        $saleItem = SaleItem::findOrFail($saleItemId);
-        return $saleItem->returnable_quantity;
+        $saleItem = SaleItem::with('returnItems.saleReturn')->findOrFail($saleItemId);
+        
+        $originalBaseQty = $saleItem->base_quantity ?? $saleItem->quantity;
+        
+        // Sum up confirmed return base quantities
+        $returnedBaseQty = $saleItem->returnItems()
+            ->whereHas('saleReturn', function ($query) {
+                $query->where('status', 'confirmed');
+            })
+            ->get()
+            ->sum(function ($item) {
+                return $item->base_quantity ?? $item->quantity;
+            });
+        
+        return max(0, $originalBaseQty - $returnedBaseQty);
     }
 }
