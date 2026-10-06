@@ -118,7 +118,7 @@
                             Add packaging variants for this product. Each variant will use the base unit you selected above.
                             <br>
                             <span class="badge bg-info text-dark">
-                                <i class="fas fa-info-circle"></i> Base unit is auto-selected - just enter Package Name and Conversion
+                                <i class="bi bi-info-circle"></i> Base unit is auto-selected - just enter Package Name and Conversion
                             </span>
                         </p>
 
@@ -127,14 +127,14 @@
                         </div>
 
                         <button type="button" class="btn btn-sm btn-outline-primary mb-3" id="addUnitBtn">
-                            <i class="fas fa-plus"></i> Add Unit
+                            <i class="bi bi-plus-lg"></i> Add Unit
                         </button>
 
                         <hr class="my-4">
 
                         <div class="mb-0 text-end">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Create Product
+                                <i class="bi bi-check-lg"></i> Create Product
                             </button>
                             <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">
                                 Cancel
@@ -192,7 +192,7 @@
                     <label class="form-label small d-block d-sm-none">Actions</label>
                     <label class="form-label small d-none d-sm-block">&nbsp;</label>
                     <button type="button" class="btn btn-sm btn-danger remove-unit-btn" style="min-width: 36px;">
-                        <i class="fas fa-trash"></i>
+                        <i class="bi bi-trash"></i>
                     </button>
                 </div>
             </div>

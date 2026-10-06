@@ -50,7 +50,7 @@
                                             value="{{ $product->baseUnit ? $product->baseUnit->name . ' (' . $product->baseUnit->abbreviation . ')' : $product->unit }}" 
                                             readonly>
                                         <small class="text-danger d-block mt-1">
-                                            <i class="fas fa-lock"></i> Cannot change base unit after confirmed transactions
+                                            <i class="bi bi-lock"></i> Cannot change base unit after confirmed transactions
                                         </small>
                                     @else
                                         <select class="form-select @error('base_unit_id') is-invalid @enderror" id="base_unit_id" name="base_unit_id" required>
@@ -209,14 +209,14 @@
                         </div>
 
                         <button type="button" class="btn btn-sm btn-outline-primary mb-3" id="addUnitBtn">
-                            <i class="fas fa-plus"></i> Add Unit
+                            <i class="bi bi-plus-lg"></i> Add Unit
                         </button>
 
                         <hr class="my-4">
 
                         <div class="mb-0 text-end">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i> Update Product
+                                <i class="bi bi-check-lg"></i> Update Product
                             </button>
                             <a href="{{ route('admin.reports.products.index') }}" class="btn btn-secondary">
                                 Cancel
