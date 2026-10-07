@@ -86,6 +86,10 @@ class SupplierPayableController extends Controller
                         'outstanding_payable' => $supplierOutstanding,
                     ];
                 })
+                ->filter(function ($supplier) {
+                    // Only include suppliers with non-zero outstanding balance
+                    return $supplier->outstanding_payable != 0;
+                })
                 ->sortByDesc('outstanding_payable')
                 ->values();
             
@@ -263,6 +267,72 @@ class SupplierPayableController extends Controller
             }
             
             return response()->json(['success' => true, 'message' => 'Payment recorded successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+    
+    /**
+     * Record refund (when we owe supplier a refund due to returns exceeding payments)
+     */
+    public function refund($supplierId)
+    {
+        $this->authorize('purchases.create');
+        
+        $user = auth()->user();
+        $supplier = Supplier::findOrFail($supplierId);
+        
+        $request = request();
+        $amount = (float) $request->input('amount');
+        $reference = $request->input('reference');
+        $notes = $request->input('notes');
+        
+        // Validate amount
+        if ($amount <= 0) {
+            return response()->json(['success' => false, 'message' => 'Refund amount must be greater than 0']);
+        }
+        
+        // Get all purchases for this supplier to find one to apply credit against
+        $purchase = Purchase::where('supplier_id', $supplierId)
+            ->where('status', 'confirmed')
+            ->oldest('purchase_date')
+            ->first();
+        
+        if (!$purchase) {
+            return response()->json(['success' => false, 'message' => 'No purchases found for this supplier']);
+        }
+        
+        // Check warehouse access
+        if (!$user->canAccessWarehouse($purchase->warehouse_id)) {
+            return response()->json(['success' => false, 'message' => 'You do not have access to this warehouse']);
+        }
+        
+        // Create refund record (negative payment)
+        try {
+            $refund = \App\Models\PurchasePayment::create([
+                'payment_number' => 'RF-' . now()->format('YmdHis') . '-' . str_pad(round(microtime(true) * 10000) % 10000, 4, '0', STR_PAD_LEFT),
+                'supplier_id' => $supplierId,
+                'purchase_id' => $purchase->id,
+                'amount' => -$amount, // Negative amount for refund
+                'payment_method' => 'cash',
+                'payment_date' => now(),
+                'reference_number' => $reference,
+                'notes' => $notes,
+                'recorded_by' => $user->id,
+            ]);
+            
+            // Update purchase paid_amount (subtracting the refund)
+            $newPaidAmount = $purchase->paid_amount - $amount;
+            $purchase->update(['paid_amount' => $newPaidAmount]);
+            
+            // Update payment status
+            if ($newPaidAmount >= $purchase->total_amount) {
+                $purchase->update(['payment_status' => 'paid']);
+            } else {
+                $purchase->update(['payment_status' => 'partial']);
+            }
+            
+            return response()->json(['success' => true, 'message' => 'Refund recorded successfully']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }

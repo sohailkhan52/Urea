@@ -510,6 +510,9 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
         Route::post('/{supplier}/payment', [\App\Http\Controllers\Admin\SupplierPayableController::class, 'payment'])
             ->middleware('permission:purchases.create')
             ->name('payment');
+        Route::post('/{supplier}/refund', [\App\Http\Controllers\Admin\SupplierPayableController::class, 'refund'])
+            ->middleware('permission:purchases.create')
+            ->name('refund');
     });
 
     // Notifications Management

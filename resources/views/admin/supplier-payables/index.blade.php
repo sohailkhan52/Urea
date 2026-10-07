@@ -166,10 +166,19 @@
                                         <a href="{{ route('admin.supplier-payables.show', $supplier->id) }}" class="btn btn-outline-primary" title="View Supplier Payable Details">
                                             <i class="bi bi-eye"></i>
                                         </a>
+                                        @if($supplier->outstanding_payable > 0)
                                         <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#paymentModal" 
-                                            onclick="setSupplierPayment({{ $supplier->id }}, '{{ $supplier->name }}', {{ $supplier->outstanding_payable }})">
+                                            onclick="setSupplierPayment({{ $supplier->id }}, '{{ $supplier->name }}', {{ $supplier->outstanding_payable }}, 'payment')"
+                                            title="Record Payment">
                                             <i class="bi bi-cash-coin"></i>
                                         </button>
+                                        @elseif($supplier->outstanding_payable < 0)
+                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#refundModal" 
+                                            onclick="setSupplierRefund({{ $supplier->id }}, '{{ $supplier->name }}', {{ $supplier->outstanding_payable }})"
+                                            title="Refund Debit">
+                                            <i class="bi bi-arrow-return-left"></i>
+                                        </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -236,14 +245,70 @@
     </div>
 </div>
 
+<!-- Refund Modal -->
+<div class="modal fade" id="refundModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Record Refund</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="refundForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Supplier</label>
+                        <input type="text" id="refundSupplierName" class="form-control" readonly>
+                        <input type="hidden" id="refundSupplierId" name="supplier_id">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Refund Due (Credit Balance)</label>
+                        <input type="text" id="refundOutstandingAmount" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Refund Amount</label>
+                        <input type="number" id="refundAmount" name="amount" class="form-control" step="0.01" min="0" required>
+                        <small class="text-muted">Max: <span id="refundMaxAmount"></span></small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reference (Optional)</label>
+                        <input type="text" name="reference" class="form-control" placeholder="Cheque number, transaction ID, etc.">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Add any notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-arrow-return-left me-1"></i> Record Refund
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
-function setSupplierPayment(supplierId, supplierName, outstanding) {
+function setSupplierPayment(supplierId, supplierName, outstanding, type = 'payment') {
     document.getElementById('supplierId').value = supplierId;
     document.getElementById('supplierName').value = supplierName;
-    document.getElementById('outstandingAmount').value = 'Rs. ' + Math.round(outstanding).toLocaleString('en-PK');
-    document.getElementById('maxAmount').textContent = 'Rs. ' + Math.round(outstanding).toLocaleString('en-PK');
-    document.getElementById('paymentAmount').max = outstanding;
+    const absAmount = Math.abs(outstanding);
+    document.getElementById('outstandingAmount').value = 'Rs. ' + Math.round(absAmount).toLocaleString('en-PK');
+    document.getElementById('maxAmount').textContent = 'Rs. ' + Math.round(absAmount).toLocaleString('en-PK');
+    document.getElementById('paymentAmount').max = absAmount;
     document.getElementById('paymentAmount').value = '';
+}
+
+function setSupplierRefund(supplierId, supplierName, outstanding) {
+    document.getElementById('refundSupplierId').value = supplierId;
+    document.getElementById('refundSupplierName').value = supplierName;
+    const refundAmount = Math.abs(outstanding); // Make it positive for display
+    document.getElementById('refundOutstandingAmount').value = 'Rs. ' + Math.round(refundAmount).toLocaleString('en-PK');
+    document.getElementById('refundMaxAmount').textContent = 'Rs. ' + Math.round(refundAmount).toLocaleString('en-PK');
+    document.getElementById('refundAmount').max = refundAmount;
+    document.getElementById('refundAmount').value = '';
 }
 
 document.getElementById('paymentForm').addEventListener('submit', function(e) {
@@ -270,6 +335,33 @@ document.getElementById('paymentForm').addEventListener('submit', function(e) {
     .catch(error => {
         console.error('Error:', error);
         alert('Error recording payment');
+    });
+});
+
+document.getElementById('refundForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const supplierId = document.getElementById('refundSupplierId').value;
+    const form = this;
+    
+    fetch(`/admin/supplier-payables/${supplierId}/refund`, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Refund recorded successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error recording refund');
     });
 });
 </script>
