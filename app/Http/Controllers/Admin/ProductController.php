@@ -44,18 +44,25 @@ class ProductController extends Controller
         // Validate basic product fields
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'unit' => 'nullable|in:KG,MG,Gram,Piece,Dozen,Litre', // Now optional for multi-unit
+            'unit' => 'nullable|in:KG,MG,Gram,Piece,Dozen,Litre',
             'base_unit_id' => 'nullable|exists:units,id',
             'purchase_price' => 'required|numeric|min:0',
             'sale_price' => 'required|numeric|min:0',
             'minimum_stock_level' => 'nullable|integer|min:0',
             'product_units' => 'nullable|array',
             'product_units.*.unit_id' => 'required|exists:units,id',
+            'product_units.*.package_name' => 'nullable|string|max:100',
             'product_units.*.conversion_to_base' => 'required|numeric|min:0.0001',
             'product_units.*.purchase_price' => 'nullable|numeric|min:0',
             'product_units.*.sale_price' => 'nullable|numeric|min:0',
             'product_units.*.barcode' => 'nullable|string|max:100',
             'product_units.*.is_active' => 'nullable|boolean',
+            // Package checkbox fields (used by the simplified Product Create UI)
+            'has_package' => 'nullable|boolean',
+            'package_type' => 'nullable|string|max:50',
+            'package_conversion' => 'nullable|numeric|min:0.0001',
+            'pkg_purchase_price' => 'nullable|numeric|min:0',
+            'pkg_sale_price' => 'nullable|numeric|min:0',
         ]);
 
         // Set default minimum stock level
@@ -97,6 +104,7 @@ class ProductController extends Controller
                     \App\Models\ProductUnit::create([
                         'product_id' => $product->id,
                         'unit_id' => $unitData['unit_id'],
+                        'package_name' => $unitData['package_name'] ?? null,
                         'conversion_to_base' => $unitData['conversion_to_base'],
                         'purchase_price' => $unitData['purchase_price'] ?? null,
                         'sale_price' => $unitData['sale_price'] ?? null,
@@ -239,8 +247,18 @@ class ProductController extends Controller
             ]);
 
             // Create additional product units if provided
+            // Skip rows that duplicate the base unit (already created above)
             if (!empty($validated['product_units']) && is_array($validated['product_units'])) {
                 foreach ($validated['product_units'] as $unitData) {
+                    // Skip if this is a base unit row — storeAjax always creates one above
+                    $isBaseRow = (empty($unitData['package_name']) || $unitData['package_name'] === '')
+                        && abs((float)($unitData['conversion_to_base'] ?? 1) - 1.0) < 0.0001
+                        && (int)($unitData['unit_id'] ?? 0) === (int)$validated['base_unit_id'];
+
+                    if ($isBaseRow) {
+                        continue;
+                    }
+
                     \App\Models\ProductUnit::create([
                         'product_id' => $product->id,
                         'unit_id' => $unitData['unit_id'],

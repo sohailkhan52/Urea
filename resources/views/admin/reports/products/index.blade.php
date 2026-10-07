@@ -171,19 +171,31 @@
                                 <small class="text-muted">{{ $product->sku ?? 'N/A' }}</small>
                             </td>
                             <td>
-                                <span class="badge bg-secondary">{{ $product->unit }}</span>
+                                @php
+                                    // Find the primary Bag or Box ProductUnit if one exists
+                                    $bagOrBox = $product->productUnits
+                                        ->whereNotNull('package_name')
+                                        ->whereIn('package_name', ['Bag', 'Box'])
+                                        ->sortByDesc('conversion_to_base')
+                                        ->first();
+                                    
+                                    // If no Bag/Box, show base unit abbreviation
+                                    $displayUnit    = $bagOrBox ? $bagOrBox->package_name : $product->unit;
+                                    $displayCost    = $bagOrBox ? $bagOrBox->purchase_price : $product->purchase_price;
+                                    $displaySale    = $bagOrBox ? $bagOrBox->sale_price    : $product->sale_price;
+                                    $badgeColor     = $bagOrBox ? 'bg-primary' : 'bg-secondary';
+                                @endphp
+                                <span class="badge {{ $badgeColor }}">{{ $displayUnit }}</span>
                             </td>
                             <td>
-                                <strong>Rs. {{ number_format($product->purchase_price, 0) }}</strong>
+                                <strong>Rs. {{ number_format($displayCost, 0) }}</strong>
                             </td>
                             <td>
-                                <strong class="text-success">Rs. {{ number_format($product->sale_price, 0) }}</strong>
+                                <strong class="text-success">Rs. {{ number_format($displaySale, 0) }}</strong>
                             </td>
                             <td>
-                                @if($product->purchase_price > 0)
-                                    @php
-                                        $margin = $product->sale_price - $product->purchase_price;
-                                    @endphp
+                                @if($displayCost > 0)
+                                    @php $margin = $displaySale - $displayCost; @endphp
                                     <strong class="text-{{ $margin >= 0 ? 'success' : 'danger' }}">Rs. {{ number_format($margin, 0) }}</strong>
                                 @else
                                     <span class="text-muted">—</span>

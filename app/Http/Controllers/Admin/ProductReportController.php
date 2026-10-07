@@ -54,7 +54,7 @@ class ProductReportController extends Controller
         if (!in_array($perPage, [10, 25, 50, 100], true)) {
             $perPage = 10;
         }
-        $products = $query->paginate($perPage)->withQueryString();
+        $products = $query->with(['productUnits'])->paginate($perPage)->withQueryString();
 
         // Get available units
         $units = Product::getUnits();
