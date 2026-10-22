@@ -80,13 +80,20 @@
                         <tbody id="itemsBody">
                             @forelse($sale->items as $index => $item)
                                 @php
-                                    // Calculate how much can still be returned
-                                    $alreadyReturned = \App\Models\SaleReturnItem::where('sale_item_id', $item->id)
-                                        ->whereHas('saleReturn', function ($q) {
-                                            $q->where('status', 'confirmed');
-                                        })
-                                        ->sum('quantity');
-                                    $canReturn = max(0, $item->quantity - $alreadyReturned);
+                                    $conversionFactor = (float) ($item->conversion_factor ?: 1);
+                                    $baseUnitLabel = $item->product->baseUnit->abbreviation
+                                        ?? $item->product->unit
+                                        ?? '';
+                                    $transactionUnitLabel = $item->productUnit->package_name
+                                        ?? $item->unit->abbreviation
+                                        ?? $item->product->baseUnit->abbreviation
+                                        ?? $item->product->unit
+                                        ?? '';
+                                    $remainingBaseQuantity = (float) ($remainingReturnableQuantities[$item->id] ?? 0);
+                                    $canReturn = min(
+                                        (float) $item->quantity,
+                                        $remainingBaseQuantity / $conversionFactor
+                                    );
                                 @endphp
                                 <tr>
                                     <td>
@@ -96,20 +103,38 @@
                                                onchange="updateItemRow({{ $index }})">
                                     </td>
                                     <td><strong>{{ $item->product->name }}</strong></td>
-                                    <td class="text-center">{{ $item->quantity }}</td>
-                                    <td class="text-center">{{ $canReturn }}</td>
+                                    <td class="text-center">
+                                        {{ number_format($item->quantity, 2) }}
+                                        @if($transactionUnitLabel)
+                                            {{ $transactionUnitLabel }}
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        {{ number_format($canReturn, 2) }}
+                                        @if($transactionUnitLabel)
+                                            <small class="d-block text-muted">{{ $transactionUnitLabel }}</small>
+                                        @endif
+                                    </td>
                                     <td class="text-end">Rs. {{ number_format($item->unit_price, 0) }}</td>
                                     <td>
-                                        <input type="number" 
-                                               class="form-control form-control-sm return-qty" 
-                                               name="items[{{ $index }}][quantity]"
-                                               data-index="{{ $index }}"
-                                               min="0" 
-                                               max="{{ $canReturn }}" 
-                                               step="0.01"
-                                               placeholder="0"
-                                               disabled
-                                               onchange="updateItemRow({{ $index }})">
+                                        <div class="input-group input-group-sm">
+                                            <input type="number"
+                                                   class="form-control return-qty"
+                                                   name="items[{{ $index }}][quantity]"
+                                                   data-index="{{ $index }}"
+                                                   data-conversion-factor="{{ $conversionFactor }}"
+                                                   data-base-unit-label="{{ $baseUnitLabel }}"
+                                                   min="0"
+                                                   max="{{ $canReturn }}"
+                                                   step="0.01"
+                                                   placeholder="0"
+                                                   disabled
+                                                   oninput="updateItemRow({{ $index }})">
+                                            @if($transactionUnitLabel)
+                                                <span class="input-group-text">{{ $transactionUnitLabel }}</span>
+                                            @endif
+                                        </div>
+                                        <small class="text-muted return-conversion-hint" data-index="{{ $index }}"></small>
                                     </td>
                                     <td class="text-end">
                                         <strong class="return-amount" data-index="{{ $index }}">Rs. 0</strong>
@@ -221,17 +246,31 @@ function updateAmount(index) {
     const qtyInput = document.querySelector(`.return-qty[data-index="${index}"]`);
     const priceInput = document.querySelector(`input[name="items[${index}][unit_price]"]`);
     const amountSpan = document.querySelector(`.return-amount[data-index="${index}"]`);
+    const conversionHint = document.querySelector(`.return-conversion-hint[data-index="${index}"]`);
     
     const qty = parseFloat(qtyInput.value) || 0;
     const price = parseFloat(priceInput.value) || 0;
     const amount = qty * price;
+    const baseQuantity = qty * (parseFloat(qtyInput.dataset.conversionFactor) || 1);
+    const baseUnitLabel = qtyInput.dataset.baseUnitLabel;
     
-    amountSpan.textContent = 'Rs. ' + Math.round(amount);
+    amountSpan.textContent = 'Rs. ' + amount.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
+    conversionHint.textContent = qty > 0 && baseUnitLabel
+        ? `Equals ${baseQuantity.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${baseUnitLabel}`
+        : '';
 }
 
 function updateTotal() {
     let total = 0;
     document.querySelectorAll('.return-qty').forEach(input => {
+        const checkbox = document.querySelector(`.item-checkbox[data-index="${input.dataset.index}"]`);
+        if (!checkbox.checked) {
+            return;
+        }
+
         const qty = parseFloat(input.value) || 0;
         const index = input.dataset.index;
         const priceInput = document.querySelector(`input[name="items[${index}][unit_price]"]`);
@@ -239,15 +278,28 @@ function updateTotal() {
         total += qty * price;
     });
     
-    document.getElementById('totalReturnAmount').textContent = Math.round(total);
+    document.getElementById('totalReturnAmount').textContent = total.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
 }
 
 // Validate form
 document.getElementById('returnForm').addEventListener('submit', function(e) {
-    const hasItems = Array.from(document.querySelectorAll('.return-qty')).some(input => parseFloat(input.value) > 0);
-    if (!hasItems) {
+    const selectedItems = Array.from(document.querySelectorAll('.item-checkbox:checked'));
+    const positiveQuantityItems = selectedItems.filter(checkbox => {
+        const input = document.querySelector(`.return-qty[data-index="${checkbox.dataset.index}"]`);
+        return parseFloat(input.value) > 0;
+    });
+    const hasInvalidQuantity = positiveQuantityItems.some(checkbox => {
+        const input = document.querySelector(`.return-qty[data-index="${checkbox.dataset.index}"]`);
+        const quantity = parseFloat(input.value);
+        return !Number.isFinite(quantity) || quantity > parseFloat(input.max);
+    });
+
+    if (positiveQuantityItems.length === 0 || hasInvalidQuantity) {
         e.preventDefault();
-        alert('Please select at least one item to return');
+        alert('Select at least one item and enter a quantity no greater than the remaining returnable amount.');
     }
 });
 </script>

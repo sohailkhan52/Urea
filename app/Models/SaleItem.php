@@ -86,6 +86,14 @@ class SaleItem extends Model
     }
 
     /**
+     * Get the specific product unit/package used for this sale item.
+     */
+    public function productUnit()
+    {
+        return $this->belongsTo(ProductUnit::class);
+    }
+
+    /**
      * Get return items for this sale item
      */
     public function returnItems()

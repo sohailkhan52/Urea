@@ -57,7 +57,7 @@ class PurchaseReturnService
             $notes
         ) {
             // Load the original purchase
-            $purchase = Purchase::with('items')->findOrFail($purchaseId);
+            $purchase = Purchase::with(['items.product.baseUnit'])->findOrFail($purchaseId);
 
             // Validate purchase is confirmed
             if (!$purchase->isConfirmed()) {
@@ -75,8 +75,10 @@ class PurchaseReturnService
                 ->filter(function ($item) {
                     return $item['quantity'] > 0;
                 })
-                ->sum(function ($item) {
-                    return $item['quantity'] * $item['unit_price'];
+                ->sum(function ($item) use ($purchase) {
+                    $purchaseItem = $purchase->items->firstWhere('id', $item['purchase_item_id']);
+
+                    return $item['quantity'] * $purchaseItem->unit_price;
                 });
 
             // Create purchase return
@@ -103,25 +105,19 @@ class PurchaseReturnService
                     continue;
                 }
 
-                $purchaseItem = $purchase->items->find($itemData['purchase_item_id']);
-                
-                // Calculate unit conversion data
-                $unitId = $itemData['unit_id'] ?? $purchaseItem->unit_id;
-                $conversionData = $this->conversionService->calculateTransactionData(
-                    $itemData['product_id'],
-                    $itemData['quantity'],
-                    $unitId
-                );
+                $purchaseItem = $purchase->items->firstWhere('id', $itemData['purchase_item_id']);
+                $purchaseUnitData = $this->getPurchaseUnitData($purchaseItem);
+                $baseQuantity = (float) $itemData['quantity'] * $purchaseUnitData['conversion_factor'];
 
                 PurchaseReturnItem::create([
                     'purchase_return_id' => $return->id,
                     'purchase_item_id' => $itemData['purchase_item_id'],
-                    'product_id' => $itemData['product_id'],
+                    'product_id' => $purchaseItem->product_id,
                     'quantity' => $itemData['quantity'],
-                    'unit_price' => $itemData['unit_price'],
-                    'unit_id' => $conversionData['unit_id'],
-                    'conversion_factor' => $conversionData['conversion_factor'],
-                    'base_quantity' => $conversionData['base_quantity'],
+                    'unit_price' => $purchaseItem->unit_price,
+                    'unit_id' => $purchaseUnitData['unit_id'],
+                    'conversion_factor' => $purchaseUnitData['conversion_factor'],
+                    'base_quantity' => $baseQuantity,
                 ]);
             }
 
@@ -142,6 +138,9 @@ class PurchaseReturnService
             // Reduce stock for each returned item using BASE QUANTITIES
             foreach ($return->items as $item) {
                 $baseQuantity = $item->base_quantity ?? $item->quantity;
+                $unitCost = $baseQuantity > 0
+                    ? (float) $item->total / $baseQuantity
+                    : (float) $item->unit_price;
                 
                 $this->stockService->removeStock(
                     $return->warehouse_id,
@@ -150,7 +149,7 @@ class PurchaseReturnService
                     StockMovement::TYPE_SUPPLIER_RETURN,
                     PurchaseReturn::class,
                     $return->id,
-                    $item->unit_price,
+                    $unitCost,
                     "Purchase Return: {$return->return_number}",
                     $confirmedBy
                 );
@@ -250,20 +249,15 @@ class PurchaseReturnService
         }
 
         foreach ($itemsToReturn as $itemData) {
-            $purchaseItem = $purchase->items->find($itemData['purchase_item_id']);
+            $purchaseItem = $purchase->items->firstWhere('id', $itemData['purchase_item_id']);
 
             if (!$purchaseItem) {
                 throw new \Exception("Invalid purchase item ID: {$itemData['purchase_item_id']}");
             }
 
-            // Calculate return quantity in base units
-            $unitId = $itemData['unit_id'] ?? $purchaseItem->unit_id;
-            $conversionData = $this->conversionService->calculateTransactionData(
-                $purchaseItem->product_id,
-                $itemData['quantity'],
-                $unitId
-            );
-            $returnBaseQuantity = $conversionData['base_quantity'];
+            // Use the conversion snapshot saved on the original purchase item.
+            $purchaseUnitData = $this->getPurchaseUnitData($purchaseItem);
+            $returnBaseQuantity = (float) $itemData['quantity'] * $purchaseUnitData['conversion_factor'];
 
             // Get original base quantity and already returned base quantity
             $originalBaseQty = $purchaseItem->base_quantity ?? $purchaseItem->quantity;
@@ -272,13 +266,48 @@ class PurchaseReturnService
 
             if ($returnBaseQuantity > $remainingBaseQty) {
                 $productName = $purchaseItem->product->name ?? 'Unknown';
+                $unitName = $purchaseItem->unit->abbreviation
+                    ?? $purchaseItem->product->baseUnit->abbreviation
+                    ?? $purchaseItem->product->unit
+                    ?? 'units';
+
                 throw new \Exception(
-                    "Cannot return {$itemData['quantity']} units of {$productName}. " .
-                    "Remaining returnable: {$remainingBaseQty} base units " .
+                    "Cannot return {$itemData['quantity']} {$unitName} of {$productName}. " .
+                    "Remaining returnable: " . ($remainingBaseQty / $purchaseUnitData['conversion_factor']) . " {$unitName} " .
                     "(original: {$originalBaseQty}, already returned: {$returnedBaseQty})"
                 );
             }
         }
+    }
+
+    /**
+     * Get the transaction unit and conversion factor recorded at purchase time.
+     *
+     * Older purchase items without a saved factor fall back to the current unit
+     * configuration, while new purchase returns always use the saved snapshot.
+     *
+     * @return array{unit_id: int|null, conversion_factor: float}
+     */
+    protected function getPurchaseUnitData(PurchaseItem $purchaseItem): array
+    {
+        if ($purchaseItem->conversion_factor !== null && (float) $purchaseItem->conversion_factor > 0) {
+            return [
+                'unit_id' => $purchaseItem->unit_id ?? $purchaseItem->product?->base_unit_id,
+                'conversion_factor' => (float) $purchaseItem->conversion_factor,
+            ];
+        }
+
+        $conversionData = $this->conversionService->calculateTransactionData(
+            $purchaseItem->product_id,
+            1,
+            $purchaseItem->unit_id,
+            $purchaseItem->product_unit_id
+        );
+
+        return [
+            'unit_id' => $conversionData['unit_id'],
+            'conversion_factor' => $conversionData['conversion_factor'],
+        ];
     }
 
     /**

@@ -229,7 +229,7 @@
                                                 <strong>{{ $item->product->name }}</strong><br>
                                                 <small class="text-muted">
                                                     @if($item->unit_id && $item->unit)
-                                                        Transaction Unit: {{ $item->unit->name }}
+                                                        Transaction Unit: {{ $item->purchaseItem?->productUnit?->package_name ?? $item->unit->name }}
                                                         @if($item->conversion_factor != 1)
                                                             ({{ $item->conversion_factor }}× base)
                                                         @endif
@@ -247,14 +247,11 @@
                                         <td class="text-end">
                                             <span class="badge bg-light text-dark">
                                                 {{ number_format($item->quantity, 2) }}
-                                                @if($item->unit)
-                                                    {{ $item->unit->abbreviation }}
-                                                @endif
+                                                {{ $item->purchaseItem?->productUnit?->package_name ?? $item->unit->abbreviation ?? $item->product->baseUnit->abbreviation ?? $item->product->unit ?? '' }}
                                             </span>
-                                            @if($item->base_quantity && $item->conversion_factor != 1 && $item->product && $item->product->baseUnit)
-                                                <br>
+                                            @if($item->conversion_factor != 1 && $item->base_quantity !== null && $item->product?->baseUnit)
                                                 <small class="text-muted">
-                                                    = {{ number_format($item->base_quantity, 2) }} {{ $item->product->baseUnit->abbreviation }}
+                                                    ({{ number_format($item->base_quantity, 2) }} {{ $item->product->baseUnit->abbreviation }})
                                                 </small>
                                             @endif
                                         </td>

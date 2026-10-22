@@ -91,12 +91,8 @@ class SaleReturnService
                 $returnTotal = $returnQty * $saleItem->unit_price;
                 
                 // Calculate unit conversion data
-                $unitId = $itemData['unit_id'] ?? $saleItem->unit_id;
-                $conversionData = $this->conversionService->calculateTransactionData(
-                    $saleItem->product_id,
-                    $returnQty,
-                    $unitId
-                );
+                $saleUnitData = $this->getSaleUnitData($saleItem);
+                $baseQuantity = $returnQty * $saleUnitData['conversion_factor'];
                 
                 SaleReturnItem::create([
                     'sale_return_id' => $return->id,
@@ -105,9 +101,9 @@ class SaleReturnService
                     'quantity' => $returnQty,
                     'unit_price' => $saleItem->unit_price, // Use original sale price
                     'total' => $returnTotal,
-                    'unit_id' => $conversionData['unit_id'],
-                    'conversion_factor' => $conversionData['conversion_factor'],
-                    'base_quantity' => $conversionData['base_quantity'],
+                    'unit_id' => $saleUnitData['unit_id'],
+                    'conversion_factor' => $saleUnitData['conversion_factor'],
+                    'base_quantity' => $baseQuantity,
                 ]);
 
                 $totalReturnAmount += $returnTotal;
@@ -154,6 +150,9 @@ class SaleReturnService
             // 1. Add stock back to warehouse for each returned item using BASE QUANTITIES
             foreach ($return->items as $returnItem) {
                 $baseQuantity = $returnItem->base_quantity ?? $returnItem->quantity;
+                $unitCost = $baseQuantity > 0
+                    ? (float) $returnItem->total / $baseQuantity
+                    : (float) $returnItem->unit_price;
                 
                 $this->stockService->addStock(
                     $return->warehouse_id,
@@ -162,7 +161,7 @@ class SaleReturnService
                     StockMovement::TYPE_CUSTOMER_RETURN,
                     SaleReturn::class,
                     $return->id,
-                    $returnItem->unit_price,
+                    $unitCost,
                     "Sale Return {$return->return_number} - Customer returned items",
                     Auth::id()
                 );
@@ -307,6 +306,9 @@ class SaleReturnService
      */
     protected function validateReturnItems(Sale $sale, array $items): void
     {
+        $saleItems = [];
+        $requestedBaseQuantities = [];
+
         foreach ($items as $itemData) {
             // Validate required fields
             if (!isset($itemData['sale_item_id']) || !isset($itemData['quantity'])) {
@@ -325,26 +327,34 @@ class SaleReturnService
                 throw new \Exception('Return quantity must be greater than 0.');
             }
 
-            // Calculate return quantity in base units
-            $unitId = $itemData['unit_id'] ?? $saleItem->unit_id;
-            $conversionData = $this->conversionService->calculateTransactionData(
-                $saleItem->product_id,
-                $returnQty,
-                $unitId
-            );
-            $returnBaseQuantity = $conversionData['base_quantity'];
+            $saleItems[$saleItem->id] = $saleItem;
+            $saleUnitData = $this->getSaleUnitData($saleItem);
+            $requestedBaseQuantities[$saleItem->id] = ($requestedBaseQuantities[$saleItem->id] ?? 0)
+                + ($returnQty * $saleUnitData['conversion_factor']);
+        }
 
-            // Get original base quantity and already returned base quantity
+        foreach ($requestedBaseQuantities as $saleItemId => $requestedBaseQuantity) {
+            $saleItem = $saleItems[$saleItemId];
+            $saleUnitData = $this->getSaleUnitData($saleItem);
             $originalBaseQty = $saleItem->base_quantity ?? $saleItem->quantity;
-            $returnedBaseQty = $this->getRemainingReturnableQuantity($saleItem->id);
-            $alreadyReturned = $originalBaseQty - $returnedBaseQty;
+            $remainingBaseQty = $this->getRemainingReturnableQuantity($saleItem->id);
+            $alreadyReturned = $originalBaseQty - $remainingBaseQty;
 
-            if ($returnBaseQuantity > $returnedBaseQty) {
+            if ($requestedBaseQuantity > $remainingBaseQty) {
                 $productName = $saleItem->product->name;
+                $unitName = $saleItem->productUnit?->package_name
+                    ?? $saleItem->unit?->abbreviation
+                    ?? $saleItem->product?->baseUnit?->abbreviation
+                    ?? $saleItem->product?->unit
+                    ?? 'units';
+
+                $requestedTransactionQty = $requestedBaseQuantity / $saleUnitData['conversion_factor'];
+                $remainingTransactionQty = $remainingBaseQty / $saleUnitData['conversion_factor'];
+
                 throw new \Exception(
-                    "Cannot return {$returnQty} units of {$productName}. " .
-                    "Remaining returnable: {$returnedBaseQty} base units " .
-                    "(Original: {$originalBaseQty}, Already returned: {$alreadyReturned})"
+                    "Cannot return {$requestedTransactionQty} {$unitName} of {$productName}. " .
+                    "Remaining returnable: {$remainingTransactionQty} {$unitName} " .
+                    "(Original: {$originalBaseQty}, Already returned: {$alreadyReturned} base units)"
                 );
             }
         }
@@ -410,9 +420,37 @@ class SaleReturnService
             })
             ->get()
             ->sum(function ($item) {
-                return $item->base_quantity ?? $item->quantity;
+                return $item->base_quantity
+                    ?? ((float) $item->quantity * (float) ($item->conversion_factor ?: 1));
             });
         
         return max(0, $originalBaseQty - $returnedBaseQty);
+    }
+
+    /**
+     * Get the transaction unit and conversion factor recorded at sale time.
+     *
+     * @return array{unit_id: int|null, conversion_factor: float}
+     */
+    protected function getSaleUnitData(SaleItem $saleItem): array
+    {
+        if ($saleItem->conversion_factor !== null && (float) $saleItem->conversion_factor > 0) {
+            return [
+                'unit_id' => $saleItem->unit_id ?? $saleItem->product?->base_unit_id,
+                'conversion_factor' => (float) $saleItem->conversion_factor,
+            ];
+        }
+
+        $conversionData = $this->conversionService->calculateTransactionData(
+            $saleItem->product_id,
+            1,
+            $saleItem->unit_id,
+            $saleItem->product_unit_id
+        );
+
+        return [
+            'unit_id' => $conversionData['unit_id'],
+            'conversion_factor' => $conversionData['conversion_factor'],
+        ];
     }
 }

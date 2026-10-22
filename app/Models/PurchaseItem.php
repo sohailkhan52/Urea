@@ -79,6 +79,14 @@ class PurchaseItem extends Model
     }
 
     /**
+     * Get the specific product unit/package used for this purchase item.
+     */
+    public function productUnit(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ProductUnit::class);
+    }
+
+    /**
      * Calculate total on save
      */
     protected static function boot()

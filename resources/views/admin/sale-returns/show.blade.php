@@ -394,7 +394,7 @@
                                         <div class="fw-semibold">{{ $item->product->name }}</div>
                                         <small class="text-muted">
                                             @if($item->unit_id && $item->unit)
-                                                Transaction Unit: {{ $item->unit->name }}
+                                                Transaction Unit: {{ $item->saleItem?->productUnit?->package_name ?? $item->unit->name }}
                                                 @if($item->conversion_factor != 1)
                                                     ({{ $item->conversion_factor }}× base)
                                                 @endif
@@ -411,21 +411,16 @@
                                     </td>
                                     <td class="text-center">
                                         {{ number_format($item->saleItem->quantity, 2) }}
-                                        @if($item->unit)
-                                            {{ $item->unit->abbreviation }}
-                                        @endif
+                                        {{ $item->saleItem?->productUnit?->package_name ?? $item->saleItem?->unit?->abbreviation ?? '' }}
                                     </td>
                                     <td class="text-center">
                                         <strong class="text-primary">
                                             {{ number_format($item->quantity, 2) }}
-                                            @if($item->unit)
-                                                {{ $item->unit->abbreviation }}
-                                            @endif
+                                            {{ $item->saleItem?->productUnit?->package_name ?? $item->unit->abbreviation ?? '' }}
                                         </strong>
-                                        @if($item->base_quantity && $item->conversion_factor != 1 && $item->product && $item->product->baseUnit)
-                                            <br>
+                                        @if($item->conversion_factor != 1 && $item->base_quantity !== null && $item->product?->baseUnit)
                                             <small class="text-muted">
-                                                = {{ number_format($item->base_quantity, 2) }} {{ $item->product->baseUnit->abbreviation }}
+                                                ({{ number_format($item->base_quantity, 2) }} {{ $item->product->baseUnit->abbreviation }})
                                             </small>
                                         @endif
                                     </td>
