@@ -223,7 +223,7 @@ class ProductController extends Controller
                 'purchase_price' => $validated['purchase_price'],
                 'sale_price' => $validated['sale_price'],
                 'minimum_stock_level' => $validated['minimum_stock_level'],
-                'sku' => 'SKU-' . time() . '-' . rand(1000, 9999), // Auto-generate SKU
+                'sku' => Product::generateUniqueSku(),
             ];
 
             \DB::beginTransaction();

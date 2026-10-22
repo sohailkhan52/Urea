@@ -12,6 +12,27 @@ class ProductMultiUnitTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_it_generates_a_unique_sku_when_one_is_not_provided()
+    {
+        $firstProduct = Product::create([
+            'name' => 'First Product',
+            'unit' => 'KG',
+            'purchase_price' => 100.00,
+            'sale_price' => 150.00,
+        ]);
+
+        $secondProduct = Product::create([
+            'name' => 'Second Product',
+            'unit' => 'KG',
+            'purchase_price' => 100.00,
+            'sale_price' => 150.00,
+        ]);
+
+        $this->assertMatchesRegularExpression('/^SKU-\d+-\d{4}$/', $firstProduct->sku);
+        $this->assertMatchesRegularExpression('/^SKU-\d+-\d{4}$/', $secondProduct->sku);
+        $this->assertNotSame($firstProduct->sku, $secondProduct->sku);
+    }
+
     /** @test */
     public function it_has_base_unit_relationship()
     {

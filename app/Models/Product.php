@@ -23,6 +23,24 @@ class Product extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::creating(function (Product $product): void {
+            if (blank($product->sku)) {
+                $product->sku = static::generateUniqueSku();
+            }
+        });
+    }
+
+    public static function generateUniqueSku(): string
+    {
+        do {
+            $sku = 'SKU-' . time() . '-' . random_int(1000, 9999);
+        } while (static::query()->where('sku', $sku)->exists());
+
+        return $sku;
+    }
+
     /**
      * Unit constants matching the modal dropdown
      */
