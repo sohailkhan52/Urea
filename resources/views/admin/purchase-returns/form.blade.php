@@ -80,6 +80,24 @@
                         </thead>
                         <tbody id="itemsBody">
                             @forelse($purchase->items as $index => $item)
+                                @php
+                                    $conversionFactor = (float) ($item->conversion_factor ?: 1);
+                                    $baseUnitLabel = $item->product->baseUnit->abbreviation
+                                        ?? $item->product->unit
+                                        ?? '';
+                                    $transactionUnitLabel = $item->productUnit->package_name
+                                        ?? $item->unit->abbreviation
+                                        ?? $item->product->baseUnit->abbreviation
+                                        ?? $item->product->unit
+                                        ?? '';
+                                    $returnedBaseQuantity = (float) ($returnedQuantities[$item->id] ?? 0);
+                                    $originalBaseQuantity = (float) ($item->base_quantity ?? $item->quantity);
+                                    $remainingTransactionQuantity = max(0, $originalBaseQuantity - $returnedBaseQuantity) / $conversionFactor;
+                                    $returnedTransactionQuantity = min(
+                                        (float) $item->quantity,
+                                        $returnedBaseQuantity / $conversionFactor
+                                    );
+                                @endphp
                                 <tr>
                                     <td>
                                         <input type="checkbox" 
@@ -88,40 +106,43 @@
                                                onchange="updateItemRow({{ $index }})">
                                     </td>
                                     <td><strong>{{ $item->product->name }}</strong></td>
-                                    <td class="text-center">{{ $item->quantity }}</td>
                                     <td class="text-center">
-                                        <span class="badge bg-info">{{ $returnedQuantities[$item->id] ?? 0 }}</span>
+                                               {{ number_format($item->quantity, 2) }}
+                                               @if($transactionUnitLabel)
+                                                   {{ $transactionUnitLabel }}
+                                               @endif
                                     </td>
                                     <td class="text-center">
-                                        @php
-                                            // Get current stock in warehouse for this product
-                                            $latestStock = \App\Models\StockMovement::where('product_id', $item->product_id)
-                                                ->where('warehouse_id', $purchase->warehouse_id)
-                                                ->latest('id')
-                                                ->first();
-                                            $currentStock = $latestStock?->balance_after ?? 0;
-                                        @endphp
-                                        <span class="badge bg-success">{{ (int) $currentStock }}</span>
+                                               <span class="badge bg-info">{{ number_format($returnedTransactionQuantity, 2) }}</span>
+                                               @if($transactionUnitLabel)
+                                                   <small class="d-block text-muted">{{ $transactionUnitLabel }}</small>
+                                               @endif
+                                    </td>
+                                    <td class="text-center">
+                                               <span class="badge bg-success">{{ number_format($remainingTransactionQuantity, 2) }}</span>
+                                               @if($transactionUnitLabel)
+                                                   <small class="d-block text-muted">{{ $transactionUnitLabel }}</small>
+                                               @endif
                                     </td>
                                     <td class="text-end">Rs. {{ number_format($item->unit_price, 0) }}</td>
                                     <td>
-                                        @php
-                                            // Get current stock in warehouse for this product
-                                            $latestStock = \App\Models\StockMovement::where('product_id', $item->product_id)
-                                                ->where('warehouse_id', $purchase->warehouse_id)
-                                                ->latest('id')
-                                                ->first();
-                                            $currentStock = (int)($latestStock?->balance_after ?? 0);
-                                        @endphp
-                                        <input type="number" 
-                                               class="form-control form-control-sm return-qty" 
-                                               name="items[{{ $index }}][quantity]"
-                                               data-index="{{ $index }}"
-                                               min="0" 
-                                               max="{{ $currentStock }}" 
-                                               step="1"
-                                               placeholder="0"
-                                               onchange="updateItemRow({{ $index }})">
+                                               <div class="input-group input-group-sm">
+                                                   <input type="number"
+                                                          class="form-control return-qty"
+                                                          name="items[{{ $index }}][quantity]"
+                                                          data-index="{{ $index }}"
+                                                          data-conversion-factor="{{ $conversionFactor }}"
+                                                          data-base-unit-label="{{ $baseUnitLabel }}"
+                                                          min="0"
+                                                          max="{{ $remainingTransactionQuantity }}"
+                                                          step="0.01"
+                                                          placeholder="0"
+                                                          oninput="updateItemRow({{ $index }})">
+                                                   @if($transactionUnitLabel)
+                                                       <span class="input-group-text">{{ $transactionUnitLabel }}</span>
+                                                   @endif
+                                               </div>
+                                               <small class="text-muted return-conversion-hint" data-index="{{ $index }}"></small>
                                     </td>
                                     <td class="text-end">
                                         <strong class="return-amount" data-index="{{ $index }}">Rs. 0</strong>
@@ -235,25 +256,42 @@ function updateAmount(index) {
     const qtyInput = document.querySelector(`.return-qty[data-index="${index}"]`);
     const priceInput = document.querySelector(`input[name="items[${index}][unit_price]"]`);
     const amountSpan = document.querySelector(`.return-amount[data-index="${index}"]`);
+    const conversionHint = document.querySelector(`.return-conversion-hint[data-index="${index}"]`);
     
-    const qty = parseInt(qtyInput.value) || 0;
+    const qty = parseFloat(qtyInput.value) || 0;
     const price = parseFloat(priceInput.value) || 0;
-    const amount = Math.round(qty * price);
+    const amount = qty * price;
+    const baseQuantity = qty * (parseFloat(qtyInput.dataset.conversionFactor) || 1);
+    const baseUnitLabel = qtyInput.dataset.baseUnitLabel;
     
-    amountSpan.textContent = 'Rs. ' + amount;
+    amountSpan.textContent = 'Rs. ' + amount.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
+    conversionHint.textContent = qty > 0 && baseUnitLabel
+        ? `Equals ${baseQuantity.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${baseUnitLabel}`
+        : '';
 }
 
 function updateTotal() {
     let total = 0;
     document.querySelectorAll('.return-qty').forEach(input => {
-        const qty = parseInt(input.value) || 0;
         const index = input.dataset.index;
+        const checkbox = document.querySelector(`.item-checkbox[data-index="${index}"]`);
+        if (!checkbox.checked) {
+            return;
+        }
+
+        const qty = parseFloat(input.value) || 0;
         const priceInput = document.querySelector(`input[name="items[${index}][unit_price]"]`);
         const price = parseFloat(priceInput.value) || 0;
-        total += Math.round(qty * price);
+        total += qty * price;
     });
     
-    document.getElementById('totalReturnAmount').textContent = total;
+    document.getElementById('totalReturnAmount').textContent = total.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
 }
 
 // Validate form
@@ -262,7 +300,8 @@ document.getElementById('returnForm').addEventListener('submit', function(e) {
     const invalidSelectedItems = selectedItems.filter(checkbox => {
         const index = checkbox.dataset.index;
         const qtyInput = document.querySelector(`.return-qty[data-index="${index}"]`);
-        return parseFloat(qtyInput.value) <= 0;
+        const quantity = parseFloat(qtyInput.value);
+        return !Number.isFinite(quantity) || quantity <= 0;
     });
     const hasItems = invalidSelectedItems.length < selectedItems.length;
 

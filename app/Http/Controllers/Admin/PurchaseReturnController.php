@@ -80,7 +80,13 @@ class PurchaseReturnController extends Controller
 
         // If purchase_id is provided, show the return creation form
         if ($request->filled('purchase_id')) {
-            $purchase = Purchase::with(['supplier', 'warehouse', 'items.product'])
+            $purchase = Purchase::with([
+                'supplier',
+                'warehouse',
+                'items.unit',
+                'items.productUnit',
+                'items.product.baseUnit',
+            ])
                 ->findOrFail($request->purchase_id);
 
             if ($purchase->status !== Purchase::STATUS_CONFIRMED) {
@@ -129,8 +135,8 @@ class PurchaseReturnController extends Controller
         $rawItems = $request->input('items', []);
         $itemsWithQuantity = [];
         
-        foreach ($rawItems as $index => $item) {
-            $quantity = isset($item['quantity']) ? floatval($item['quantity']) : 0;
+        foreach ($rawItems as $item) {
+            $quantity = isset($item['quantity']) ? (float) $item['quantity'] : 0;
             // Only include items with quantity > 0
             if ($quantity > 0) {
                 $itemsWithQuantity[] = $item;
@@ -153,21 +159,15 @@ class PurchaseReturnController extends Controller
 
         // Step 4: Manually validate the filtered items
         foreach ($itemsWithQuantity as $item) {
-            if (!isset($item['purchase_item_id']) || !isset($item['product_id']) || !isset($item['unit_price'])) {
+            if (!isset($item['purchase_item_id'])) {
                 return back()->withInput()
                     ->with('error', 'Invalid item data. Missing required fields.');
             }
-            
+
             // Verify purchase_item_id exists
             if (!\App\Models\PurchaseItem::find($item['purchase_item_id'])) {
                 return back()->withInput()
                     ->with('error', 'Invalid purchase item.');
-            }
-            
-            // Verify product_id exists
-            if (!\App\Models\Product::find($item['product_id'])) {
-                return back()->withInput()
-                    ->with('error', 'Invalid product.');
             }
         }
 
@@ -214,7 +214,7 @@ class PurchaseReturnController extends Controller
             'warehouse', 
             'items.product.baseUnit',
             'items.unit',
-            'items.purchaseItem',
+            'items.purchaseItem.productUnit',
             'creator', 
             'confirmer'
         ]);

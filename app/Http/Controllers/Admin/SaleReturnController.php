@@ -123,7 +123,14 @@ class SaleReturnController extends Controller
 
         // If sale_id is provided, show the return creation form
         if ($request->filled('sale_id')) {
-            $sale = Sale::with(['customer', 'family', 'warehouse', 'items'])
+            $sale = Sale::with([
+                'customer',
+                'family',
+                'warehouse',
+                'items.unit',
+                'items.productUnit',
+                'items.product.baseUnit',
+            ])
                 ->findOrFail($request->sale_id);
 
             if ($sale->status !== Sale::STATUS_CONFIRMED) {
@@ -136,7 +143,13 @@ class SaleReturnController extends Controller
                 abort(403, 'You do not have permission to create returns for this sale.');
             }
 
-            return view('admin.sale-returns.form', compact('sale'));
+            $remainingReturnableQuantities = [];
+            foreach ($sale->items as $item) {
+                $remainingReturnableQuantities[$item->id] = $this->returnService
+                    ->getRemainingReturnableQuantity($item->id);
+            }
+
+            return view('admin.sale-returns.form', compact('sale', 'remainingReturnableQuantities'));
         }
 
         // Show list of sales to select from
@@ -270,8 +283,8 @@ class SaleReturnController extends Controller
         $rawItems = $request->input('items', []);
         $itemsWithQuantity = [];
         
-        foreach ($rawItems as $index => $item) {
-            $quantity = isset($item['quantity']) ? floatval($item['quantity']) : 0;
+        foreach ($rawItems as $item) {
+            $quantity = isset($item['quantity']) ? (float) $item['quantity'] : 0;
             // Only include items with quantity > 0
             if ($quantity > 0) {
                 $itemsWithQuantity[] = $item;
@@ -355,7 +368,7 @@ class SaleReturnController extends Controller
             'warehouse',
             'items.product.baseUnit',
             'items.unit',
-            'items.saleItem',
+            'items.saleItem.productUnit',
             'creator',
             'confirmer',
         ])->findOrFail($id);
