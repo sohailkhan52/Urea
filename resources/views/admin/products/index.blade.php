@@ -34,7 +34,8 @@
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>Unit</th>
+                            <th>Base Unit</th>
+                            <th>Available Units</th>
                             <th>Purchase Price</th>
                             <th>Sale Price</th>
                             <th>Profit Margin</th>
@@ -48,7 +49,22 @@
                                 <td>
                                     <strong>{{ $product->name }}</strong>
                                 </td>
-                                <td>{{ $product->unit }}</td>
+                                <td>
+                                    @if($product->baseUnit)
+                                        <span class="badge bg-primary">{{ $product->baseUnit->abbreviation }}</span>
+                                    @else
+                                        <span class="badge bg-secondary">{{ $product->unit }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($product->productUnits->count() > 0)
+                                        <small class="text-muted">
+                                            {{ $product->productUnits->pluck('unit.abbreviation')->filter()->join(', ') }}
+                                        </small>
+                                    @else
+                                        <small class="text-muted">—</small>
+                                    @endif
+                                </td>
                                 <td>Rs. {{ number_format($product->purchase_price, 0) }}</td>
                                 <td>Rs. {{ number_format($product->sale_price, 0) }}</td>
                                 <td>

@@ -42,6 +42,7 @@ class Product extends Model
         'name',
         'sku',
         'unit',
+        'base_unit_id',
         'purchase_price',
         'sale_price',
         'status',
@@ -121,6 +122,37 @@ class Product extends Model
         return "{$this->name} ({$this->unit})";
     }
 
+    // ========== BUSINESS LOGIC METHODS ==========
+
+    /**
+     * Check if product has any confirmed transactions (purchases or sales)
+     * Used to prevent changing base unit after transactions exist
+     * 
+     * @return bool
+     */
+    public function hasConfirmedTransactions(): bool
+    {
+        // Check for confirmed purchases
+        $hasConfirmedPurchases = $this->purchaseItems()
+            ->whereHas('purchase', function ($query) {
+                $query->where('status', 'confirmed');
+            })
+            ->exists();
+
+        if ($hasConfirmedPurchases) {
+            return true;
+        }
+
+        // Check for confirmed sales
+        $hasConfirmedSales = $this->saleItems()
+            ->whereHas('sale', function ($query) {
+                $query->where('status', 'confirmed');
+            })
+            ->exists();
+
+        return $hasConfirmedSales;
+    }
+
     // ========== SCOPES ==========
 
     /**
@@ -132,6 +164,22 @@ class Product extends Model
     }
 
     // ========== RELATIONSHIPS ==========
+
+    /**
+     * Get the base unit for this product (multi-unit system)
+     */
+    public function baseUnit()
+    {
+        return $this->belongsTo(Unit::class, 'base_unit_id');
+    }
+
+    /**
+     * Get all configured units for this product (multi-unit system)
+     */
+    public function productUnits()
+    {
+        return $this->hasMany(ProductUnit::class);
+    }
 
     /**
      * Get purchase items for this product

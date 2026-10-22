@@ -56,6 +56,7 @@ class StorePurchaseWithItemsRequest extends FormRequest
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|integer|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.unit_id' => 'nullable|integer|exists:units,id', // Multi-unit support
             'items.*.unit_price' => 'required|numeric|min:0.01',
             'items.*.sale_price' => 'nullable|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',

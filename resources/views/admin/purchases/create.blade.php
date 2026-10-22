@@ -492,70 +492,130 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="product_unit" class="form-label">Unit <span class="text-danger">*</span></label>
-                                <select class="form-select three-option-scroll-select" 
-                                        id="product_unit" 
-                                        name="unit"
+                                <label for="product_base_unit" class="form-label">Base Unit <span class="text-danger">*</span></label>
+                                <select class="form-select" 
+                                        id="product_base_unit" 
+                                        name="base_unit_id"
                                         required>
-                                    <option value="">-- Select Unit --</option>
-                                    @foreach(\App\Models\Product::getUnits() as $value => $label)
-                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    <option value="">-- Select Base Unit --</option>
+                                    @foreach(\App\Models\Unit::active()->orderBy('name')->get() as $unit)
+                                        <option value="{{ $unit->id }}" data-abbr="{{ $unit->abbreviation }}">{{ $unit->name }} ({{ $unit->abbreviation }})</option>
                                     @endforeach
                                 </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="product_purchase_price" class="form-label">Purchase Price (Rs.) <span class="text-danger">*</span></label>
-                                <input type="number" 
-                                       class="form-control" 
-                                       id="product_purchase_price" 
-                                       name="purchase_price" 
-                                       step="0.01" 
-                                       min="0"
-                                       max="999999.99"
-                                       placeholder="0"
-                                       inputmode="decimal"
-                                       onwheel="return false"
-                                       required>
+                                <small class="text-muted d-block mt-1">Primary unit for inventory tracking</small>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="product_sale_price" class="form-label">Sale Price (Rs.) <span class="text-danger">*</span></label>
-                                <input type="number" 
-                                       class="form-control" 
-                                       id="product_sale_price" 
-                                       name="sale_price" 
-                                       step="0.01" 
-                                       min="0"
-                                       max="999999.99"
-                                       placeholder="0"
-                                       inputmode="decimal"
-                                       onwheel="return false"
-                                       required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-12">
                             <div class="mb-3">
                                 <label for="product_minimum_stock_level" class="form-label">Minimum Stock Level</label>
                                 <input type="number" 
                                        class="form-control" 
                                        id="product_minimum_stock_level" 
                                        name="minimum_stock_level" 
-                                       min="0" 
-                                       step="1"
-                                       placeholder="10"
+                                       value="10"
+                                       min="0" step="1"
                                        inputmode="numeric"
                                        onwheel="return false">
-                                <small class="text-muted d-block mt-1">Alert will show when stock falls below this level (default: 10)</small>
                             </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    {{-- ── Bag / Box Checkbox ── --}}
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                   id="modal_has_package">
+                            <label class="form-check-label fw-semibold" for="modal_has_package">
+                                This product is sold / purchased as Bag or Box
+                            </label>
+                        </div>
+                        <small class="text-muted d-block ms-4">Check this if you buy/sell by the bag or box (e.g., 1 Bag = 50 KG).</small>
+                    </div>
+
+                    {{-- Section A: Normal (unchecked) — unit prices --}}
+                    <div id="modalSectionNormal">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="product_purchase_price" class="form-label" id="modalNormalCostLabel">Unit Cost Price (Rs.) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control"
+                                           id="product_purchase_price"
+                                           step="0.01" min="0"
+                                           placeholder="e.g., 180"
+                                           inputmode="decimal" onwheel="return false">
+                                    <small class="text-muted d-block mt-1" id="modalNormalCostHint">Cost price per base unit.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="product_sale_price" class="form-label" id="modalNormalSaleLabel">Unit Sell Price (Rs.) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control"
+                                           id="product_sale_price"
+                                           step="0.01" min="0"
+                                           placeholder="e.g., 220"
+                                           inputmode="decimal" onwheel="return false">
+                                    <small class="text-muted d-block mt-1" id="modalNormalSaleHint">Sale price per base unit.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Section B: Package (checked) — Bag/Box prices --}}
+                    <div id="modalSectionPackage" style="display:none;">
+
+                        {{-- Package Type --}}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Package Type <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio"
+                                           name="modal_package_type" id="modalPkgBag" value="Bag" checked>
+                                    <label class="form-check-label" for="modalPkgBag">Bag</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio"
+                                           name="modal_package_type" id="modalPkgBox" value="Box">
+                                    <label class="form-check-label" for="modalPkgBox">Box</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label" id="modalConversionLabel">Bag/Box Quantity <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control"
+                                               id="modal_pkg_conversion"
+                                               min="0.0001" step="0.0001" placeholder="e.g., 50">
+                                        <span class="input-group-text" id="modalUnitAbbrBadge">units</span>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">How many base units in one package.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label" id="modalPkgCostLabel">Bag Cost Price (Rs.) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control"
+                                           id="modal_pkg_purchase_price"
+                                           min="0" step="0.01" placeholder="e.g., 4500">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label" id="modalPkgSaleLabel">Bag Sell Price (Rs.) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control"
+                                           id="modal_pkg_sale_price"
+                                           min="0" step="0.01" placeholder="e.g., 5000">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="modalBasePricePreview" class="alert alert-info py-2 small" style="display:none;">
+                            <strong>Base unit prices (auto-calculated):</strong>
+                            <span id="modalBasePriceText"></span>
                         </div>
                     </div>
                 </form>
@@ -801,6 +861,9 @@
 
     // ========== SUPPLIER SEARCH & SELECTION ==========
     function setupEventListeners() {
+        // Initialize modal package UI after DOM is ready
+        initModalPackageUI();
+
         // Supplier Search
         const supplierSearch = document.getElementById('supplierSearch');
         const supplierDropdown = document.getElementById('supplierDropdown');
@@ -907,6 +970,135 @@
             });
         } else {
             console.error('Save Product button NOT FOUND!');
+        }
+
+        // Product Units Management in Modal
+        let modalUnitIndex = 0;
+        const modalUnitsContainer = document.getElementById('modalProductUnitsContainer');
+        const modalAddUnitBtn = document.getElementById('modalAddUnitBtn');
+        const baseUnitSelect = document.getElementById('product_base_unit');
+
+        if (modalAddUnitBtn && baseUnitSelect) {
+            modalAddUnitBtn.addEventListener('click', function() {
+                if (!baseUnitSelect.value) {
+                    baseUnitSelect.focus();
+                    baseUnitSelect.classList.add('is-invalid');
+                    return;
+                }
+                baseUnitSelect.classList.remove('is-invalid');
+
+                const unitRow = document.createElement('div');
+                unitRow.className = 'card mb-2 modal-unit-item';
+                unitRow.innerHTML = `
+                    <div class="card-body py-2">
+                        <div class="row align-items-center">
+                            <input type="hidden" name="product_units[${modalUnitIndex}][unit_id]" value="${baseUnitSelect.value}">
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Unit</label>
+                                <input type="text" class="form-control form-control-sm" 
+                                       value="${baseUnitSelect.options[baseUnitSelect.selectedIndex].text}" 
+                                       disabled style="background:#e9ecef">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Package Name</label>
+                                <input type="text" class="form-control form-control-sm" 
+                                       name="product_units[${modalUnitIndex}][package_name]" 
+                                       placeholder="e.g., bag, box">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Conversion <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control form-control-sm modal-conversion-input" 
+                                       name="product_units[${modalUnitIndex}][conversion_to_base]" 
+                                       min="0.0001" step="0.01" placeholder="1.0" required
+                                       data-index="${modalUnitIndex}">
+                                <small class="text-muted modal-conversion-display"></small>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Purchase Price</label>
+                                <input type="number" class="form-control form-control-sm modal-purchase-price" 
+                                       name="product_units[${modalUnitIndex}][purchase_price]" 
+                                       min="0" step="0.01" placeholder="Auto"
+                                       data-index="${modalUnitIndex}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Sale Price</label>
+                                <input type="number" class="form-control form-control-sm modal-sale-price" 
+                                       name="product_units[${modalUnitIndex}][sale_price]" 
+                                       min="0" step="0.01" placeholder="Auto"
+                                       data-index="${modalUnitIndex}">
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <label class="form-label small d-block mb-1">&nbsp;</label>
+                                <button type="button" class="btn btn-sm btn-danger modal-remove-unit-btn">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                modalUnitsContainer.appendChild(unitRow);
+
+                // Attach event listeners
+                const conversionInput = unitRow.querySelector('.modal-conversion-input');
+                const purchasePriceInput = unitRow.querySelector('.modal-purchase-price');
+                const salePriceInput = unitRow.querySelector('.modal-sale-price');
+                const conversionDisplay = unitRow.querySelector('.modal-conversion-display');
+                const removeBtn = unitRow.querySelector('.modal-remove-unit-btn');
+
+                let purchasePriceManuallyEdited = false;
+                let salePriceManuallyEdited = false;
+
+                purchasePriceInput.addEventListener('input', () => { purchasePriceManuallyEdited = true; });
+                salePriceInput.addEventListener('input', () => { salePriceManuallyEdited = true; });
+
+                function updateConversionDisplay() {
+                    const conversion = parseFloat(conversionInput.value) || 1;
+                    const baseAbbr = baseUnitSelect.options[baseUnitSelect.selectedIndex]?.text.match(/\(([^)]+)\)/)?.[1] || '';
+                    const selectedAbbr = baseUnitSelect.options[baseUnitSelect.selectedIndex]?.text.match(/\(([^)]+)\)/)?.[1] || '';
+                    if (baseAbbr) {
+                        conversionDisplay.textContent = `1 unit = ${conversion} ${baseAbbr}`;
+                    }
+                }
+
+                function autoCalculatePrices() {
+                    const conversion = parseFloat(conversionInput.value);
+                    if (!conversion || conversion <= 0) return;
+
+                    const basePurchasePrice = parseFloat(document.getElementById('product_purchase_price').value) || 0;
+                    const baseSalePrice = parseFloat(document.getElementById('product_sale_price').value) || 0;
+
+                    if (!purchasePriceManuallyEdited && basePurchasePrice > 0) {
+                        purchasePriceInput.value = (basePurchasePrice * conversion).toFixed(2);
+                    }
+
+                    if (!salePriceManuallyEdited && baseSalePrice > 0) {
+                        salePriceInput.value = (baseSalePrice * conversion).toFixed(2);
+                    }
+                }
+
+                conversionInput.addEventListener('input', function() {
+                    updateConversionDisplay();
+                    autoCalculatePrices();
+                });
+
+                document.getElementById('product_purchase_price')?.addEventListener('input', function() {
+                    if (!purchasePriceManuallyEdited) autoCalculatePrices();
+                });
+
+                document.getElementById('product_sale_price')?.addEventListener('input', function() {
+                    if (!salePriceManuallyEdited) autoCalculatePrices();
+                });
+
+                removeBtn.addEventListener('click', function() {
+                    unitRow.remove();
+                });
+
+                // Focus on package name
+                unitRow.querySelector('input[name*="[package_name]"]').focus();
+
+                modalUnitIndex++;
+            });
         }
     }
 
@@ -1174,13 +1366,50 @@
         if (existingItem) {
             existingItem.quantity += 1;
         } else {
+            // Multi-unit support: Get available units for this product
+            const productUnits = product.product_units || [];
+            
+            // Determine default unit:
+            // 1. If only one unit exists, use it
+            // 2. Otherwise, use base unit
+            // 3. Fallback: use first active unit or create legacy unit
+            let defaultUnit = null;
+            
+            if (productUnits.length === 1) {
+                defaultUnit = productUnits[0];
+            } else if (productUnits.length > 1) {
+                // Try to find base unit
+                defaultUnit = productUnits.find(u => u.is_base_unit) || productUnits[0];
+            } else {
+                // Legacy product without product_units - create a virtual unit from product data
+                defaultUnit = {
+                    unit_id: product.base_unit_id || null,
+                    unit_name: product.unit || 'Unit',
+                    unit_abbreviation: product.unit || 'Unit',
+                    conversion_to_base: 1,
+                    purchase_price: product.purchase_price,
+                    sale_price: product.sale_price,
+                    is_base_unit: true
+                };
+            }
+            
             purchaseItems.push({
                 product_id: product.id,
                 product_name: product.name,
                 quantity: 1,
-                unit_price: parseFloat(product.purchase_price),
-                sale_price: parseFloat(product.sale_price),
-                unit: product.unit
+                product_unit_id: defaultUnit.id,  // Add ProductUnit ID
+                unit_id: defaultUnit.unit_id,
+                unit_name: defaultUnit.unit_name,
+                unit_abbreviation: defaultUnit.unit_abbreviation,
+                package_name: defaultUnit.package_name || null,  // Add package name
+                conversion_to_base: defaultUnit.conversion_to_base,
+                unit_price: parseFloat(defaultUnit.purchase_price ?? product.purchase_price),
+                sale_price: parseFloat(defaultUnit.sale_price ?? product.sale_price),
+                // Store full product data including available units
+                product_units: productUnits,
+                base_unit_abbreviation: product.base_unit?.abbreviation || product.unit || 'Unit',
+                // Legacy field for backward compatibility
+                unit: defaultUnit.unit_abbreviation
             });
         }
 
@@ -1194,52 +1423,90 @@
     }
 
     function saveNewProduct() {
-        const form = document.getElementById('newProductForm');
-        const nameInput = document.getElementById('product_name');
-        const unitInput = document.getElementById('product_unit');
+        const form          = document.getElementById('newProductForm');
+        const nameInput     = document.getElementById('product_name');
+        const baseUnitInput = document.getElementById('product_base_unit');
         const purchasePriceInput = document.getElementById('product_purchase_price');
-        const salePriceInput = document.getElementById('product_sale_price');
-        
-        console.log('saveNewProduct called'); // Debug
-        console.log('Form:', form); // Debug
-        console.log('Name input:', nameInput); // Debug
-        
-        // Clear previous visual error states without rendering messages.
-        const fields = [nameInput, unitInput, purchasePriceInput, salePriceInput];
-        fields.forEach(field => {
-            field.classList.remove('is-invalid');
-        });
+        const salePriceInput     = document.getElementById('product_sale_price');
 
-        const focusInvalidProductField = field => {
+        const hasPackage    = document.getElementById('modal_has_package').checked;
+        const pkgConvInput  = document.getElementById('modal_pkg_conversion');
+        const pkgCostInput  = document.getElementById('modal_pkg_purchase_price');
+        const pkgSaleInput  = document.getElementById('modal_pkg_sale_price');
+        const pkgType       = document.querySelector('input[name="modal_package_type"]:checked')?.value || 'Bag';
+
+        // ── Clear previous error states ────────────────────────────────
+        [nameInput, baseUnitInput, purchasePriceInput, salePriceInput,
+         pkgConvInput, pkgCostInput, pkgSaleInput].forEach(f => f?.classList.remove('is-invalid'));
+
+        const markInvalid = field => {
             field.classList.add('is-invalid');
             field.scrollIntoView({ behavior: 'smooth', block: 'center' });
             field.focus({ preventScroll: true });
         };
 
-        if (!nameInput.value.trim()) {
-            focusInvalidProductField(nameInput);
-            return;
+        // ── Required field validation ──────────────────────────────────
+        if (!nameInput.value.trim())         { markInvalid(nameInput);     return; }
+        if (!baseUnitInput.value)            { markInvalid(baseUnitInput); return; }
+
+        if (hasPackage) {
+            // Package mode: validate package fields
+            const conv = parseFloat(pkgConvInput.value);
+            if (!conv || conv <= 0)                    { markInvalid(pkgConvInput);  return; }
+            const cost = parseFloat(pkgCostInput.value);
+            if (pkgCostInput.value === '' || cost < 0) { markInvalid(pkgCostInput);  return; }
+            const sale = parseFloat(pkgSaleInput.value);
+            if (pkgSaleInput.value === '' || sale < 0) { markInvalid(pkgSaleInput);  return; }
+        } else {
+            // Normal mode: validate base prices
+            const cost = Number(purchasePriceInput.value);
+            if (purchasePriceInput.value === '' || !Number.isFinite(cost) || cost < 0) {
+                markInvalid(purchasePriceInput); return;
+            }
+            const sale = Number(salePriceInput.value);
+            if (salePriceInput.value === '' || !Number.isFinite(sale) || sale < 0) {
+                markInvalid(salePriceInput); return;
+            }
         }
 
-        if (!unitInput.value.trim()) {
-            focusInvalidProductField(unitInput);
-            return;
+        // ── Build FormData ─────────────────────────────────────────────
+        const formData = new FormData();
+        formData.append('name',              nameInput.value.trim());
+        formData.append('base_unit_id',      baseUnitInput.value);
+        formData.append('minimum_stock_level',
+            document.getElementById('product_minimum_stock_level')?.value || '10');
+
+        if (hasPackage) {
+            const conv    = parseFloat(pkgConvInput.value);
+            const pkgCost = parseFloat(pkgCostInput.value);
+            const pkgSale = parseFloat(pkgSaleInput.value);
+
+            // Derive base prices from package prices
+            const baseCost = pkgCost / conv;
+            const baseSale = pkgSale / conv;
+
+            formData.append('purchase_price', baseCost.toFixed(4));
+            formData.append('sale_price',     baseSale.toFixed(4));
+
+            // Row 0: base unit (NULL package_name, conversion 1)
+            formData.append('product_units[0][unit_id]',           baseUnitInput.value);
+            formData.append('product_units[0][package_name]',      '');
+            formData.append('product_units[0][conversion_to_base]','1');
+            formData.append('product_units[0][purchase_price]',    baseCost.toFixed(4));
+            formData.append('product_units[0][sale_price]',        baseSale.toFixed(4));
+
+            // Row 1: Bag / Box
+            formData.append('product_units[1][unit_id]',           baseUnitInput.value);
+            formData.append('product_units[1][package_name]',      pkgType);
+            formData.append('product_units[1][conversion_to_base]',conv.toString());
+            formData.append('product_units[1][purchase_price]',    pkgCost.toString());
+            formData.append('product_units[1][sale_price]',        pkgSale.toString());
+        } else {
+            formData.append('purchase_price', purchasePriceInput.value);
+            formData.append('sale_price',     salePriceInput.value);
         }
 
-        const purchasePrice = Number(purchasePriceInput.value);
-        if (purchasePriceInput.value === '' || !Number.isFinite(purchasePrice) || purchasePrice < 0) {
-            focusInvalidProductField(purchasePriceInput);
-            return;
-        }
-
-        const salePrice = Number(salePriceInput.value);
-        if (salePriceInput.value === '' || !Number.isFinite(salePrice) || salePrice < 0) {
-            focusInvalidProductField(salePriceInput);
-            return;
-        }
-
-        const formData = new FormData(form);
-
+        // ── POST to storeAjax ──────────────────────────────────────────
         fetch('{{ route("admin.products.storeAjax") }}', {
             method: 'POST',
             body: formData,
@@ -1250,49 +1517,43 @@
         })
         .then(response => {
             if (response.status === 422) {
-                // Validation error - extract error messages
                 return response.json().then(errors => {
                     console.error('Validation errors:', errors);
                     const firstField = Object.keys(errors.errors || {})[0];
                     const fieldMap = {
                         name: nameInput,
-                        unit: unitInput,
-                        purchase_price: purchasePriceInput,
-                        sale_price: salePriceInput,
+                        base_unit_id: baseUnitInput,
+                        purchase_price: hasPackage ? pkgCostInput : purchasePriceInput,
+                        sale_price:     hasPackage ? pkgSaleInput  : salePriceInput,
                     };
-                    if (fieldMap[firstField]) {
-                        focusInvalidProductField(fieldMap[firstField]);
-                    }
+                    if (fieldMap[firstField]) { markInvalid(fieldMap[firstField]); }
                     throw new Error('Product validation failed');
                 });
             }
-            
             if (!response.ok) {
-                // Try to get error message from response
                 return response.json().then(errorData => {
-                    console.error('Server error data:', errorData);
-                    throw new Error(errorData.message || errorData.error || 'Server error: ' + response.statusText);
-                }).catch(jsonError => {
-                    // If JSON parsing fails, just use status text
-                    console.error('Failed to parse error JSON:', jsonError);
+                    throw new Error(errorData.message || 'Server error: ' + response.statusText);
+                }).catch(() => {
                     throw new Error('Server error (' + response.status + '): ' + response.statusText);
                 });
             }
-            
             return response.json();
         })
         .then(data => {
-            allProducts.push({
-                id: data.id,
-                name: data.name,
-                unit: data.unit,
-                purchase_price: data.purchase_price,
-                sale_price: data.sale_price
-            });
-            
+            // Merge full product data into allProducts
+            allProducts.push(data);
             addProductToItems(data);
             bootstrap.Modal.getInstance(document.getElementById('newProductModal')).hide();
+            // Reset form and package UI
             form.reset();
+            const hasPkgCb = document.getElementById('modal_has_package');
+            if (hasPkgCb) hasPkgCb.checked = false;
+            const pkgSection = document.getElementById('modalSectionPackage');
+            if (pkgSection) pkgSection.style.display = 'none';
+            const normalSection = document.getElementById('modalSectionNormal');
+            if (normalSection) normalSection.style.display = '';
+            const previewEl = document.getElementById('modalBasePricePreview');
+            if (previewEl) previewEl.style.display = 'none';
             showAlert('success', 'Product created successfully.');
         })
         .catch(error => {
@@ -1301,6 +1562,80 @@
                 showAlert('danger', 'Error creating product: ' + error.message);
             }
         });
+    }
+
+    // ── Modal package UI logic (runs after DOM is ready) ──────────────────
+    function initModalPackageUI() {
+        const hasPackageCb   = document.getElementById('modal_has_package');
+        const sectionNormal  = document.getElementById('modalSectionNormal');
+        const sectionPkg     = document.getElementById('modalSectionPackage');
+        const baseUnitSelect = document.getElementById('product_base_unit');
+        const unitAbbrBadge  = document.getElementById('modalUnitAbbrBadge');
+        const convLabel      = document.getElementById('modalConversionLabel');
+        const costLabel      = document.getElementById('modalPkgCostLabel');
+        const saleLabel      = document.getElementById('modalPkgSaleLabel');
+        const normalCostLabel = document.getElementById('modalNormalCostLabel');
+        const normalSaleLabel = document.getElementById('modalNormalSaleLabel');
+        const normalCostHint  = document.getElementById('modalNormalCostHint');
+        const normalSaleHint  = document.getElementById('modalNormalSaleHint');
+        const pkgConvInput   = document.getElementById('modal_pkg_conversion');
+        const pkgCostInput   = document.getElementById('modal_pkg_purchase_price');
+        const pkgSaleInput   = document.getElementById('modal_pkg_sale_price');
+        const previewBox     = document.getElementById('modalBasePricePreview');
+        const previewText    = document.getElementById('modalBasePriceText');
+
+        function abbr() {
+            const opt = baseUnitSelect.options[baseUnitSelect.selectedIndex];
+            return opt?.dataset?.abbr || opt?.text?.match(/\(([^)]+)\)/)?.[1] || 'units';
+        }
+        function pkgType() {
+            return document.getElementById('modalPkgBag').checked ? 'Bag' : 'Box';
+        }
+        function updateLabels() {
+            const a  = abbr();
+            const pt = pkgType();
+            // Package section labels
+            unitAbbrBadge.textContent = a;
+            convLabel.innerHTML = `${pt} Quantity / Weight <span class="text-danger">*</span>`;
+            costLabel.innerHTML = `${pt} Cost Price (Rs.) <span class="text-danger">*</span>`;
+            saleLabel.innerHTML = `${pt} Sell Price (Rs.) <span class="text-danger">*</span>`;
+            // Normal section labels
+            if (normalCostLabel) normalCostLabel.innerHTML = `Unit Cost Price (Rs.) <span class="text-danger">*</span>`;
+            if (normalSaleLabel) normalSaleLabel.innerHTML = `Unit Sell Price (Rs.) <span class="text-danger">*</span>`;
+            if (normalCostHint)  normalCostHint.textContent  = a !== 'units' ? `Cost price per 1 ${a}.` : 'Cost price per base unit.';
+            if (normalSaleHint)  normalSaleHint.textContent  = a !== 'units' ? `Sale price per 1 ${a}.` : 'Sale price per base unit.';
+        }
+        function applyMode() {
+            const isPkg = hasPackageCb.checked;
+            sectionNormal.style.display = isPkg ? 'none' : '';
+            sectionPkg.style.display    = isPkg ? ''     : 'none';
+            if (!isPkg) previewBox.style.display = 'none';
+            updateLabels();
+        }
+        function updatePreview() {
+            const conv = parseFloat(pkgConvInput.value);
+            const cost = parseFloat(pkgCostInput.value);
+            const sale = parseFloat(pkgSaleInput.value);
+            if (conv > 0 && (cost > 0 || sale > 0)) {
+                const a  = abbr();
+                const parts = [];
+                if (cost > 0) parts.push(`Cost per ${a}: Rs. ${(cost/conv).toFixed(2)}`);
+                if (sale > 0) parts.push(`Sale per ${a}: Rs. ${(sale/conv).toFixed(2)}`);
+                previewText.textContent = ' ' + parts.join(' | ');
+                previewBox.style.display = '';
+            } else {
+                previewBox.style.display = 'none';
+            }
+        }
+
+        hasPackageCb.addEventListener('change', applyMode);
+        baseUnitSelect.addEventListener('change', function() { updateLabels(); updatePreview(); });
+        [document.getElementById('modalPkgBag'), document.getElementById('modalPkgBox')]
+            .forEach(r => r?.addEventListener('change', updateLabels));
+        [pkgConvInput, pkgCostInput, pkgSaleInput]
+            .forEach(el => el?.addEventListener('input', updatePreview));
+
+        applyMode();
     }
 
     // ========== ITEMS TABLE RENDERING ==========
@@ -1315,16 +1650,18 @@
         let cursorPosition = 0;
 
         // Check if the active element is one of our input fields
-        if (activeElement && activeElement.tagName === 'INPUT' && activeElement.type === 'number') {
+        if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'SELECT')) {
             // Find which row and field is active
             const row = activeElement.closest('tr');
             if (row) {
                 activeIndex = Array.from(tbody.children).indexOf(row);
-                // Determine which field (quantity, unit_price, or sale_price)
+                // Determine which field (quantity, unit_id, unit_price, or sale_price)
                 if (activeElement.getAttribute('data-field')) {
                     activeField = activeElement.getAttribute('data-field');
                 }
-                cursorPosition = activeElement.selectionStart;
+                if (activeElement.tagName === 'INPUT') {
+                    cursorPosition = activeElement.selectionStart;
+                }
             }
         }
 
@@ -1333,7 +1670,45 @@
             return;
         }
 
-        tbody.innerHTML = purchaseItems.map((item, index) => `
+        tbody.innerHTML = purchaseItems.map((item, index) => {
+            // Build unit selector dropdown
+            let unitOptions = '';
+            
+            if (item.product_units && item.product_units.length > 0) {
+                // Multi-unit product - show all active units
+                unitOptions = item.product_units.map(pu => {
+                    const selected = pu.id === item.product_unit_id ? 'selected' : '';
+
+                    // A ProductUnit is the base when it has no package_name AND conversion = 1.
+                    // Do NOT rely on pu.is_base_unit from the API — that field was computed
+                    // server-side and may be stale when the same unit_id is shared by multiple packages.
+                    const isBase = (!pu.package_name || pu.package_name === '')
+                        && Math.abs(parseFloat(pu.conversion_to_base) - 1.0) < 0.0001;
+
+                    // Display name: use package_name when set, otherwise unit_name
+                    const displayName = pu.package_name || pu.unit_name;
+                    const conversionText = isBase
+                        ? 'Base'
+                        : `${pu.conversion_to_base} ${item.base_unit_abbreviation}`;
+
+                    return `<option value="${pu.id}" data-unit-id="${pu.unit_id}" data-package="${pu.package_name || ''}" ${selected}>${displayName} (${conversionText})</option>`;
+                }).join('');
+            } else {
+                // Legacy product - show single option
+                const displayName = item.display_name || item.unit_abbreviation || item.unit || 'Unit';
+                unitOptions = `<option value="${item.unit_id || ''}" selected>${displayName}</option>`;
+            }
+            
+            // Generate conversion preview text
+            let conversionPreview = '';
+            if (item.conversion_to_base && item.conversion_to_base !== 1) {
+                const baseQty = (item.quantity * item.conversion_to_base).toFixed(2);
+                conversionPreview = `<div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+                    ${item.quantity} × ${item.conversion_to_base} = ${baseQty} ${item.base_unit_abbreviation}
+                </div>`;
+            }
+            
+            return `
             <tr>
                 <td>
                     <strong>${item.product_name}</strong>
@@ -1348,9 +1723,20 @@
                            data-index="${index}"
                            oninput="updateItemQuantity(${index}, this.value)"
                            onblur="updateItemQuantity(${index}, this.value)">
+                    ${conversionPreview}
                 </td>
                 <td>
-                    <small class="text-muted">${item.unit || 'KG'}</small>
+                    <select class="form-select form-select-sm" 
+                            data-field="unit_id"
+                            data-index="${index}"
+                            onchange="updateItemUnit(${index}, this.value)"
+                            ${item.product_units && item.product_units.length > 1 ? '' : 'disabled'}>
+                        ${unitOptions}
+                    </select>
+                    <!-- Display current selection for closed dropdown -->
+                    <small class="text-muted d-block" style="font-size: 0.7rem; margin-top: 2px;">
+                        ${item.package_name ? item.package_name : item.unit_abbreviation}
+                    </small>
                 </td>
                 <td>
                     <input type="number" 
@@ -1387,16 +1773,19 @@
                     </button>
                 </td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
 
         // Restore focus and cursor position if there was an active element
         if (activeIndex >= 0 && activeField) {
             const newRow = tbody.children[activeIndex];
             if (newRow) {
-                const input = newRow.querySelector(`input[data-field="${activeField}"]`);
+                const input = newRow.querySelector(`[data-field="${activeField}"]`);
                 if (input) {
                     input.focus();
-                    input.setSelectionRange(cursorPosition, cursorPosition);
+                    if (input.tagName === 'INPUT') {
+                        input.setSelectionRange(cursorPosition, cursorPosition);
+                    }
                 }
             }
         }
@@ -1404,8 +1793,8 @@
 
     function updateItemQuantity(index, value) {
         purchaseItems[index].quantity = parseFloat(value) || 0;
-        // Update the row total display
-        updateRowTotal(index);
+        // Update the row with new quantity and conversion preview
+        updateRowWithConversion(index);
         // Only update calculations, don't re-render the table to preserve cursor
         updateCalculationsOnly();
     }
@@ -1423,6 +1812,50 @@
         // No need to update row total as sale price doesn't affect purchase total
     }
 
+    /**
+     * Handle unit change for a purchase item
+     * Updates conversion factor, prices, and re-renders to show new conversion preview
+     */
+    function updateItemUnit(index, productUnitId) {
+        const item = purchaseItems[index];
+        const productUnitIdNum = parseInt(productUnitId);
+        
+        // Find the selected ProductUnit by its unique ID (not unit_id!)
+        const selectedUnit = item.product_units?.find(pu => pu.id === productUnitIdNum);
+        
+        if (!selectedUnit) {
+            console.error('Selected product unit not found:', productUnitId);
+            return;
+        }
+        
+        // Update item with new unit data
+        item.product_unit_id = selectedUnit.id;  // Store the ProductUnit ID
+        item.unit_id = selectedUnit.unit_id;
+        item.unit_name = selectedUnit.unit_name;
+        item.unit_abbreviation = selectedUnit.unit_abbreviation;
+        item.package_name = selectedUnit.package_name;
+        item.conversion_to_base = selectedUnit.conversion_to_base;
+        item.unit = selectedUnit.unit_abbreviation; // Legacy compatibility
+        
+        // Update prices with unit-specific prices if available
+        // Use fallback to product base prices if unit-specific price is null
+        const productBasePrice = item.unit_price; // Keep current if not specified
+        const productBaseSalePrice = item.sale_price;
+        
+        // Only update price if the unit has a specific price configured
+        if (selectedUnit.purchase_price !== null && selectedUnit.purchase_price !== undefined) {
+            item.unit_price = parseFloat(selectedUnit.purchase_price);
+        }
+        
+        if (selectedUnit.sale_price !== null && selectedUnit.sale_price !== undefined) {
+            item.sale_price = parseFloat(selectedUnit.sale_price);
+        }
+        
+        // Re-render the table to update conversion preview and prices
+        renderItemsTable();
+        updateCalculations();
+    }
+
     // Update the total display for a specific row without re-rendering
     function updateRowTotal(index) {
         const tbody = document.getElementById('itemsBody');
@@ -1432,6 +1865,42 @@
             const totalCell = row.cells[5]; // 6th column (0-indexed) is the Total column
             if (totalCell) {
                 totalCell.innerHTML = `<strong>Rs. ${Math.round(item.quantity * item.unit_price)}</strong>`;
+            }
+        }
+    }
+
+    /**
+     * Update row total AND conversion preview when quantity changes
+     */
+    function updateRowWithConversion(index) {
+        const tbody = document.getElementById('itemsBody');
+        const row = tbody.children[index];
+        if (row) {
+            const item = purchaseItems[index];
+            
+            // Update total cell (6th column, 0-indexed = 5)
+            const totalCell = row.cells[5];
+            if (totalCell) {
+                totalCell.innerHTML = `<strong>Rs. ${Math.round(item.quantity * item.unit_price)}</strong>`;
+            }
+            
+            // Update conversion preview (inside quantity cell, 2nd column, 0-indexed = 1)
+            const quantityCell = row.cells[1];
+            if (quantityCell && item.conversion_to_base && item.conversion_to_base !== 1) {
+                const baseQty = (item.quantity * item.conversion_to_base).toFixed(2);
+                const conversionPreview = `<div class="text-muted" style="font-size: 0.75rem; margin-top: 2px;">
+                    ${item.quantity} × ${item.conversion_to_base} = ${baseQty} ${item.base_unit_abbreviation}
+                </div>`;
+                
+                // Find the input element and add preview after it
+                const input = quantityCell.querySelector('input');
+                const existingPreview = quantityCell.querySelector('.text-muted');
+                
+                if (existingPreview) {
+                    existingPreview.outerHTML = conversionPreview;
+                } else if (input) {
+                    input.insertAdjacentHTML('afterend', conversionPreview);
+                }
             }
         }
     }

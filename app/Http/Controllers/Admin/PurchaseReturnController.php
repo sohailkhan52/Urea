@@ -220,7 +220,8 @@ class PurchaseReturnController extends Controller
             'purchase', 
             'supplier', 
             'warehouse', 
-            'items.product',
+            'items.product.baseUnit',
+            'items.unit',
             'items.purchaseItem',
             'creator', 
             'confirmer'
