@@ -164,6 +164,7 @@ class PurchaseController extends Controller
                         \Log::info('Adding purchase item', [
                             'product_id' => $itemData['product_id'],
                             'quantity' => $itemData['quantity'],
+                            'unit_id' => $itemData['unit_id'] ?? null,
                             'unit_price' => $itemData['unit_price'],
                         ]);
                         
@@ -171,7 +172,9 @@ class PurchaseController extends Controller
                             $purchase,
                             $itemData['product_id'],
                             $itemData['quantity'],
-                            $itemData['unit_price']
+                            $itemData['unit_price'],
+                            $itemData['unit_id'] ?? null, // Multi-unit support: pass unit_id if present
+                            $itemData['product_unit_id'] ?? null // Pass ProductUnit ID for precise matching
                         );
                     }
                 }
@@ -211,7 +214,15 @@ class PurchaseController extends Controller
             abort(403, 'You do not have permission to view this purchase.');
         }
 
-        $purchase->load(['supplier', 'warehouse', 'items.product', 'creator', 'confirmer']);
+        $purchase->load([
+            'supplier', 
+            'warehouse', 
+            'items.product.baseUnit', 
+            'items.product.productUnits',
+            'items.unit',
+            'creator', 
+            'confirmer'
+        ]);
 
         $summary = $this->purchaseService->getPurchaseSummary($purchase);
 

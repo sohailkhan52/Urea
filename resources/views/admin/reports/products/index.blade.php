@@ -475,19 +475,31 @@
                                 <small class="text-muted">{{ $product->sku ?? 'N/A' }}</small>
                             </td>
                             <td>
-                                <span class="badge bg-secondary">{{ $product->unit }}</span>
+                                @php
+                                    // Find the primary Bag or Box ProductUnit if one exists
+                                    $bagOrBox = $product->productUnits
+                                        ->whereNotNull('package_name')
+                                        ->whereIn('package_name', ['Bag', 'Box'])
+                                        ->sortByDesc('conversion_to_base')
+                                        ->first();
+                                    
+                                    // If no Bag/Box, show base unit abbreviation
+                                    $displayUnit    = $bagOrBox ? $bagOrBox->package_name : $product->unit;
+                                    $displayCost    = $bagOrBox ? $bagOrBox->purchase_price : $product->purchase_price;
+                                    $displaySale    = $bagOrBox ? $bagOrBox->sale_price    : $product->sale_price;
+                                    $badgeColor     = $bagOrBox ? 'bg-primary' : 'bg-secondary';
+                                @endphp
+                                <span class="badge {{ $badgeColor }}">{{ $displayUnit }}</span>
                             </td>
                             <td>
-                                <strong>Rs. {{ number_format($product->purchase_price, 0) }}</strong>
+                                <strong>Rs. {{ number_format($displayCost, 0) }}</strong>
                             </td>
                             <td>
-                                <strong class="text-success">Rs. {{ number_format($product->sale_price, 0) }}</strong>
+                                <strong class="text-success">Rs. {{ number_format($displaySale, 0) }}</strong>
                             </td>
                             <td>
-                                @if($product->purchase_price > 0)
-                                    @php
-                                        $margin = $product->sale_price - $product->purchase_price;
-                                    @endphp
+                                @if($displayCost > 0)
+                                    @php $margin = $displaySale - $displayCost; @endphp
                                     <strong class="text-{{ $margin >= 0 ? 'success' : 'danger' }}">Rs. {{ number_format($margin, 0) }}</strong>
                                 @else
                                     <span class="text-muted">—</span>
@@ -502,19 +514,11 @@
                             </td>
                             <td class="text-center">
                                 <div class="btn-group" role="group">
-                                                <button type="button"
+                                                <a href="{{ route('admin.products.edit', $product) }}"
                                                     class="btn btn-sm btn-outline-primary"
-                                                    title="Edit"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#editProductModal"
-                                                    data-update-url="{{ route('admin.products.update', $product) }}"
-                                                    data-name="{{ $product->name }}"
-                                                    data-unit="{{ $product->unit }}"
-                                                    data-purchase-price="{{ $product->purchase_price }}"
-                                                    data-sale-price="{{ $product->sale_price }}"
-                                                    data-minimum-stock-level="{{ $product->minimum_stock_level ?? 10 }}">
+                                                    title="Edit">
                                         <i class="bi bi-pencil"></i>
-                                                </button>
+                                                </a>
                                     <form action="{{ route('admin.reports.products.destroy', $product) }}" 
                                           method="POST" 
                                           style="display: inline;"

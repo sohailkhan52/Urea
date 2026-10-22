@@ -11,16 +11,30 @@ use App\Models\SupplierLedger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Services\UnitConversionService;
 
+/**
+ * Purchase Return Service
+ * 
+ * Multi-unit support:
+ * - Validates returnable quantities using base units
+ * - Stores unit conversion snapshots on return items
+ * - Uses base quantities for stock movements
+ */
 class PurchaseReturnService
 {
     protected StockService $stockService;
     protected PayableHistoryService $payableHistoryService;
+    protected UnitConversionService $conversionService;
 
-    public function __construct(StockService $stockService, PayableHistoryService $payableHistoryService)
-    {
+    public function __construct(
+        StockService $stockService, 
+        PayableHistoryService $payableHistoryService,
+        UnitConversionService $conversionService
+    ) {
         $this->stockService = $stockService;
         $this->payableHistoryService = $payableHistoryService;
+        $this->conversionService = $conversionService;
     }
 
     /**
@@ -89,12 +103,25 @@ class PurchaseReturnService
                     continue;
                 }
 
+                $purchaseItem = $purchase->items->find($itemData['purchase_item_id']);
+                
+                // Calculate unit conversion data
+                $unitId = $itemData['unit_id'] ?? $purchaseItem->unit_id;
+                $conversionData = $this->conversionService->calculateTransactionData(
+                    $itemData['product_id'],
+                    $itemData['quantity'],
+                    $unitId
+                );
+
                 PurchaseReturnItem::create([
                     'purchase_return_id' => $return->id,
                     'purchase_item_id' => $itemData['purchase_item_id'],
                     'product_id' => $itemData['product_id'],
                     'quantity' => $itemData['quantity'],
                     'unit_price' => $itemData['unit_price'],
+                    'unit_id' => $conversionData['unit_id'],
+                    'conversion_factor' => $conversionData['conversion_factor'],
+                    'base_quantity' => $conversionData['base_quantity'],
                 ]);
             }
 
@@ -112,12 +139,14 @@ class PurchaseReturnService
                 throw new \Exception('Only draft returns can be confirmed.');
             }
 
-            // Reduce stock for each returned item
+            // Reduce stock for each returned item using BASE QUANTITIES
             foreach ($return->items as $item) {
+                $baseQuantity = $item->base_quantity ?? $item->quantity;
+                
                 $this->stockService->removeStock(
                     $return->warehouse_id,
                     $item->product_id,
-                    $item->quantity,
+                    $baseQuantity,
                     StockMovement::TYPE_SUPPLIER_RETURN,
                     PurchaseReturn::class,
                     $return->id,
@@ -174,7 +203,10 @@ class PurchaseReturnService
     }
 
     /**
-     * Get total returned quantity for a purchase item
+     * Get total returned quantity for a purchase item (in BASE UNITS)
+     * 
+     * This sums up base_quantity from all confirmed returns.
+     * For legacy returns without base_quantity, falls back to quantity.
      */
     public function getReturnedQuantity(int $purchaseItemId): float
     {
@@ -182,20 +214,28 @@ class PurchaseReturnService
             $query->where('status', PurchaseReturn::STATUS_CONFIRMED);
         })
         ->where('purchase_item_id', $purchaseItemId)
-        ->sum('quantity');
+        ->get()
+        ->sum(function ($item) {
+            // Use base_quantity if available, otherwise fall back to quantity
+            return $item->base_quantity ?? $item->quantity;
+        });
     }
 
     /**
-     * Get remaining returnable quantity for a purchase item
+     * Get remaining returnable quantity for a purchase item (in BASE UNITS)
      */
     public function getRemainingReturnableQuantity(PurchaseItem $purchaseItem): float
     {
-        $returnedQty = $this->getReturnedQuantity($purchaseItem->id);
-        return max(0, $purchaseItem->quantity - $returnedQty);
+        $originalBaseQty = $purchaseItem->base_quantity ?? $purchaseItem->quantity;
+        $returnedBaseQty = $this->getReturnedQuantity($purchaseItem->id);
+        return max(0, $originalBaseQty - $returnedBaseQty);
     }
 
     /**
-     * Validate return quantities against purchase items
+     * Validate return quantities against purchase items using BASE UNITS
+     * 
+     * CRITICAL: Must compare base quantities to prevent returning more than purchased.
+     * Example: Purchased 10 Bags (500 KG), can't return 11 Bags (550 KG).
      */
     protected function validateReturnQuantities(array $items, Purchase $purchase): void
     {
@@ -216,15 +256,26 @@ class PurchaseReturnService
                 throw new \Exception("Invalid purchase item ID: {$itemData['purchase_item_id']}");
             }
 
-            // Check remaining returnable quantity
-            $returnedQty = $this->getReturnedQuantity($purchaseItem->id);
-            $remainingQty = $purchaseItem->quantity - $returnedQty;
+            // Calculate return quantity in base units
+            $unitId = $itemData['unit_id'] ?? $purchaseItem->unit_id;
+            $conversionData = $this->conversionService->calculateTransactionData(
+                $purchaseItem->product_id,
+                $itemData['quantity'],
+                $unitId
+            );
+            $returnBaseQuantity = $conversionData['base_quantity'];
 
-            if ($itemData['quantity'] > $remainingQty) {
+            // Get original base quantity and already returned base quantity
+            $originalBaseQty = $purchaseItem->base_quantity ?? $purchaseItem->quantity;
+            $returnedBaseQty = $this->getReturnedQuantity($purchaseItem->id);
+            $remainingBaseQty = $originalBaseQty - $returnedBaseQty;
+
+            if ($returnBaseQuantity > $remainingBaseQty) {
                 $productName = $purchaseItem->product->name ?? 'Unknown';
                 throw new \Exception(
-                    "Cannot return {$itemData['quantity']} of {$productName}. " .
-                    "Only {$remainingQty} remaining (already returned: {$returnedQty})"
+                    "Cannot return {$itemData['quantity']} units of {$productName}. " .
+                    "Remaining returnable: {$remainingBaseQty} base units " .
+                    "(original: {$originalBaseQty}, already returned: {$returnedBaseQty})"
                 );
             }
         }

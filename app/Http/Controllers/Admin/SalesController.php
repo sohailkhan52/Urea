@@ -155,18 +155,50 @@ class SalesController extends Controller
                 ->get();
         }
         
-        $products = Product::active()->orderBy('name')->get();
+        // Load products with base unit and product units for multi-unit support
+        $products = Product::with(['baseUnit', 'productUnits.unit'])
+            ->active()
+            ->orderBy('name')
+            ->get();
         
         // Get families for the family selection
         $families = \App\Models\Family::orderBy('name')->get();
         
-        // Load warehouse inventory for each product
+        // Load warehouse inventory for each product and include multi-unit data
         $productsWithStock = $products->map(function($product) use ($defaultWarehouse) {
             $inventory = \App\Models\WarehouseInventory::where('warehouse_id', $defaultWarehouse->id)
                 ->where('product_id', $product->id)
                 ->first();
             
             $product->stock = $inventory ? $inventory->quantity : 0;
+            
+            // Add product_units data for multi-unit support
+            $product->product_units = $product->productUnits()
+                ->with('unit')
+                ->where('is_active', true)
+                ->ordered()
+                ->get()
+                ->map(function ($productUnit) use ($product) {
+                    return [
+                        'id' => $productUnit->id,
+                        'unit_id' => $productUnit->unit_id,
+                        'unit_name' => $productUnit->unit->name,
+                        'unit_abbreviation' => $productUnit->unit->abbreviation,
+                        'package_name' => $productUnit->package_name,
+                        'display_name' => $productUnit->package_name ?: $productUnit->unit->name,
+                        'conversion_to_base' => (float) $productUnit->conversion_to_base,
+                        'purchase_price' => $productUnit->purchase_price ? (float) $productUnit->purchase_price : null,
+                        'sale_price' => $productUnit->sale_price ? (float) $productUnit->sale_price : null,
+                        'is_base_unit' => $productUnit->unit_id === $product->base_unit_id,
+                    ];
+                });
+            
+            $product->base_unit = $product->baseUnit ? [
+                'id' => $product->baseUnit->id,
+                'name' => $product->baseUnit->name,
+                'abbreviation' => $product->baseUnit->abbreviation,
+            ] : null;
+            
             return $product;
         })->sortBy(function ($product) {
             return ($product->stock > 0 ? '0' : '1') . '|' . strtolower($product->name);
@@ -235,7 +267,17 @@ class SalesController extends Controller
             abort(403, 'You do not have permission to view this sale.');
         }
 
-        $sale->load(['customer', 'family', 'warehouse', 'items.product', 'creator', 'confirmer', 'customerPayments.receiver']);
+        $sale->load([
+            'customer', 
+            'family', 
+            'warehouse', 
+            'items.product.baseUnit',
+            'items.product.productUnits',
+            'items.unit',
+            'creator', 
+            'confirmer', 
+            'customerPayments.receiver'
+        ]);
 
         $summary = $this->salesService->getSaleSummary($sale);
 

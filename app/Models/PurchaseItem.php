@@ -30,6 +30,10 @@ class PurchaseItem extends Model
         'quantity',
         'unit_price',
         'total',
+        'unit_id',
+        'product_unit_id',
+        'conversion_factor',
+        'base_quantity',
     ];
 
     /**
@@ -43,6 +47,8 @@ class PurchaseItem extends Model
             'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',
             'total' => 'decimal:2',
+            'conversion_factor' => 'decimal:4',
+            'base_quantity' => 'decimal:4',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
@@ -62,6 +68,14 @@ class PurchaseItem extends Model
     public function product(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the unit used for this purchase item (multi-unit system)
+     */
+    public function unit(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Unit::class);
     }
 
     /**

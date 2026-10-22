@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Services\PayableHistoryService;
+use App\Services\UnitConversionService;
 
 /**
  * Purchase Service - Handles purchase operations and inventory integration
@@ -20,16 +21,22 @@ use App\Services\PayableHistoryService;
  * - Purchase confirmation with inventory integration
  * - Purchase cancellation
  * - Stock movement creation on confirmation
+ * - Multi-unit support with conversion to base units
  */
 class PurchaseService
 {
     protected StockService $stockService;
     protected PayableHistoryService $historyService;
+    protected UnitConversionService $conversionService;
 
-    public function __construct(StockService $stockService, PayableHistoryService $historyService)
-    {
+    public function __construct(
+        StockService $stockService, 
+        PayableHistoryService $historyService,
+        UnitConversionService $conversionService
+    ) {
         $this->stockService = $stockService;
         $this->historyService = $historyService;
+        $this->conversionService = $conversionService;
     }
 
     /**
@@ -68,28 +75,32 @@ class PurchaseService
     /**
      * Add item to purchase (draft only)
      * 
+     * Multi-unit support:
+     * - If unitId is provided, validates unit belongs to product and calculates conversion
+     * - If unitId is null, uses product's base unit (legacy behavior)
+     * - Stores unit_id, conversion_factor, and base_quantity on the item
+     * 
      * @param Purchase $purchase
      * @param int $productId
-     * @param float $quantity
-     * @param float $unitPrice
+     * @param float $quantity Quantity in the selected unit
+     * @param float $unitPrice Price per selected unit
+     * @param int|null $unitId Selected unit (null = use base unit)
      * @return PurchaseItem
      * @throws \Exception
      */
-    public function addItem(Purchase $purchase, int $productId, float $quantity, float $unitPrice): PurchaseItem
-    {
+    public function addItem(
+        Purchase $purchase, 
+        int $productId, 
+        float $quantity, 
+        float $unitPrice,
+        ?int $unitId = null,
+        ?int $productUnitId = null
+    ): PurchaseItem {
         if (!$purchase->canBeEdited()) {
             throw new \Exception("Cannot add items to non-draft purchase.");
         }
 
-        return DB::transaction(function () use ($purchase, $productId, $quantity, $unitPrice) {
-            // Debug logging
-            \Log::info('addItem called', [
-                'product_id' => $productId,
-                'quantity' => $quantity,
-                'unit_price' => $unitPrice,
-                'unit_price_type' => gettype($unitPrice),
-            ]);
-            
+        return DB::transaction(function () use ($purchase, $productId, $quantity, $unitPrice, $unitId, $productUnitId) {
             // Check if product already exists in purchase
             $existingItem = $purchase->items()->where('product_id', $productId)->first();
 
@@ -97,28 +108,39 @@ class PurchaseService
                 throw new \Exception("Product already exists in this purchase. Please update quantity instead.");
             }
 
+            // Calculate unit conversion data.
+            // Pass $productUnitId so the service does a direct PK lookup on product_units
+            // instead of the ambiguous ->where('unit_id')->first() path.
+            // This guarantees the correct conversion_factor when multiple packages share
+            // the same underlying unit_id (e.g., "Single" and "Base" both backed by Piece).
+            $conversionData = $this->conversionService->calculateTransactionData(
+                $productId,
+                $quantity,
+                $unitId,
+                $productUnitId
+            );
+
             $item = $purchase->items()->create([
                 'product_id' => $productId,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
                 'total' => $quantity * $unitPrice,
-            ]);
-
-            // Verify what was stored
-            \Log::info('Purchase item created', [
-                'item_id' => $item->id,
-                'stored_unit_price' => $item->unit_price,
-                'stored_quantity' => $item->quantity,
-                'stored_total' => $item->total,
+                'unit_id' => $conversionData['unit_id'],
+                'product_unit_id' => $productUnitId, // Store the specific ProductUnit ID
+                'conversion_factor' => $conversionData['conversion_factor'],
+                'base_quantity' => $conversionData['base_quantity'],
             ]);
 
             // Recalculate purchase totals
             $this->recalculatePurchaseTotals($purchase);
 
-            Log::info('Purchase item added', [
+            Log::info('Purchase item added with unit conversion', [
                 'purchase_id' => $purchase->id,
                 'product_id' => $productId,
                 'quantity' => $quantity,
+                'unit_id' => $conversionData['unit_id'],
+                'conversion_factor' => $conversionData['conversion_factor'],
+                'base_quantity' => $conversionData['base_quantity'],
             ]);
 
             return $item;
@@ -128,31 +150,56 @@ class PurchaseService
     /**
      * Update purchase item (draft only)
      * 
+     * Multi-unit support:
+     * - Can change unit along with quantity
+     * - Recalculates conversion and base quantity
+     * 
      * @param PurchaseItem $item
-     * @param float $quantity
-     * @param float $unitPrice
+     * @param float $quantity Quantity in the selected unit
+     * @param float $unitPrice Price per selected unit
+     * @param int|null $unitId Selected unit (null = keep existing or use base unit)
      * @return PurchaseItem
      * @throws \Exception
      */
-    public function updateItem(PurchaseItem $item, float $quantity, float $unitPrice): PurchaseItem
-    {
+    public function updateItem(
+        PurchaseItem $item, 
+        float $quantity, 
+        float $unitPrice,
+        ?int $unitId = null
+    ): PurchaseItem {
         if (!$item->purchase->canBeEdited()) {
             throw new \Exception("Cannot update items in non-draft purchase.");
         }
 
-        return DB::transaction(function () use ($item, $quantity, $unitPrice) {
+        return DB::transaction(function () use ($item, $quantity, $unitPrice, $unitId) {
+            // If unitId not provided, keep the existing unit
+            if ($unitId === null) {
+                $unitId = $item->unit_id;
+            }
+
+            // Calculate unit conversion data
+            $conversionData = $this->conversionService->calculateTransactionData(
+                $item->product_id, 
+                $quantity, 
+                $unitId
+            );
+
             $item->update([
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
                 'total' => $quantity * $unitPrice,
+                'unit_id' => $conversionData['unit_id'],
+                'conversion_factor' => $conversionData['conversion_factor'],
+                'base_quantity' => $conversionData['base_quantity'],
             ]);
 
             $this->recalculatePurchaseTotals($item->purchase);
 
-            Log::info('Purchase item updated', [
+            Log::info('Purchase item updated with unit conversion', [
                 'item_id' => $item->id,
-                'purchase_id' => $item->purchase_id,
                 'quantity' => $quantity,
+                'unit_id' => $conversionData['unit_id'],
+                'base_quantity' => $conversionData['base_quantity'],
             ]);
 
             return $item;
@@ -239,10 +286,11 @@ class PurchaseService
 
         return DB::transaction(function () use ($purchase, $amountPaid, $itemsData) {
             // Update product prices with the purchase prices before adding stock
+            // IMPORTANT: Handle multi-unit pricing correctly
             foreach ($purchase->items as $item) {
                 try {
                     // Reload product fresh to avoid any stale cache
-                    $product = Product::find($item->product_id);
+                    $product = Product::with('baseUnit', 'productUnits')->find($item->product_id);
                     if (!$product) {
                         Log::warning('Product not found for purchase item', [
                             'product_id' => $item->product_id,
@@ -251,29 +299,52 @@ class PurchaseService
                         continue;
                     }
                     
-                    // Prepare update data
-                    $updateData = [
-                        'purchase_price' => floatval($item->unit_price),
-                    ];
-                    
-                    // If itemsData provided, check for sale_price updates
+                    // -------------------------------------------------------
+                    // PRICE SYNCHRONIZATION — all packages always updated
+                    // -------------------------------------------------------
+                    // Rule (task spec §1–§14):
+                    //   new_base = entered_price / selected_conversion
+                    //   every_package_price = new_base × package_conversion
+                    //
+                    // ALL ProductUnits are recalculated every time.
+                    // Historical purchase_items/sale_items are never touched.
+                    // Stock quantities and purchase totals are not affected here.
+                    // Cost and sale are calculated independently.
+                    // -------------------------------------------------------
+
+                    $conversionFactor = ($item->conversion_factor !== null)
+                        ? (float) $item->conversion_factor
+                        : 1.0;
+
+                    // Calculate new base purchase price
+                    $basePurchasePrice = (float) $item->unit_price / $conversionFactor;
+
+                    // Calculate new base sale price only if the caller supplied it
+                    $baseSalePrice = null;
                     if ($itemsData && is_array($itemsData)) {
                         $itemData = collect($itemsData)->firstWhere('product_id', $item->product_id);
-                        if ($itemData && isset($itemData['sale_price']) && floatval($itemData['sale_price']) > 0) {
-                            $updateData['sale_price'] = floatval($itemData['sale_price']);
+                        if ($itemData !== null
+                            && isset($itemData['sale_price'])
+                            && floatval($itemData['sale_price']) > 0
+                        ) {
+                            $baseSalePrice = floatval($itemData['sale_price']) / $conversionFactor;
                         }
                     }
-                    
-                    // Update product
-                    $product->update($updateData);
-                    
-                    Log::info('Product price updated on purchase confirmation', [
-                        'product_id' => $item->product_id,
-                        'product_name' => $product->name,
-                        'old_purchase_price' => $product->getOriginal('purchase_price'),
-                        'new_purchase_price' => $item->unit_price,
-                        'sale_price_updated' => isset($updateData['sale_price']),
-                        'purchase_id' => $purchase->id,
+
+                    // Delegate ALL price updates to the centralized synchronizer
+                    $this->conversionService->synchronizeProductUnitPrices(
+                        $product,
+                        $basePurchasePrice,
+                        $baseSalePrice   // null = leave existing sale prices untouched
+                    );
+
+                    Log::info('Product prices synchronized after purchase', [
+                        'product_id'             => $product->id,
+                        'purchase_item_id'        => $item->id,
+                        'selected_conversion'     => $conversionFactor,
+                        'entered_unit_price'      => $item->unit_price,
+                        'new_base_purchase_price' => $basePurchasePrice,
+                        'new_base_sale_price'     => $baseSalePrice ?? 'not updated',
                     ]);
                 } catch (\Exception $e) {
                     Log::error('Failed to update product price', [
@@ -284,20 +355,43 @@ class PurchaseService
                 }
             }
 
-            // Add stock for each item
+            // Add stock for each item using BASE QUANTITIES
             foreach ($purchase->items as $item) {
                 try {
+                    // CRITICAL: Use base_quantity for stock, not raw quantity
+                    // For legacy items without base_quantity, fall back to quantity (assumes base unit)
+                    $stockQuantity = $item->base_quantity ?? $item->quantity;
+                    
+                    // Calculate base unit cost if purchasing in packages
+                    // If purchasing 1 Bag at Rs 5000, and Bag = 50 KG, base cost = 100/KG
+                    $baseUnitCost = $item->unit_price;
+                    if ($item->conversion_factor && $item->conversion_factor > 1) {
+                        $baseUnitCost = $this->conversionService->calculateBaseCostPrice(
+                            $item->unit_price,
+                            $item->conversion_factor
+                        );
+                    }
+                    
                     $this->stockService->addStock(
                         warehouseId: $purchase->warehouse_id,
                         productId: $item->product_id,
-                        quantity: $item->quantity,
+                        quantity: $stockQuantity,
                         type: StockMovement::TYPE_PURCHASE,
                         referenceType: Purchase::class,
                         referenceId: $purchase->id,
-                        unitCost: $item->unit_price,
+                        unitCost: $baseUnitCost,
                         remarks: "Purchase Order #{$purchase->purchase_number}",
                         userId: Auth::id()
                     );
+                    
+                    Log::info('Stock added for purchase item', [
+                        'purchase_id' => $purchase->id,
+                        'product_id' => $item->product_id,
+                        'transaction_quantity' => $item->quantity,
+                        'base_quantity' => $stockQuantity,
+                        'unit_id' => $item->unit_id,
+                        'conversion_factor' => $item->conversion_factor,
+                    ]);
                 } catch (\Exception $e) {
                     Log::error('Stock movement creation failed', [
                         'purchase_id' => $purchase->id,
