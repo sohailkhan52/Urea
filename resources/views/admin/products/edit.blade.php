@@ -131,7 +131,7 @@
 
                         <div id="productUnitsContainer">
                             @foreach($product->productUnits as $index => $productUnit)
-                                <div class="card mb-2 product-unit-item" data-unit-id="{{ $productUnit->id }}">
+                                <div class="card mb-2 product-unit-item" data-unit-id="{{ $productUnit->id }}" data-is-base-unit="{{ $productUnit->isBaseUnit() ? '1' : '0' }}">
                                     <div class="card-body">
                                         <input type="hidden" name="product_units[{{ $index }}][id]" value="{{ $productUnit->id }}">
                                         <div class="row align-items-center">
@@ -230,7 +230,7 @@
 </div>
 
 <template id="productUnitTemplate">
-    <div class="card mb-2 product-unit-item">
+    <div class="card mb-2 product-unit-item" data-is-base-unit="0">
         <div class="card-body">
             <div class="row align-items-center">
                 <div class="col-md-2">
@@ -350,29 +350,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Conversion display and price auto-calculation
+        // Keep the conversion label current for each package row.
         const unitSelect = row.querySelector('.unit-select');
         const conversionInput = row.querySelector('.conversion-input');
         const conversionDisplay = row.querySelector('.conversion-display');
-        const purchasePriceInput = row.querySelector('input[name*="[purchase_price]"]');
-        const salePriceInput = row.querySelector('input[name*="[sale_price]"]');
-        
-        // Track if user has manually edited prices
-        let purchasePriceManuallyEdited = !!purchasePriceInput?.value; // If already has value, consider it edited
-        let salePriceManuallyEdited = !!salePriceInput?.value;
-        
-        // Mark as manually edited when user types
-        if (purchasePriceInput) {
-            purchasePriceInput.addEventListener('input', function() {
-                purchasePriceManuallyEdited = true;
-            });
-        }
-        
-        if (salePriceInput) {
-            salePriceInput.addEventListener('input', function() {
-                salePriceManuallyEdited = true;
-            });
-        }
 
         if (unitSelect && conversionInput && conversionDisplay && !conversionInput.readOnly) {
             function updateConversionDisplay() {
@@ -394,61 +375,127 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            function autoCalculatePrices() {
-                const conversion = parseFloat(conversionInput.value);
-                
-                // Only auto-calculate if conversion is valid and prices haven't been manually edited
-                if (!conversion || conversion <= 0) return;
-                
-                // Get base product prices
-                const basePurchasePrice = parseFloat(document.getElementById('purchase_price')?.value) || 0;
-                const baseSalePrice = parseFloat(document.getElementById('sale_price')?.value) || 0;
-                
-                // Auto-calculate purchase price if not manually edited
-                if (purchasePriceInput && !purchasePriceManuallyEdited && basePurchasePrice > 0) {
-                    const calculatedPurchasePrice = (basePurchasePrice * conversion).toFixed(2);
-                    purchasePriceInput.value = calculatedPurchasePrice;
-                    purchasePriceInput.placeholder = `Auto: ${calculatedPurchasePrice}`;
-                }
-                
-                // Auto-calculate sale price if not manually edited
-                if (salePriceInput && !salePriceManuallyEdited && baseSalePrice > 0) {
-                    const calculatedSalePrice = (baseSalePrice * conversion).toFixed(2);
-                    salePriceInput.value = calculatedSalePrice;
-                    salePriceInput.placeholder = `Auto: ${calculatedSalePrice}`;
-                }
-            }
-
             unitSelect.addEventListener('change', updateConversionDisplay);
             conversionInput.addEventListener('input', function() {
                 updateConversionDisplay();
-                autoCalculatePrices();
+                syncAllPricesFromBase();
             });
             if (baseUnitSelect) {
                 baseUnitSelect.addEventListener('change', updateConversionDisplay);
             }
-            
-            // Recalculate when base prices change
-            const basePurchasePriceInput = document.getElementById('purchase_price');
-            const baseSalePriceInput = document.getElementById('sale_price');
-            
-            if (basePurchasePriceInput) {
-                basePurchasePriceInput.addEventListener('input', function() {
-                    if (!purchasePriceManuallyEdited) {
-                        autoCalculatePrices();
-                    }
-                });
-            }
-            
-            if (baseSalePriceInput) {
-                baseSalePriceInput.addEventListener('input', function() {
-                    if (!salePriceManuallyEdited) {
-                        autoCalculatePrices();
-                    }
-                });
-            }
         }
     }
+
+    function parsePrice(input) {
+        if (!input || input.value.trim() === '') {
+            return null;
+        }
+
+        const value = parseFloat(input.value);
+        return Number.isFinite(value) ? value : null;
+    }
+
+    function formatPrice(value) {
+        if (!Number.isFinite(value)) {
+            return '';
+        }
+
+        return value.toFixed(2).replace(/\.?0+$/, '');
+    }
+
+    function writePrice(input, value) {
+        if (input && Number.isFinite(value)) {
+            input.value = formatPrice(value);
+        }
+    }
+
+    function syncAllPricesFromBase() {
+        const basePurchaseInput = document.getElementById('purchase_price');
+        const baseSaleInput = document.getElementById('sale_price');
+        const basePurchasePrice = parsePrice(basePurchaseInput);
+        const baseSalePrice = parsePrice(baseSaleInput);
+
+        container.querySelectorAll('.product-unit-item').forEach(row => {
+            if (row.querySelector('.delete-flag')?.value === '1') {
+                return;
+            }
+
+            if (row.dataset.isBaseUnit === '1') {
+                writePrice(row.querySelector('input[name*="[purchase_price]"]'), basePurchasePrice);
+                writePrice(row.querySelector('input[name*="[sale_price]"]'), baseSalePrice);
+                return;
+            }
+
+            const multiplier = parseFloat(row.querySelector('.conversion-input')?.value);
+            if (!Number.isFinite(multiplier) || multiplier <= 0) {
+                return;
+            }
+
+            if (basePurchasePrice !== null) {
+                writePrice(
+                    row.querySelector('input[name*="[purchase_price]"]'),
+                    basePurchasePrice * multiplier
+                );
+            }
+            if (baseSalePrice !== null) {
+                writePrice(
+                    row.querySelector('input[name*="[sale_price]"]'),
+                    baseSalePrice * multiplier
+                );
+            }
+        });
+    }
+
+    function syncBasePriceFromUnitPrice(row, priceType) {
+        const isPurchasePrice = priceType === 'purchase_price';
+        const unitPriceInput = row.querySelector(`input[name*="[${priceType}]"]`);
+        const basePriceInput = document.getElementById(isPurchasePrice ? 'purchase_price' : 'sale_price');
+        const unitPrice = parsePrice(unitPriceInput);
+
+        // Let the user clear a field while typing; do not treat it as zero.
+        if (unitPrice === null) {
+            return;
+        }
+
+        let basePrice = unitPrice;
+
+        if (row.dataset.isBaseUnit !== '1') {
+            const multiplier = parseFloat(row.querySelector('.conversion-input')?.value);
+            if (!Number.isFinite(multiplier) || multiplier <= 0) {
+                return;
+            }
+
+            basePrice /= multiplier;
+        }
+
+        writePrice(basePriceInput, basePrice);
+        syncAllPricesFromBase();
+    }
+
+    document.getElementById('purchase_price').addEventListener('input', syncAllPricesFromBase);
+    document.getElementById('sale_price').addEventListener('input', syncAllPricesFromBase);
+
+    document.addEventListener('blur', function(event) {
+        if (!event.target.matches('#purchase_price, #sale_price, .product-unit-item input[name*="[purchase_price]"], .product-unit-item input[name*="[sale_price]"]')) {
+            return;
+        }
+
+        const value = parsePrice(event.target);
+        if (value !== null) {
+            event.target.value = formatPrice(value);
+        }
+    }, true);
+
+    container.addEventListener('input', function(event) {
+        const input = event.target;
+        if (!input.matches('input[name*="[purchase_price]"], input[name*="[sale_price]"]')) {
+            return;
+        }
+
+        const row = input.closest('.product-unit-item');
+        const priceType = input.name.includes('[purchase_price]') ? 'purchase_price' : 'sale_price';
+        syncBasePriceFromUnitPrice(row, priceType);
+    });
 });
 </script>
 @endpush
