@@ -18,9 +18,15 @@
                     </p>
                     
                     <div class="d-flex gap-3 mb-5">
-                        <a href="{{ route('login') }}" class="btn btn-primary btn-lg px-5">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-                        </a>
+                        @auth
+                            <a href="{{ route('admin.dashboard') }}" class="btn btn-primary btn-lg px-5">
+                                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}" class="btn btn-primary btn-lg px-5">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                            </a>
+                        @endauth
                         <a href="#features" class="btn btn-outline-primary btn-lg px-5">
                             <i class="bi bi-star me-2"></i>Learn More
                         </a>
