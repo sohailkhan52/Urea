@@ -110,9 +110,6 @@
                             <div class="sale-search-wrapper" id="customerSearchWrapper">
                                 <input type="text" id="customerSearch" class="form-control" placeholder="Search customer by name or phone..." autocomplete="off">
                                 <div id="customerDropdown" class="sale-search-dropdown list-group" style="display: none;"></div>
-                                <select id="existingCustomerSelect" class="form-select d-none" aria-hidden="true" tabindex="-1">
-                                    <option value="">-- Search & Select Customer --</option>
-                                </select>
                             </div>
 
                         </div>
@@ -557,6 +554,15 @@
         opacity: 0.75;
     }
 
+    .sale-search-dropdown.sale-search-dropdown-portal {
+        position: fixed;
+        right: auto;
+        z-index: 1080;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
     @media (max-width: 767.98px) {
         .sale-family-card {
             position: relative;
@@ -611,11 +617,72 @@ let saleItems = {};
 
 let allCustomers = [];
 const allSaleProducts = @json($productsWithStock ?? []);
+const mobileSaleDropdowns = window.matchMedia('(max-width: 768px)');
+
+function positionSaleDropdown(dropdown, input) {
+    if (!mobileSaleDropdowns.matches || dropdown.style.display === 'none') {
+        return;
+    }
+
+    const inputBounds = input.getBoundingClientRect();
+    const viewportPadding = 8;
+    const availableBelow = Math.max(0, window.innerHeight - inputBounds.bottom - viewportPadding - 4);
+    const availableAbove = Math.max(0, inputBounds.top - viewportPadding - 4);
+    const desiredHeight = Math.min(dropdown.scrollHeight, 320);
+    const showAbove = desiredHeight > availableBelow && availableAbove > availableBelow;
+    const availableHeight = showAbove ? availableAbove : availableBelow;
+    const maxHeight = Math.min(desiredHeight, availableHeight);
+
+    dropdown.style.left = `${inputBounds.left}px`;
+    dropdown.style.width = `${inputBounds.width}px`;
+    dropdown.style.maxHeight = `${maxHeight}px`;
+    dropdown.style.top = showAbove
+        ? `${Math.max(viewportPadding, inputBounds.top - maxHeight - 4)}px`
+        : `${inputBounds.bottom + 4}px`;
+}
+
+function setupMobileSaleDropdowns() {
+    const dropdowns = [
+        ['customerDropdown', 'customerSearch', 'customerSearchWrapper'],
+        ['familyDropdown', 'familySearch', 'familySearchWrapper'],
+    ];
+
+    const updateDropdowns = () => {
+        dropdowns.forEach(([dropdownId, inputId, wrapperId]) => {
+            const dropdown = document.getElementById(dropdownId);
+            const input = document.getElementById(inputId);
+            const wrapper = document.getElementById(wrapperId);
+
+            if (mobileSaleDropdowns.matches) {
+                if (dropdown.parentElement !== document.body) {
+                    document.body.appendChild(dropdown);
+                }
+                dropdown.classList.add('sale-search-dropdown-portal');
+                positionSaleDropdown(dropdown, input);
+            } else {
+                if (dropdown.parentElement !== wrapper) {
+                    wrapper.appendChild(dropdown);
+                }
+                dropdown.classList.remove('sale-search-dropdown-portal');
+                dropdown.style.top = '';
+                dropdown.style.left = '';
+                dropdown.style.width = '';
+                dropdown.style.maxHeight = '';
+            }
+        });
+    };
+
+    updateDropdowns();
+    mobileSaleDropdowns.addEventListener('change', updateDropdowns);
+    window.addEventListener('resize', updateDropdowns);
+    window.addEventListener('scroll', updateDropdowns, true);
+}
 
 // Load customers on page load
 
 document.addEventListener('DOMContentLoaded', function() {
 
+    setupMobileSaleDropdowns();
     loadAllCustomers();
     
     // Initialize paid amount handler for integer-only input
@@ -641,17 +708,6 @@ function loadAllCustomers() {
     .then(data => {
 
         allCustomers = data;
-
-        const select = document.getElementById('existingCustomerSelect');
-        select.innerHTML = '<option value="">-- Search & Select Customer --</option>';
-
-        data.forEach(customer => {
-            const option = document.createElement('option');
-            option.value = customer.id;
-            option.textContent = `${customer.name}${customer.phone ? ' - ' + customer.phone : ''}`;
-            option.dataset.phone = customer.phone || '';
-            select.appendChild(option);
-        });
 
         if (document.activeElement === document.getElementById('customerSearch')) {
             renderCustomerDropdown(document.getElementById('customerSearch').value);
@@ -701,6 +757,7 @@ function renderCustomerDropdown(searchTerm = '') {
     }
 
     dropdown.style.display = 'block';
+    positionSaleDropdown(dropdown, customerSearch);
 }
 
 const customerSearch = document.getElementById('customerSearch');
@@ -709,7 +766,6 @@ customerSearch.addEventListener('input', () => {
     const selectedCustomer = allCustomers.find(customer => customer.id == document.getElementById('customer_id').value);
     if (selectedCustomer && customerSearch.value.trim() !== selectedCustomer.name) {
         document.getElementById('customer_id').value = '';
-        document.getElementById('existingCustomerSelect').value = '';
         document.getElementById('selectedCustomerCard').style.display = 'none';
         document.getElementById('family_id').value = '';
         document.getElementById('familySearch').value = '';
@@ -777,6 +833,7 @@ function renderFamilyDropdown(searchTerm = '') {
     }
 
     dropdown.style.display = 'block';
+    positionSaleDropdown(dropdown, document.getElementById('familySearch'));
 }
 
 // Select customer
@@ -784,8 +841,6 @@ function renderFamilyDropdown(searchTerm = '') {
 function selectCustomer(id, name, phone) {
 
     document.getElementById('customer_id').value = id;
-
-    document.getElementById('existingCustomerSelect').value = id;
 
     document.getElementById('customerSearch').value = name;
 
@@ -818,8 +873,6 @@ function clearCustomer() {
     document.getElementById('customer_id').value = '';
 
     document.getElementById('selectedCustomerCard').style.display = 'none';
-
-    document.getElementById('existingCustomerSelect').value = '';
 
     document.getElementById('customerSearch').value = '';
 
@@ -899,8 +952,8 @@ productSearch.addEventListener('focus', () => searchSaleProducts(productSearch.v
 productSearch.addEventListener('input', () => searchSaleProducts(productSearch.value.trim()));
 
 document.addEventListener('click', function(event) {
-    if (!event.target.closest('#customerSearchWrapper')) document.getElementById('customerDropdown').style.display = 'none';
-    if (!event.target.closest('#familySearchWrapper')) document.getElementById('familyDropdown').style.display = 'none';
+    if (!event.target.closest('#customerSearchWrapper') && !event.target.closest('#customerDropdown')) document.getElementById('customerDropdown').style.display = 'none';
+    if (!event.target.closest('#familySearchWrapper') && !event.target.closest('#familyDropdown')) document.getElementById('familyDropdown').style.display = 'none';
     if (!event.target.closest('#productSearchWrapper')) document.getElementById('productDropdown').style.display = 'none';
 });
 
