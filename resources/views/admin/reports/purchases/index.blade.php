@@ -423,6 +423,26 @@
     </div>
 </div>
 
+<div class="modal fade" id="bulkDeleteResultModal" tabindex="-1" aria-labelledby="bulkDeleteResultModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white" id="bulkDeleteResultModalHeader">
+                <h5 class="modal-title" id="bulkDeleteResultModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Deletion Issues
+                </h5>
+                <button type="button" class="btn-close btn-close-white" id="bulkDeleteResultClose" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="bulkDeleteResultMessage" class="mb-2"></p>
+                <ul id="bulkDeleteResultErrors" class="mb-0 ps-3"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- Hidden form for bulk delete --}}
 <form id="bulkDeleteForm" action="{{ route('admin.reports.purchases.bulk-delete') }}" method="POST" style="display: none;">
     @csrf
@@ -448,6 +468,38 @@
         const checkboxes = document.querySelectorAll('.purchase-checkbox:checked');
         const deleteBtn = document.getElementById('deleteSelectedBtn');
         deleteBtn.disabled = checkboxes.length === 0;
+    }
+
+    function showBulkDeleteResult(message, errors = [], reloadAfterClose = false, isError = errors.length > 0) {
+        const modalElement = document.getElementById('bulkDeleteResultModal');
+        const modalHeader = document.getElementById('bulkDeleteResultModalHeader');
+        const modalTitle = document.getElementById('bulkDeleteResultModalLabel');
+        const closeButton = document.getElementById('bulkDeleteResultClose');
+        document.getElementById('bulkDeleteResultMessage').textContent = message;
+
+        modalHeader.classList.toggle('bg-danger', isError);
+        modalHeader.classList.toggle('bg-success', !isError);
+        modalTitle.innerHTML = isError
+            ? '<i class="bi bi-exclamation-triangle me-2"></i>Deletion Issues'
+            : '<i class="bi bi-check-circle me-2"></i>Deletion Complete';
+        closeButton.classList.toggle('btn-close-white', true);
+
+        const errorsList = document.getElementById('bulkDeleteResultErrors');
+        errorsList.replaceChildren();
+        errors.forEach(error => {
+            const item = document.createElement('li');
+            item.textContent = error;
+            errorsList.appendChild(item);
+        });
+
+        if (reloadAfterClose) {
+            modalElement.addEventListener('hidden.bs.modal', function reloadReport() {
+                modalElement.removeEventListener('hidden.bs.modal', reloadReport);
+                window.location.href = '{{ route("admin.reports.purchases.index") }}';
+            });
+        }
+
+        bootstrap.Modal.getOrCreateInstance(modalElement).show();
     }
 
     // Show bulk delete confirmation
@@ -505,10 +557,6 @@
             return;
         }
         
-        if (!confirm(`Delete ${purchaseIds.length} purchase(es)? This action cannot be undone.`)) {
-            return;
-        }
-        
         // Close the modal first
         const modalElement = document.getElementById('bulkDeleteModal');
         if (modalElement) {
@@ -541,29 +589,23 @@
                 'Accept': 'application/json'
             }
         })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Response data:', data);
-            
-            if (data.success) {
-                // Show success message
-                if (data.errors && data.errors.length > 0) {
-                    let errorMsg = data.message + '\n\nErrors:\n' + data.errors.join('\n');
-                    alert(errorMsg);
-                } else {
-                    alert(data.message);
-                }
-                // Reload page after a short delay
-                setTimeout(() => {
-                    window.location.href = '{{ route("admin.reports.purchases.index") }}';
-                }, 1000);
-            } else {
-                alert('Error: ' + (data.message || 'Unknown error occurred'));
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                showBulkDeleteResult(data.message || 'Bulk deletion failed. Please try again.', data.errors || [], false, true);
+                return;
             }
+
+            const errors = Array.isArray(data.errors) ? data.errors : [];
+            showBulkDeleteResult(
+                data.message || 'Bulk deletion completed.',
+                errors,
+                true
+            );
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while deleting. Please try again.');
+            showBulkDeleteResult('An error occurred while deleting. Please try again.', [], false, true);
         });
     }
 

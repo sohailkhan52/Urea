@@ -8,9 +8,6 @@
         <h1 class="h3 mb-0">
             <i class="bi bi-arrow-return-left me-2"></i>Select Sale Invoice to Return
         </h1>
-        <a href="{{ route('admin.sales.index') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Back to Sales
-        </a>
     </div>
 
     <div class="card">

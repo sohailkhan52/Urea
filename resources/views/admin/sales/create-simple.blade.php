@@ -147,7 +147,7 @@
 
                 <!-- FAMILY SECTION (OPTIONAL) -->
 
-                <div class="card mb-4">
+                <div class="card mb-4 sale-family-card">
 
                     <div class="card-header bg-light">
 
@@ -168,17 +168,12 @@
                                 <div class="sale-search-wrapper" id="familySearchWrapper">
                                     <input type="text" id="familySearch" class="form-control" placeholder="Search or select family..." autocomplete="off">
                                     <div id="familyDropdown" class="sale-search-dropdown" style="display: none;"></div>
-                                    <select id="family_id" name="family_id" class="form-select d-none" aria-hidden="true" tabindex="-1">
-
-                                    <option value="">-- Select Family --</option>
-
+                                    <input type="hidden" id="family_id" name="family_id">
+                                    <div id="familyOptions" hidden>
                                     @foreach($families ?? [] as $family)
-
-                                        <option value="{{ $family->id }}">{{ $family->name }}</option>
-
+                                        <span data-family-id="{{ $family->id }}" data-family-name="{{ $family->name }}"></span>
                                     @endforeach
-
-                                    </select>
+                                    </div>
                                 </div>
 
                             </div>
@@ -207,7 +202,7 @@
 
                 <!-- PRODUCTS SECTION -->
 
-                <div class="card mb-4">
+                <div class="card mb-4 sale-products-card">
 
                     <div class="card-header bg-light">
 
@@ -561,6 +556,50 @@
         background-color: #f8f9fa;
         opacity: 0.75;
     }
+
+    @media (max-width: 767.98px) {
+        .sale-family-card {
+            position: relative;
+            overflow: visible !important;
+        }
+
+        .sale-family-card:focus-within {
+            z-index: 1060;
+        }
+
+        .sale-family-card .card-body,
+        .sale-family-card .sale-search-wrapper {
+            overflow: visible !important;
+        }
+
+        #familyDropdown {
+            max-height: 320px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sale-products-card {
+            position: relative;
+            overflow: visible !important;
+        }
+
+        .sale-products-card:focus-within {
+            z-index: 1060;
+        }
+
+        .sale-products-card .card-body,
+        .sale-products-card .sale-search-wrapper {
+            overflow: visible !important;
+        }
+
+        #productDropdown {
+            max-height: 320px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+    }
 </style>
 @endpush
 
@@ -682,22 +721,37 @@ customerSearch.addEventListener('input', () => {
 document.getElementById('familySearch').addEventListener('focus', function() {
     renderFamilyDropdown(this.value);
 });
+document.getElementById('familySearch').addEventListener('click', function() {
+    renderFamilyDropdown(this.value);
+});
 document.getElementById('familySearch').addEventListener('input', function() {
     const familySelect = document.getElementById('family_id');
-    const selectedFamily = familySelect.options[familySelect.selectedIndex];
-    if (familySelect.value && selectedFamily.text !== this.value.trim()) {
+    const selectedFamily = getFamilyOption(familySelect.value);
+    if (familySelect.value && selectedFamily?.dataset.familyName !== this.value.trim()) {
         familySelect.value = '';
         document.getElementById('familyInfo').style.display = 'none';
     }
     renderFamilyDropdown(this.value);
 });
 
+function getFamilyOptions() {
+    return Array.from(document.querySelectorAll('#familyOptions [data-family-id]'))
+        .map(option => ({
+            value: option.dataset.familyId,
+            text: option.dataset.familyName
+        }));
+}
+
+function getFamilyOption(familyId) {
+    return Array.from(document.querySelectorAll('#familyOptions [data-family-id]'))
+        .find(option => option.dataset.familyId === String(familyId));
+}
+
 function renderFamilyDropdown(searchTerm = '') {
     const dropdown = document.getElementById('familyDropdown');
-    const select = document.getElementById('family_id');
     const normalizedTerm = searchTerm.trim().toLowerCase();
-    const options = Array.from(select.options).filter(option =>
-        option.value && option.text.toLowerCase().includes(normalizedTerm)
+    const options = getFamilyOptions().filter(option =>
+        option.text.toLowerCase().includes(normalizedTerm)
     );
 
     dropdown.innerHTML = '';
@@ -713,10 +767,10 @@ function renderFamilyDropdown(searchTerm = '') {
             option.className = 'list-group-item list-group-item-action text-start';
             option.textContent = family.text;
             option.addEventListener('click', () => {
-                select.value = family.value;
+                document.getElementById('family_id').value = family.value;
                 document.getElementById('familySearch').value = family.text;
                 dropdown.style.display = 'none';
-                select.dispatchEvent(new Event('change', { bubbles: true }));
+                document.getElementById('family_id').dispatchEvent(new Event('change', { bubbles: true }));
             });
             dropdown.appendChild(option);
         });
@@ -751,7 +805,7 @@ function selectCustomer(id, name, phone) {
     const customer = allCustomers.find(c => c.id == id);
     if (customer && customer.family_id) {
         document.getElementById('family_id').value = customer.family_id;
-        document.getElementById('familySearch').value = document.querySelector(`#family_id option[value="${customer.family_id}"]`)?.textContent || '';
+        document.getElementById('familySearch').value = getFamilyOption(customer.family_id)?.dataset.familyName || '';
         document.getElementById('family_id').dispatchEvent(new Event('change'));
     }
 
@@ -782,11 +836,11 @@ document.getElementById('family_id')?.addEventListener('change', function() {
 
     if (this.value) {
 
-        const selectedOption = this.options[this.selectedIndex];
+        const selectedOption = getFamilyOption(this.value);
 
-        document.getElementById('familySearch').value = selectedOption.text;
+        document.getElementById('familySearch').value = selectedOption?.dataset.familyName || '';
 
-        document.getElementById('familyName').textContent = selectedOption.text;
+        document.getElementById('familyName').textContent = selectedOption?.dataset.familyName || '';
 
         document.getElementById('familyInfo').style.display = 'block';
 
@@ -1305,21 +1359,16 @@ document.getElementById('saveFamilyBtn')?.addEventListener('click', function() {
 
             const family = data.family || data;
 
-            const select = document.getElementById('family_id');
+            const option = document.createElement('span');
+            option.dataset.familyId = family.id;
+            option.dataset.familyName = family.name;
+            document.getElementById('familyOptions').appendChild(option);
 
-            const option = document.createElement('option');
-
-            option.value = family.id;
-
-            option.textContent = family.name;
-
-            select.appendChild(option);
-
-            select.value = family.id;
+            document.getElementById('family_id').value = family.id;
 
             document.getElementById('familySearch').value = family.name;
 
-            select.dispatchEvent(new Event('change'));
+            document.getElementById('family_id').dispatchEvent(new Event('change'));
 
             document.getElementById('newFamilyForm').reset();
 
