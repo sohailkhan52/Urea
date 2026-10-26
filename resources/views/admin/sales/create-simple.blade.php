@@ -167,7 +167,7 @@
 
                                 <div class="sale-search-wrapper" id="familySearchWrapper">
                                     <input type="text" id="familySearch" class="form-control" placeholder="Search or select family..." autocomplete="off">
-                                    <div id="familyDropdown" class="sale-search-dropdown" style="display: none;"></div>
+                                    <div id="familyDropdown" class="sale-search-dropdown list-group" style="display: none;"></div>
                                     <input type="hidden" id="family_id" name="family_id">
                                     <div id="familyOptions" hidden>
                                     @foreach($families ?? [] as $family)
