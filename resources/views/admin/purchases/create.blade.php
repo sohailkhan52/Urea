@@ -163,7 +163,7 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
+                        <div class="table-responsive purchase-items-table-responsive">
                             <table class="table table-sm table-hover" id="itemsTable">
                                 <thead class="table-light">
                                     <tr>
@@ -2190,6 +2190,25 @@
     .table-responsive {
         max-height: 500px;
         overflow-y: auto;
+    }
+
+    .purchase-items-table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #itemsTable {
+        min-width: 760px;
+    }
+
+    #itemsTable th:nth-child(2),
+    #itemsTable td:nth-child(2) {
+        min-width: 80px;
+    }
+
+    #itemsTable th:nth-child(3),
+    #itemsTable td:nth-child(3) {
+        min-width: 120px;
     }
 
     .form-control-sm:focus,
