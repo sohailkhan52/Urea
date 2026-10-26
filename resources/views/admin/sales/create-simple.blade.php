@@ -63,7 +63,7 @@
 
                 <!-- CUSTOMER SECTION -->
 
-                <div class="card mb-4">
+                <div class="card mb-4 sale-customer-card">
 
                     <div class="card-header bg-light">
 
@@ -558,20 +558,25 @@
     }
 
     @media (max-width: 767.98px) {
+        .sale-customer-card,
         .sale-family-card {
             position: relative;
             overflow: visible !important;
         }
 
+        .sale-customer-card:focus-within,
         .sale-family-card:focus-within {
             z-index: 1060;
         }
 
+        .sale-customer-card .card-body,
+        .sale-customer-card .sale-search-wrapper,
         .sale-family-card .card-body,
         .sale-family-card .sale-search-wrapper {
             overflow: visible !important;
         }
 
+        #customerDropdown,
         #familyDropdown {
             max-height: 320px;
             overflow-y: auto;
