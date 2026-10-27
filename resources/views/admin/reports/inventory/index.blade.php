@@ -21,7 +21,7 @@
                                id="search" 
                                name="search" 
                                value="{{ $search ?? '' }}"
-                               placeholder="Search by product name or code"
+                               placeholder="Search by product name or SKU"
                                autocomplete="off"
                                autocorrect="off"
                                autocapitalize="off"
@@ -68,7 +68,7 @@
                         <thead>
                             <tr>
                                 <th>Product</th>
-                                <th>Code</th>
+                                <th>SKU</th>
                                 <th>Unit</th>
                                 <th class="text-end">Purchased</th>
                                 <th class="text-end">Sold</th>
@@ -84,26 +84,54 @@
                                     <strong>{{ $product->name }}</strong>
                                 </td>
                                 <td>{{ $product->product_code ?? '-' }}</td>
-                                <td>{{ $product->unit }}</td>
-                                <td class="text-end">
-                                    <span class="badge bg-info">{{ number_format($product->total_purchased) }}</span>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle unit-dropdown-{{ $product->id }}" 
+                                                type="button" 
+                                                id="unit-dropdown-{{ $product->id }}"
+                                                data-bs-toggle="dropdown" 
+                                                aria-expanded="false">
+                                            <span class="unit-display">{{ $product->unit }}</span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-sm" aria-labelledby="unit-dropdown-{{ $product->id }}">
+                                            @foreach($product->productUnits as $productUnit)
+                                            <li>
+                                                <a class="dropdown-item unit-selector" 
+                                                   href="#"
+                                                   data-unit-selector
+                                                   data-product-id="{{ $product->id }}"
+                                                   data-unit-name="{{ $productUnit->unit?->name ?? 'N/A' }}"
+                                                   data-unit-label="{{ trim(($productUnit->unit?->name ?? 'N/A') . ($productUnit->package_name ? ' (' . $productUnit->package_name . ')' : '')) }}"
+                                                   data-conversion-to-base="{{ $productUnit->conversion_to_base }}">
+                                                    {{ $productUnit->unit?->name ?? 'N/A' }} 
+                                                    @if($productUnit->package_name)
+                                                        ({{ $productUnit->package_name }})
+                                                    @endif
+                                                </a>
+                                            </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
                                 </td>
                                 <td class="text-end">
-                                    <span class="badge bg-warning">{{ number_format($product->total_sold) }}</span>
+                                    <span class="badge bg-info purchased-qty-{{ $product->id }}" data-base-value="{{ $product->total_purchased }}">{{ number_format($product->total_purchased) }}</span>
                                 </td>
                                 <td class="text-end">
-                                    <span class="badge bg-danger">{{ number_format($product->purchase_returns) }}</span>
+                                    <span class="badge bg-warning sold-qty-{{ $product->id }}" data-base-value="{{ $product->total_sold }}">{{ number_format($product->total_sold) }}</span>
                                 </td>
                                 <td class="text-end">
-                                    <span class="badge bg-secondary">{{ number_format($product->sale_returns) }}</span>
+                                    <span class="badge bg-danger purchase-returns-qty-{{ $product->id }}" data-base-value="{{ $product->purchase_returns }}">{{ number_format($product->purchase_returns) }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge bg-secondary sale-returns-qty-{{ $product->id }}" data-base-value="{{ $product->sale_returns }}">{{ number_format($product->sale_returns) }}</span>
                                 </td>
                                 <td class="text-end">
                                     @if($product->current_stock > 0)
-                                        <strong class="text-success">{{ number_format($product->current_stock) }}</strong>
+                                        <strong class="text-success stock-qty-{{ $product->id }}" data-base-value="{{ $product->current_stock }}">{{ number_format($product->current_stock) }}</strong>
                                     @elseif($product->current_stock < 0)
-                                        <strong class="text-danger">{{ number_format($product->current_stock) }}</strong>
+                                        <strong class="text-danger stock-qty-{{ $product->id }}" data-base-value="{{ $product->current_stock }}">{{ number_format($product->current_stock) }}</strong>
                                     @else
-                                        <strong class="text-muted">0</strong>
+                                        <strong class="text-muted stock-qty-{{ $product->id }}" data-base-value="0">0</strong>
                                     @endif
                                 </td>
                             </tr>
@@ -124,4 +152,66 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('click', function (event) {
+    if (!(event.target instanceof Element)) {
+        return;
+    }
+
+    const link = event.target.closest('[data-unit-selector]');
+    if (!link) {
+        return;
+    }
+
+    event.preventDefault();
+
+    const row = link.closest('tr');
+    const conversionToBase = Number(link.dataset.conversionToBase);
+    if (!row || !Number.isFinite(conversionToBase) || conversionToBase <= 0) {
+        console.error('Unable to apply selected inventory unit.');
+        return;
+    }
+
+    const productId = link.dataset.productId;
+    const purchasedBadge = row.querySelector(`.purchased-qty-${productId}`);
+    const soldBadge = row.querySelector(`.sold-qty-${productId}`);
+    const purchaseReturnsBadge = row.querySelector(`.purchase-returns-qty-${productId}`);
+    const saleReturnsBadge = row.querySelector(`.sale-returns-qty-${productId}`);
+    const stockDisplay = row.querySelector(`.stock-qty-${productId}`);
+    const unitDisplay = row.querySelector(`#unit-dropdown-${productId} .unit-display`);
+
+    if (!purchasedBadge || !soldBadge || !purchaseReturnsBadge || !saleReturnsBadge || !stockDisplay || !unitDisplay) {
+        console.error('Unable to find inventory values for product', productId);
+        return;
+    }
+
+    const convertQuantity = (element) => Number(element.dataset.baseValue) / conversionToBase;
+    const purchased = convertQuantity(purchasedBadge);
+    const sold = convertQuantity(soldBadge);
+    const purchaseReturns = convertQuantity(purchaseReturnsBadge);
+    const saleReturns = convertQuantity(saleReturnsBadge);
+    const stock = purchased - sold - purchaseReturns + saleReturns;
+    const formatQuantity = (quantity) => quantity.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+    unitDisplay.textContent = link.dataset.unitLabel || link.dataset.unitName;
+    purchasedBadge.textContent = formatQuantity(purchased);
+    soldBadge.textContent = formatQuantity(sold);
+    purchaseReturnsBadge.textContent = formatQuantity(purchaseReturns);
+    saleReturnsBadge.textContent = formatQuantity(saleReturns);
+    stockDisplay.textContent = formatQuantity(stock);
+    stockDisplay.classList.remove('text-success', 'text-danger', 'text-muted');
+
+    if (stock > 0) {
+        stockDisplay.classList.add('text-success');
+    } else if (stock < 0) {
+        stockDisplay.classList.add('text-danger');
+    } else {
+        stockDisplay.classList.add('text-muted');
+    }
+});
+</script>
 @endsection
