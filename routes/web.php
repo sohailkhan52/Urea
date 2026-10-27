@@ -259,6 +259,12 @@ Route::middleware(['auth', 'user_status'])->prefix('admin')->name('admin.')->gro
     });
     // ============ END PRODUCT REPORTS ============
 
+    // ============ INVENTORY REPORTS ============
+    Route::prefix('reports/inventory')->name('reports.inventory.')->middleware('permission:products.view')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\Reports\InventoryReportController::class, 'index'])->name('index');
+    });
+    // ============ END INVENTORY REPORTS ============
+
     // Sales Management
     // AJAX endpoints for returns (must come before resource route)
     Route::get('/sales/search-for-return', [\App\Http\Controllers\Admin\SaleReturnController::class, 'searchSales'])
